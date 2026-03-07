@@ -18,7 +18,7 @@ gcc ^
     -I . ^
     -I vendor/fundamental/include ^
     vendor/fundamental/src/startup/startup.c ^
-    vendor/fundamental/src/startup/windows.c ^
+    vendor/fundamental/arch/startup/windows-amd64/windows.c ^
     src/main.c ^
     src/cli.c ^
     commands/cmd_version.c ^
