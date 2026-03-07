@@ -1,13 +1,17 @@
 @ECHO OFF
 
-REM Compile fundamental CLI - Zero stdlib function calls
-REM Uses -fno-builtin to prevent compiler from substituting our functions
-REM with stdlib versions (printf, strlen, etc.)
+REM Compile fundamental CLI - Complete standalone build
+REM Uses -nostdlib to exclude standard C library
+REM Uses -fno-builtin to prevent compiler builtin substitution
+REM Uses -e main to specify entry point (required with -nostdlib)
 REM Our code calls ZERO stdlib runtime functions
 
 gcc ^
     --std=c17 -Os ^
+    -nostdlib ^
     -fno-builtin ^
+    -e main ^
+    -mconsole ^
     -I . ^
     -I vendor/fundamental/include ^
     vendor/fundamental/src/startup/startup.c ^
