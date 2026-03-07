@@ -10,7 +10,7 @@ gcc ^
     -fno-builtin ^
     -I . ^
     -I vendor/fundamental/include ^
-    src/startup.c ^
+    vendor/fundamental/src/startup/startup.c ^
     src/main.c ^
     src/cli.c ^
     commands/cmd_version.c ^
