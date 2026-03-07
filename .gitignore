@@ -1,0 +1,16 @@
+# Build outputs
+cli.exe
+cli
+
+# OS files
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+*.vsix
+
+# Test artifacts
+*.o
