@@ -29,10 +29,9 @@ ErrorResult cli_register(Command cmd) {
 }
 
 int cli_show_help(void) {
-  fun_console_write_line(
-      "fundamental-cli - A CLI built with fundamental library");
+  fun_console_write_line("fun - A CLI built with fundamental library");
   fun_console_write_line("");
-  fun_console_write_line("Usage: cli <command> [arguments]");
+  fun_console_write_line("Usage: fun <command> [arguments]");
   fun_console_write_line("");
   fun_console_write_line("Available commands:");
 
@@ -45,7 +44,7 @@ int cli_show_help(void) {
 
   fun_console_write_line("");
   fun_console_write_line(
-      "Use 'cli <command> --help' for command-specific help.");
+      "Use 'fun <command> --help' for command-specific help.");
 
   return 0;
 }
