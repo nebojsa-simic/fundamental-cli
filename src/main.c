@@ -2,7 +2,7 @@
 #include "commands/cmd_version.h"
 #include "src/cli.h"
 
-int main(int argc, const char **argv) {
+int cli_main(int argc, const char **argv) {
   // Initialize CLI runtime
   cli_init();
 
