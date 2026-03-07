@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # Compile fundamental CLI - Complete standalone build
-# Uses -nostdlib to exclude standard C library
+# Uses -nostdlib to exclude standard C library (works on Linux)
 # Uses -fno-builtin to prevent compiler builtin substitution
 # Uses -e main to specify entry point (required with -nostdlib)
-# Our code calls ZERO stdlib runtime functions
+# Our code calls ZERO stdlib runtime functions (printf, malloc, strlen, etc.)
 
 gcc \
     --std=c17 -Os \
