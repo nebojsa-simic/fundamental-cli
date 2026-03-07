@@ -1,8 +1,6 @@
 # Build outputs
 fun.exe
 fun
-cli.exe
-cli
 
 # Object files
 *.o
