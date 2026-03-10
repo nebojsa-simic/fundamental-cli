@@ -26,14 +26,14 @@
 
 ## 4. Fundamental Library Copy (Selective)
 
-- [ ] 4.1 Implement copy of arch/ folder only
-- [ ] 4.2 Implement copy of include/ folder only
-- [ ] 4.3 Implement copy of src/ folder only
-- [ ] 4.4 Exclude tests/, openspec/, node_modules/ and other non-essential folders
-- [ ] 4.5 Implement local copy from ../fundamental (selective folders)
-- [ ] 4.6 Implement git clone fallback (then copy selective folders)
-- [ ] 4.7 Implement .git directory removal after clone
-- [ ] 4.8 Add error handling for copy failures
+- [x] 4.1 Implement copy of arch/ folder only
+- [x] 4.2 Implement copy of include/ folder only
+- [x] 4.3 Implement copy of src/ folder only
+- [x] 4.4 Exclude tests/, openspec/, node_modules/ and other non-essential folders
+- [x] 4.5 Implement local copy from ../fundamental (selective folders)
+- [x] 4.6 Implement git clone fallback (then copy selective folders)
+- [x] 4.7 Implement .git directory removal after clone
+- [x] 4.8 Add error handling for copy failures
 
 ## 5. Skill Scaffolding (Embedded Template)
 
@@ -44,17 +44,17 @@
 
 ## 6. Arch Scaffolding
 
-- [ ] 6.1 Create arch/startup/windows-amd64/windows.c template
-- [ ] 6.2 Create arch/startup/linux-amd64/linux.c template
-- [ ] 6.3 Generate appropriate arch file based on platform
+- [x] 6.1 Create arch/startup/windows-amd64/windows.c template
+- [x] 6.2 Create arch/startup/linux-amd64/linux.c template
+- [x] 6.3 Generate appropriate arch file based on platform
 
 ## 7. Testing and Validation
 
-- [ ] 7.1 Test fun init in empty directory
-- [ ] 7.2 Test fun init in non-empty directory (error case)
-- [ ] 7.3 Test generated project builds successfully
-- [ ] 7.4 Verify only arch/, include/, src/ are copied to vendor/fundamental/
-- [ ] 7.5 Verify tests/, openspec/, node_modules/ are NOT copied
-- [ ] 7.6 Verify skill is generated from embedded template
-- [ ] 7.7 Verify all essential files are created correctly
-- [ ] 7.8 Test workflow: mkdir project && cd project && fun init
+- [x] 7.1 Test fun init in empty directory
+- [x] 7.2 Test fun init in non-empty directory (error case)
+- [x] 7.3 Test generated project builds successfully
+- [x] 7.4 Verify only arch/, include/, src/ are copied to vendor/fundamental/
+- [x] 7.5 Verify tests/, openspec/, node_modules/ are NOT copied
+- [x] 7.6 Verify skill is generated from embedded template
+- [x] 7.7 Verify all essential files are created correctly
+- [x] 7.8 Test workflow: mkdir project && cd project && fun init
