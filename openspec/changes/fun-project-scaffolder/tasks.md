@@ -15,6 +15,7 @@
 - [ ] 2.6 Embed build-linux-amd64.sh template as C string
 - [ ] 2.7 Embed fun.ini template as C string
 - [ ] 2.8 Embed README.md template as C string
+- [ ] 2.9 Embed fundamental-expert/SKILL.md template as C string
 
 ## 3. Project Initialization Logic
 
@@ -34,11 +35,12 @@
 - [ ] 4.7 Implement .git directory removal after clone
 - [ ] 4.8 Add error handling for copy failures
 
-## 5. Skill Scaffolding
+## 5. Skill Scaffolding (Embedded Template)
 
-- [ ] 5.1 Copy fundamental-expert/SKILL.md from vendor
-- [ ] 5.2 Create .opencode/skills/ directory structure
-- [ ] 5.3 Handle missing skill file gracefully
+- [ ] 5.1 Embed fundamental-expert/SKILL.md as C string template
+- [ ] 5.2 Create .opencode/skills/fundamental-expert/ directory
+- [ ] 5.3 Write SKILL.md from embedded template (not copied from vendor)
+- [ ] 5.4 Handle template write errors
 
 ## 6. Arch Scaffolding
 
@@ -53,5 +55,6 @@
 - [ ] 7.3 Test generated project builds successfully
 - [ ] 7.4 Verify only arch/, include/, src/ are copied to vendor/fundamental/
 - [ ] 7.5 Verify tests/, openspec/, node_modules/ are NOT copied
-- [ ] 7.6 Verify all essential files are created correctly
-- [ ] 7.7 Test workflow: mkdir project && cd project && fun init
+- [ ] 7.6 Verify skill is generated from embedded template
+- [ ] 7.7 Verify all essential files are created correctly
+- [ ] 7.8 Test workflow: mkdir project && cd project && fun init
