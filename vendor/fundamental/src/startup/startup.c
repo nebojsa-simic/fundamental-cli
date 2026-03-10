@@ -4,8 +4,7 @@
 
 // Provide __main to satisfy GCC when using -ffreestanding/-nostdlib
 // Called automatically by GCC-generated code at program startup
-void __main(void)
-{
-	// No initialization needed for fundamental library
-	// This stub prevents linker errors when building without CRT
+void __main(void) {
+  // No initialization needed for fundamental library
+  // This stub prevents linker errors when building without CRT
 }

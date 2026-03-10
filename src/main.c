@@ -1,6 +1,6 @@
 #include "commands/cmd_help.h"
-#include "commands/cmd_version.h"
 #include "commands/cmd_init.h"
+#include "commands/cmd_version.h"
 #include "src/cli.h"
 
 int cli_main(int argc, const char **argv) {

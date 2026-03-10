@@ -12,35 +12,35 @@ typedef AsyncStatus (*AsyncPollFn)(AsyncResult *result);
 #define PROCESS_STDERR_BUFFER_SIZE 4096
 
 typedef struct {
-	void *handle;
-	void *stdout_pipe;
-	void *stderr_pipe;
-	int exit_code;
-	uint8_t stdout_buffer[PROCESS_STDOUT_BUFFER_SIZE];
-	size_t stdout_write_pos;
-	size_t stdout_read_pos;
-	size_t stdout_count;
-	uint8_t stderr_buffer[PROCESS_STDERR_BUFFER_SIZE];
-	size_t stderr_write_pos;
-	size_t stderr_read_pos;
-	size_t stderr_count;
-	int is_running;
-	int platform_data[16];
+  void *handle;
+  void *stdout_pipe;
+  void *stderr_pipe;
+  int exit_code;
+  uint8_t stdout_buffer[PROCESS_STDOUT_BUFFER_SIZE];
+  size_t stdout_write_pos;
+  size_t stdout_read_pos;
+  size_t stdout_count;
+  uint8_t stderr_buffer[PROCESS_STDERR_BUFFER_SIZE];
+  size_t stderr_write_pos;
+  size_t stderr_read_pos;
+  size_t stderr_count;
+  int is_running;
+  int platform_data[16];
 } Process;
 
 typedef struct {
-	size_t stdout_buffer_size;
-	size_t stderr_buffer_size;
-	const char **environment;
-	int inherit_environment;
+  size_t stdout_buffer_size;
+  size_t stderr_buffer_size;
+  const char **environment;
+  int inherit_environment;
 } ProcessSpawnOptions;
 
 struct AsyncResult {
-	AsyncPollFn poll;
-	void *state;
-	AsyncStatus status;
-	ErrorResult error;
-	Process process;
+  AsyncPollFn poll;
+  void *state;
+  AsyncStatus status;
+  ErrorResult error;
+  Process process;
 };
 
 void fun_async_await(AsyncResult *result);
@@ -49,12 +49,14 @@ void fun_async_await_all(AsyncResult **results, size_t count);
 /**
  * Spawn a new process asynchronously.
  * @param executable Path to the executable to run
- * @param args NULL-terminated array of arguments (args[0] is typically the executable)
+ * @param args NULL-terminated array of arguments (args[0] is typically the
+ * executable)
  * @param options Spawn options, or NULL for defaults
- * @return AsyncResult with process handle embedded. Use fun_async_await() to wait.
+ * @return AsyncResult with process handle embedded. Use fun_async_await() to
+ * wait.
  */
 AsyncResult fun_async_process_spawn(const char *executable, const char **args,
-									const ProcessSpawnOptions *options);
+                                    const ProcessSpawnOptions *options);
 
 /**
  * Get the Process struct embedded in an AsyncResult from process spawn.

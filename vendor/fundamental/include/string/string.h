@@ -1,9 +1,9 @@
 #ifndef LIBRARY_STRING_H
 #define LIBRARY_STRING_H
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdbool.h>
 
 #include "../error/error.h"
 
@@ -15,16 +15,16 @@ typedef int64_t StringPosition;
 typedef int8_t StringDifference;
 // Define a union to hold different types of data
 typedef union {
-	int64_t intValue;
-	uint64_t uintValue;
-	double doubleValue;
-	String stringValue;
-	void *pointerValue;
+  int64_t intValue;
+  uint64_t uintValue;
+  double doubleValue;
+  String stringValue;
+  void *pointerValue;
 } StringTemplateValue;
 // Key-Value pair to hold template parameters
 typedef struct {
-	String key;
-	StringTemplateValue value;
+  String key;
+  StringTemplateValue value;
 } StringTemplateParam;
 
 // Interface
@@ -36,12 +36,12 @@ void fun_string_from_double(double num, int afterpoint, OutputString output);
 
 // string validation
 CanReturnError(void)
-	fun_string_is_valid(String source, StringLength maximumLength);
+    fun_string_is_valid(String source, StringLength maximumLength);
 
 // find and compare
 StringDifference fun_string_compare(String source, String target);
 StringPosition fun_string_index_of(String haystack, String needle,
-								   StringPosition start);
+                                   StringPosition start);
 // in-place operations
 StringLength fun_string_length(String source);
 void fun_string_trim_in_place(OutputString source);
@@ -52,6 +52,6 @@ void fun_string_copy(String source, OutputString output);
 
 // templating
 void fun_string_template(String template, StringTemplateParam *params,
-						 size_t paramCount, OutputString output);
+                         size_t paramCount, OutputString output);
 
 #endif // LIBRARY_STRING_H
