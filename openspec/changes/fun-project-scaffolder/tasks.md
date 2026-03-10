@@ -23,12 +23,16 @@
 - [ ] 3.3 Implement current directory validation (must be empty or not exist)
 - [ ] 3.4 Handle existing files error case
 
-## 4. Fundamental Library Copy
+## 4. Fundamental Library Copy (Selective)
 
-- [ ] 4.1 Implement local copy from ../fundamental
-- [ ] 4.2 Implement git clone fallback
-- [ ] 4.3 Implement .git directory removal after clone
-- [ ] 4.4 Add error handling for copy failures
+- [ ] 4.1 Implement copy of arch/ folder only
+- [ ] 4.2 Implement copy of include/ folder only
+- [ ] 4.3 Implement copy of src/ folder only
+- [ ] 4.4 Exclude tests/, openspec/, node_modules/ and other non-essential folders
+- [ ] 4.5 Implement local copy from ../fundamental (selective folders)
+- [ ] 4.6 Implement git clone fallback (then copy selective folders)
+- [ ] 4.7 Implement .git directory removal after clone
+- [ ] 4.8 Add error handling for copy failures
 
 ## 5. Skill Scaffolding
 
@@ -47,5 +51,7 @@
 - [ ] 7.1 Test fun init in empty directory
 - [ ] 7.2 Test fun init in non-empty directory (error case)
 - [ ] 7.3 Test generated project builds successfully
-- [ ] 7.4 Verify all files are created correctly
-- [ ] 7.5 Test workflow: mkdir project && cd project && fun init
+- [ ] 7.4 Verify only arch/, include/, src/ are copied to vendor/fundamental/
+- [ ] 7.5 Verify tests/, openspec/, node_modules/ are NOT copied
+- [ ] 7.6 Verify all essential files are created correctly
+- [ ] 7.7 Test workflow: mkdir project && cd project && fun init
