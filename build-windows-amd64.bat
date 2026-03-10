@@ -23,6 +23,7 @@ gcc ^
     src/cli.c ^
     commands/cmd_version.c ^
     commands/cmd_help.c ^
+    commands/cmd_init.c ^
     vendor/fundamental/src/console/console.c ^
     vendor/fundamental/src/string/stringConversion.c ^
     vendor/fundamental/src/string/stringOperations.c ^
