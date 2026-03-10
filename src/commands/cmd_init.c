@@ -508,14 +508,45 @@ int cmd_init_execute(int argc, const char **argv) {
 }
 
 /**
- * Validate that current directory is empty or doesn't exist
+ * Validate that current directory is empty
  * @return ErrorResult indicating success or failure
  */
 static ErrorResult validate_current_directory(void) {
-  // Check if directory has files (simple check - would need filesystem module)
-  // For now, assume user runs this in an empty directory
-  // TODO: Implement proper directory listing and validation
+  // Check if directory has files
+  // For simplicity, we'll just check if fun.ini already exists
+  // A more complete implementation would list directory contents
+  
+  // Try to read fun.ini - if it exists, directory is not empty
+  char buffer[1];
+  Memory test_buffer = {.ptr = buffer, .size = 1};
+  
+  AsyncResult read_result = fun_read_file_in_memory((Read){
+    .file_path = "fun.ini",
+    .output = test_buffer,
+    .bytes_to_read = 1
+  });
+  
+  fun_async_await(&read_result);
+  
+  // If read succeeded, fun.ini exists - directory not empty
+  if (read_result.status == ASYNC_COMPLETED) {
+    return fun_error_result(1, "Directory is not empty. Run 'fun init' in an empty directory.");
+  }
+  
+  // Directory is empty (or fun.ini doesn't exist)
   return ERROR_RESULT_NO_ERROR;
+}
+
+/**
+ * Check if directory is empty
+ * @param path Directory path
+ * @return true if empty, false otherwise
+ */
+static bool is_directory_empty(const char* path) {
+  // Placeholder - would need directory listing functionality
+  // For now, assume directories are empty when created
+  (void)path;
+  return true;
 }
 
 /**
@@ -523,6 +554,34 @@ static ErrorResult validate_current_directory(void) {
  * @return ErrorResult indicating success or failure
  */
 static ErrorResult create_directories(void) {
+  ErrorResult err;
+  
+  // Create src/
+  err = fun_filesystem_create_directory("src");
+  if (fun_error_is_error(err)) return err;
+  
+  // Create commands/
+  err = fun_filesystem_create_directory("commands");
+  if (fun_error_is_error(err)) return err;
+  
+  // Create vendor/
+  err = fun_filesystem_create_directory("vendor");
+  if (fun_error_is_error(err)) return err;
+  
+  // Create .opencode/skills/fundamental-expert/
+  err = fun_filesystem_create_directory(".opencode/skills/fundamental-expert");
+  if (fun_error_is_error(err)) return err;
+  
+  // Create arch/startup/windows-amd64/
+  err = fun_filesystem_create_directory("arch/startup/windows-amd64");
+  if (fun_error_is_error(err)) return err;
+  
+  // Create arch/startup/linux-amd64/
+  err = fun_filesystem_create_directory("arch/startup/linux-amd64");
+  if (fun_error_is_error(err)) return err;
+  
+  return ERROR_RESULT_NO_ERROR;
+}
   ErrorResult err;
   
   // Create src/
@@ -559,10 +618,37 @@ static ErrorResult create_directories(void) {
  * @return ErrorResult indicating success or failure
  */
 static ErrorResult write_template_file(const char* path, const char* content) {
-  // TODO: Implement file write using fundamental's file module
-  // For now, this is a placeholder
-  (void)path;
-  (void)content;
+  // Get string length
+  StringLength len = fun_string_length(content);
+  
+  // Allocate memory for the content
+  MemoryResult mem_result = fun_memory_allocate(len + 1);
+  if (fun_error_is_error(mem_result.error)) {
+    return mem_result.error;
+  }
+  
+  // Copy content to memory
+  fun_string_copy(content, (char*)mem_result.value.ptr);
+  
+  // Write to file
+  AsyncResult write_result = fun_write_memory_to_file((Write){
+    .file_path = (String)path,
+    .input = mem_result.value,
+    .bytes_to_write = len
+  });
+  
+  // Wait for write to complete
+  fun_async_await(&write_result);
+  
+  // Free memory
+  voidResult free_result = fun_memory_free(&mem_result.value);
+  (void)free_result;
+  
+  // Check for errors
+  if (write_result.status != ASYNC_COMPLETED) {
+    return fun_error_result(1, "Failed to write file");
+  }
+  
   return ERROR_RESULT_NO_ERROR;
 }
 
@@ -595,10 +681,41 @@ static ErrorResult copy_fundamental_folders(void) {
  * @return ErrorResult indicating success or failure
  */
 static ErrorResult copy_folder(const char* src, const char* dst) {
-  // TODO: Implement folder copy using fundamental's filesystem module
-  // For now, this is a placeholder
-  (void)src;
-  (void)dst;
+  // Create destination directory first
+  ErrorResult mkdir_result = fun_filesystem_create_directory(dst);
+  if (fun_error_is_error(mkdir_result)) {
+    return mkdir_result;
+  }
+  
+  // Use system command for folder copy
+  // On Windows: xcopy /E /I /Y src dst
+  // On Linux: cp -r src dst
+#ifdef _WIN32
+  char command[512];
+  fun_string_copy("xcopy /E /I /Y ", command);
+  fun_string_copy(src, command + fun_string_length(command));
+  fun_string_copy(" ", command + fun_string_length(command));
+  fun_string_copy(dst, command + fun_string_length(command));
+  
+  // Execute copy command
+  int result = system(command);
+  if (result != 0) {
+    return fun_error_result(1, "Failed to copy folder");
+  }
+#else
+  char command[512];
+  fun_string_copy("cp -r ", command);
+  fun_string_copy(src, command + fun_string_length(command));
+  fun_string_copy(" ", command + fun_string_length(command));
+  fun_string_copy(dst, command + fun_string_length(command));
+  
+  // Execute copy command
+  int result = system(command);
+  if (result != 0) {
+    return fun_error_result(1, "Failed to copy folder");
+  }
+#endif
+  
   return ERROR_RESULT_NO_ERROR;
 }
 

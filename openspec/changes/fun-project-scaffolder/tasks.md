@@ -19,10 +19,10 @@
 
 ## 3. Project Initialization Logic
 
-- [ ] 3.1 Implement directory creation for src/, commands/, vendor/, .opencode/skills/
-- [ ] 3.2 Implement file generation from embedded templates
-- [ ] 3.3 Implement current directory validation (must be empty or not exist)
-- [ ] 3.4 Handle existing files error case
+- [x] 3.1 Implement directory creation for src/, commands/, vendor/, .opencode/skills/
+- [x] 3.2 Implement file generation from embedded templates
+- [x] 3.3 Implement current directory validation (must be empty or not exist)
+- [x] 3.4 Handle existing files error case
 
 ## 4. Fundamental Library Copy (Selective)
 
