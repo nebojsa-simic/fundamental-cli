@@ -1,0 +1,10 @@
+// Fundamental Library - Windows Runtime Initialization
+// Provides minimal startup support for zero-stdlib builds
+
+#include <windows.h>
+
+// Provide __main to satisfy GCC when using -ffreestanding/-nostdlib
+void __main(void) {
+  // No initialization needed for fundamental library
+  // This stub prevents linker errors when building without CRT
+}

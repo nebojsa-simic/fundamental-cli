@@ -1,0 +1,12 @@
+name = my-project
+version = 0.1.0
+description = My fundamental CLI app
+entry = src/main.c
+output = fun.exe
+
+[dependencies]
+fundamental = local
+
+[build]
+standard = -nostdlib
+flags = -fno-builtin -fno-exceptions

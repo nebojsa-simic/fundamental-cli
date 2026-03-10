@@ -1,0 +1,20 @@
+#include "commands/cmd_version.h"
+#include "commands/cmd_help.h"
+#include "cli.h"
+
+int main(int argc, const char **argv) {
+  // Initialize CLI runtime
+  cli_init();
+
+  // Register available commands
+  cli_register((Command){.name = "version",
+                         .description = "Show version information",
+                         .execute = cmd_version_execute});
+
+  cli_register((Command){.name = "help",
+                         .description = "Show this help message",
+                         .execute = cmd_help_execute});
+
+  // Run CLI with provided arguments
+  return cli_run(argc, argv);
+}
