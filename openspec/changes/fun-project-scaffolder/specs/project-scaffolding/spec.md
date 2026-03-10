@@ -1,19 +1,19 @@
 ## ADDED Requirements
 
 ### Requirement: User can initialize new fundamental project
-The system SHALL generate a complete fundamental library project structure with all necessary files, directories, and configurations.
-
-#### Scenario: Initialize project with name
-- **WHEN** user runs `fun init my-app`
-- **THEN** system creates `my-app/` directory with complete project structure
+The system SHALL generate a complete fundamental library project structure in the current directory.
 
 #### Scenario: Initialize project in current directory
-- **WHEN** user runs `fun init` without name in empty directory
-- **THEN** system uses current directory name as project name
+- **WHEN** user runs `fun init` in empty directory
+- **THEN** system creates project structure in current directory
 
-#### Scenario: Reject existing directory
+#### Scenario: Reject existing files
 - **WHEN** user runs `fun init` in non-empty directory
 - **THEN** system shows error and exits without modifying files
+
+#### Scenario: Reject if not in project directory
+- **WHEN** user runs `fun init` without creating project folder first
+- **THEN** system initializes in current working directory
 
 ### Requirement: Project structure follows fundamental conventions
 The generated project SHALL include standard directories: `src/`, `commands/`, `vendor/`, `.opencode/skills/`.

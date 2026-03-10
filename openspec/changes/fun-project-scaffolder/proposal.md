@@ -4,13 +4,14 @@ Developers need a quick way to bootstrap new fundamental library projects with p
 
 ## What Changes
 
-- **New**: `fun init [project-name]` command to scaffold new fundamental-based projects
+- **New**: `fun init` command to scaffold new fundamental-based projects in current directory
 - **New**: Embedded project templates as C strings in the fun binary
 - **New**: Automatic fundamental library copying from local `../fundamental` or git clone
 - **New**: `fun.ini` manifest file for project configuration and dependencies
 - **New**: `.opencode/skills/fundamental-expert/SKILL.md` scaffolding for LLM assistance
 - **New**: Minimal `arch/startup/<platform>/` scaffolding following fundamental principles
 - **New**: Platform-specific build script generation (`build-windows-amd64.bat`, `build-linux-amd64.sh`)
+- **Modified**: `fun init` does not accept project name - always initializes current directory
 
 ## Capabilities
 
@@ -33,3 +34,4 @@ Developers need a quick way to bootstrap new fundamental library projects with p
 - **Templates**: Embedded C strings for project templates (main.c, cli.c, build scripts, fun.ini)
 - **Filesystem**: Creates directory structure, copies files, manages vendor/ folder
 - **Platform**: Cross-platform path handling for Windows and Linux/macOS
+- **Workflow**: Users create directory first, cd into it, then run `fun init`

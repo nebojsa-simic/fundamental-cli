@@ -18,10 +18,10 @@
 
 ## 3. Project Initialization Logic
 
-- [ ] 3.1 Implement directory creation for project structure
+- [ ] 3.1 Implement directory creation for src/, commands/, vendor/, .opencode/skills/
 - [ ] 3.2 Implement file generation from embedded templates
-- [ ] 3.3 Implement project name validation and directory check
-- [ ] 3.4 Handle existing directory error case
+- [ ] 3.3 Implement current directory validation (must be empty or not exist)
+- [ ] 3.4 Handle existing files error case
 
 ## 4. Fundamental Library Copy
 
@@ -44,8 +44,8 @@
 
 ## 7. Testing and Validation
 
-- [ ] 7.1 Test fun init with project name
-- [ ] 7.2 Test fun init in current directory
-- [ ] 7.3 Test fun init with existing directory (error case)
-- [ ] 7.4 Test generated project builds successfully
-- [ ] 7.5 Verify all files are created correctly
+- [ ] 7.1 Test fun init in empty directory
+- [ ] 7.2 Test fun init in non-empty directory (error case)
+- [ ] 7.3 Test generated project builds successfully
+- [ ] 7.4 Verify all files are created correctly
+- [ ] 7.5 Test workflow: mkdir project && cd project && fun init
