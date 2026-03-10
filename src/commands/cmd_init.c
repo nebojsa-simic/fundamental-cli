@@ -326,9 +326,82 @@ static const char* TEMPLATE_ARCH_LINUX_C =
 "  // This stub prevents linker errors when building without CRT\n"
 "}\n";
 
-// Template: fundamental-expert/SKILL.md (embedded from existing file)
-// This will be loaded from the existing skill file at runtime
-static const char* TEMPLATE_SKILL_MD = NULL; // Will load from .opencode/skills/fundamental-expert/SKILL.md
+// Template: fundamental-expert/SKILL.md (embedded as C string)
+static const char* TEMPLATE_SKILL_MD =
+"---\n"
+"name: fundamental-expert\n"
+"description: Expert guide for building applications with Fundamental Library - knows the architecture, patterns, and all modules inside out.\n"
+"license: MIT\n"
+"compatibility: Standalone skill for application development guidance.\n"
+"metadata:\n"
+"  author: fundamental-library\n"
+"  version: \"1.0\"\n"
+"  generatedBy: fundamental-expert skill\n"
+"---\n"
+"\n"
+"# Fundamental Library Expert Skill\n"
+"\n"
+"I am your expert guide for building applications with the **Fundamental Library** - a zero-stdlib C library for cross-platform CLI applications.\n"
+"\n"
+"**My purpose:** Help you write correct, idiomatic Fundamental Library code by providing patterns, examples, and architectural guidance from deep knowledge of the codebase.\n"
+"\n"
+"---\n"
+"\n"
+"## What I Know\n"
+"\n"
+"### Core Architecture\n"
+"\n"
+"```\n"
+"fundamental/\n"
+"├── arch/              # Platform-specific implementations\n"
+"│   ├── async/        # Async operations (linux-amd64, windows-amd64)\n"
+"│   ├── config/       # Environment variable access\n"
+"│   ├── console/      # Console I/O per platform\n"
+"│   ├── file/         # File I/O implementations\n"
+"│   ├── filesystem/   # Filesystem operations\n"
+"│   ├── memory/       # Memory management (syscalls, VirtualAlloc)\n"
+"│   ├── startup/      # Platform entry points (_start, main)\n"
+"│   └── stream/       # Stream I/O per platform\n"
+"├── include/          # Public API headers\n"
+"│   ├── array/        # Dynamic arrays\n"
+"│   ├── async/        # Async primitives\n"
+"│   ├── collections/  # Hash maps, RB-trees, sets\n"
+"│   ├── config/       # Configuration management\n"
+"│   ├── console/      # Console I/O\n"
+"│   ├── error/        # Error handling system\n"
+"│   ├── file/         # File I/O interface\n"
+"│   ├── filesystem/   # Directory/path operations\n"
+"│   ├── hashmap/      # Hash map interface\n"
+"│   ├── memory/       # Memory management\n"
+"│   ├── rbtree/       # Red-black tree interface\n"
+"│   ├── set/          # Set data structure\n"
+"│   ├── stream/       # Stream I/O interface\n"
+"│   └── string/       # String operations\n"
+"├── src/              # Core implementations\n"
+"│   ├── array/        # Dynamic array implementation\n"
+"│   ├── async/        # Async scheduler, process spawn\n"
+"│   ├── config/       # Config loading, INI parser, CLI parser\n"
+"│   ├── console/      # Console output with buffering\n"
+"│   ├── filesystem/   # Path and directory operations\n"
+"│   ├── hashmap/      # Hash map implementation\n"
+"│   ├── rbtree/       # Red-black tree implementation\n"
+"│   ├── set/          # Set implementation\n"
+"│   ├── startup/      # Cross-platform entry point\n"
+"│   ├── stream/       # Stream lifecycle, file streams\n"
+"│   └── string/       # Conversion, templating, validation\n"
+"└── tests/            # Comprehensive test suites\n"
+"```\n"
+"\n"
+"### Design Principles (NEVER violate these)\n"
+"\n"
+"| Principle | What It Means | Example |\n"
+"|-----------|--------------|---------|\n"
+"| **Zero stdlib** | No C standard library in library code | Use `fun_memory_allocate()`, not `malloc()` |\n"
+"| **Caller-allocated memory** | Functions don't allocate for caller | Pass pre-allocated buffer, get size back |\n"
+"| **Explicit errors** | All functions return `Result` types | Check `fun_error_is_error(result.error)` |\n"
+"| **Descriptive naming** | `fun_` prefix, full names | `fun_string_from_int()`, not `fun_itoa()` |\n"
+"| **Cross-platform** | No OS logic outside `arch/` | Use file module, not direct syscalls |\n"
+"| **Async by default** | I/O returns `AsyncResult` | Use `fun_async_await()` to block if needed |\n";
 
 // Forward declarations
 static ErrorResult create_directories(void);
@@ -417,22 +490,12 @@ int cmd_init_execute(int argc, const char **argv) {
   }
   fun_console_write_line("✓ Copied fundamental library (arch/, include/, src/)");
 
-  // Step 8: Copy fundamental-expert skill
-  // Load from existing skill file
-  MemoryResult mem_result = fun_read_file_in_memory((Read){
-    .file_path = ".opencode/skills/fundamental-expert/SKILL.md",
-    .output = {0},
-    .bytes_to_read = 65536
-  });
-  
-  if (fun_error_is_ok(mem_result.error)) {
-    // Write to project's .opencode/skills/fundamental-expert/SKILL.md
-    Memory output = mem_result.value;
-    // Note: Would need a write_file function here
-    // For now, we'll copy the file directly
-    fun_console_write_line("✓ Copied fundamental-expert skill");
+  // Step 8: Write fundamental-expert skill
+  err = write_template_file(".opencode/skills/fundamental-expert/SKILL.md", TEMPLATE_SKILL_MD);
+  if (fun_error_is_error(err)) {
+    fun_console_write_line("⚠ Failed to write skill file (optional)");
   } else {
-    fun_console_write_line("⚠ fundamental-expert skill not found (optional)");
+    fun_console_write_line("✓ Created fundamental-expert skill");
   }
 
   fun_console_write_line("\n✓ Project initialized successfully!");

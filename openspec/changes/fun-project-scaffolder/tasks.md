@@ -37,10 +37,10 @@
 
 ## 5. Skill Scaffolding (Embedded Template)
 
-- [ ] 5.1 Embed fundamental-expert/SKILL.md as C string template
-- [ ] 5.2 Create .opencode/skills/fundamental-expert/ directory
-- [ ] 5.3 Write SKILL.md from embedded template (not copied from vendor)
-- [ ] 5.4 Handle template write errors
+- [x] 5.1 Embed fundamental-expert/SKILL.md as C string template
+- [x] 5.2 Create .opencode/skills/fundamental-expert/ directory
+- [x] 5.3 Write SKILL.md from embedded template (not copied from vendor)
+- [x] 5.4 Handle template write errors
 
 ## 6. Arch Scaffolding
 
