@@ -8,9 +8,9 @@
  * Command structure for CLI subcommands
  */
 typedef struct Command {
-  String name;
-  String description;
-  int (*execute)(int argc, const char **argv);
+	String name;
+	String description;
+	int (*execute)(int argc, const char **argv);
 } Command;
 
 /**

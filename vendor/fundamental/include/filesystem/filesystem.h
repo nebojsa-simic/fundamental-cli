@@ -1,13 +1,13 @@
 #ifndef LIBRARY_FILESYSTEM_H
 #define LIBRARY_FILESYSTEM_H
 
-#include <stdbool.h>
-#include <stddef.h>
 #include <stdint.h>
+#include <stddef.h>
+#include <stdbool.h>
 
-#include "error/error.h"
 #include "memory/memory.h"
 #include "string/string.h"
+#include "error/error.h"
 
 // ------------------------------------------------------------------
 // Filesystem Module Core Types
@@ -19,9 +19,9 @@
 
 /**
  * Get the platform-specific path separator character
- *
+ * 
  * @return '/' on POSIX systems, '\\' on Windows
- *
+ * 
  * Example:
  * char sep = fun_path_separator();
  * // sep == '\\' on Windows
@@ -35,11 +35,11 @@ char fun_path_separator(void);
 
 /**
  * Create directory including parent directories if they don't exist
- *
+ * 
  * @param path REQUIRED - Directory path to create
- *
+ * 
  * @return ErrorResult with operation status
- *
+ * 
  * Example:
  * fun_filesystem_create_directory("/tmp/test/nested/dir");
  */
@@ -47,11 +47,11 @@ ErrorResult fun_filesystem_create_directory(String path);
 
 /**
  * Remove empty directory (fails if directory is not empty)
- *
+ * 
  * @param path REQUIRED - Directory path to remove
- *
+ * 
  * @return ErrorResult with operation status
- *
+ * 
  * Example:
  * fun_filesystem_remove_directory("/tmp/test/dir");
  */
@@ -59,13 +59,13 @@ ErrorResult fun_filesystem_remove_directory(String path);
 
 /**
  * List directory contents into caller-allocated buffer
- *
+ * 
  * @param path REQUIRED - Directory path to list
  * @param output REQUIRED - Pre-allocated buffer to fill with entry names
  *                         Entries separated by newlines
- *
+ * 
  * @return ErrorResult with operation status
- *
+ * 
  * Example:
  * Memory buffer = fun_memory_allocate(4096);
  * fun_filesystem_list_directory("/tmp", buffer);
@@ -78,13 +78,13 @@ ErrorResult fun_filesystem_list_directory(String path, Memory output);
 
 /**
  * Join two path components with platform-appropriate separator
- *
+ * 
  * @param base REQUIRED - Base path
  * @param relative REQUIRED - Relative path component to append
  * @param output REQUIRED - Buffer to store result
- *
+ * 
  * @return ErrorResult with operation status
- *
+ * 
  * Example:
  * char output[512];
  * fun_path_join("/home/user", "documents", output);
@@ -93,12 +93,12 @@ ErrorResult fun_path_join(String base, String relative, OutputString output);
 
 /**
  * Normalize path by resolving . and .. components and collapsing separators
- *
+ * 
  * @param path REQUIRED - Path to normalize
  * @param output REQUIRED - Buffer to store normalized path
- *
+ * 
  * @return ErrorResult with operation status
- *
+ * 
  * Example:
  * char output[512];
  * fun_path_normalize("/home/user/../user/./documents", output);
@@ -107,12 +107,12 @@ ErrorResult fun_path_normalize(String path, OutputString output);
 
 /**
  * Extract parent directory from path
- *
+ * 
  * @param path REQUIRED - Path to get parent of
  * @param output REQUIRED - Buffer to store parent path
- *
+ * 
  * @return ErrorResult with operation status
- *
+ * 
  * Example:
  * char output[512];
  * fun_path_get_parent("/home/user/documents/file.txt", output);
@@ -122,12 +122,12 @@ ErrorResult fun_path_get_parent(String path, OutputString output);
 
 /**
  * Extract filename component from path
- *
+ * 
  * @param path REQUIRED - Path to get filename from
  * @param output REQUIRED - Buffer to store filename
- *
+ * 
  * @return ErrorResult with operation status
- *
+ * 
  * Example:
  * char output[256];
  * fun_path_get_filename("/home/user/documents/file.txt", output);
