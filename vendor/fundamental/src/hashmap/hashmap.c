@@ -1,6 +1,5 @@
-#include <string.h>
-
 #include "../../include/hashmap/hashmap.h"
+#include "../../include/memory/memory.h"
 
 // Internal helper: Calculate bucket index from hash
 static inline size_t hashmap_bucket_index(const HashMap *map, uint64_t hash)
@@ -82,7 +81,7 @@ ErrorResult fun_hashmap_put(HashMap *map, const void *key, const void *value)
 
 	if (existing) {
 		// Update existing value
-		memcpy(existing->value, value, map->value_size);
+		fun_memory_copy(value, existing->value, map->value_size);
 		return ERROR_RESULT_NO_ERROR;
 	}
 
@@ -102,7 +101,7 @@ ErrorResult fun_hashmap_put(HashMap *map, const void *key, const void *value)
 		return fun_error_result(ERROR_CODE_HASHMAP_FULL,
 								"Failed to allocate key");
 	}
-	memcpy(key_result.value, key, map->key_size);
+	fun_memory_copy(key, key_result.value, map->key_size);
 
 	// Allocate and copy value
 	MemoryResult value_result = fun_memory_allocate(map->value_size);
@@ -112,7 +111,7 @@ ErrorResult fun_hashmap_put(HashMap *map, const void *key, const void *value)
 		return fun_error_result(ERROR_CODE_HASHMAP_FULL,
 								"Failed to allocate value");
 	}
-	memcpy(value_result.value, value, map->value_size);
+	fun_memory_copy(value, value_result.value, map->value_size);
 
 	// Set up the new entry
 	new_entry->key = key_result.value;
@@ -147,7 +146,7 @@ ErrorResult fun_hashmap_get(const HashMap *map, const void *key,
 	}
 
 	// Copy value to output
-	memcpy(out_value, entry->value, map->value_size);
+	fun_memory_copy(entry->value, out_value, map->value_size);
 	return ERROR_RESULT_NO_ERROR;
 }
 

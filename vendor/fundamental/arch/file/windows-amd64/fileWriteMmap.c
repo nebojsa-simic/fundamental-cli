@@ -55,11 +55,18 @@ AsyncStatus poll_mmap_write(AsyncResult *result)
 			new_pos.QuadPart = required_size;
 
 			if (!SetFilePointerEx(state->file_handle, new_pos, NULL,
-								  FILE_BEGIN) ||
-				!SetEndOfFile(state->file_handle)) {
+								  FILE_BEGIN)) {
 				result->error =
 					(ErrorResult){ .code = GetLastError(),
-								   .message = "Failed to extend file" };
+								   .message = "Failed to set file pointer" };
+				final_status = ASYNC_ERROR;
+				goto cleanup;
+			}
+
+			if (!SetEndOfFile(state->file_handle)) {
+				result->error =
+					(ErrorResult){ .code = GetLastError(),
+								   .message = "Failed to set end of file" };
 				final_status = ASYNC_ERROR;
 				goto cleanup;
 			}
@@ -120,8 +127,8 @@ AsyncStatus poll_mmap_write(AsyncResult *result)
 		uint64_t actual_offset =
 			state->parameters.offset - state->adjusted_offset;
 		void *write_location = (char *)state->mapped_view + actual_offset;
-		memcpy(write_location, state->parameters.input,
-			   state->parameters.bytes_to_write);
+		fun_memory_copy(state->parameters.input, write_location,
+						state->parameters.bytes_to_write);
 
 		// Force synchronization to disk
 		if (!FlushViewOfFile(state->mapped_view, view_size)) {
@@ -157,8 +164,9 @@ cleanup:
 		CloseHandle(state->file_handle);
 	}
 
-	// Free state memory
-	fun_memory_free((void **)&state);
+	// Free state memory - cast state pointer to Memory for proper free
+	void *state_memory = state;
+	fun_memory_free(&state_memory);
 
 	return final_status;
 }

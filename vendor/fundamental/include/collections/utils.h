@@ -4,7 +4,6 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <string.h>
 
 #include "../error/error.h"
 #include "../memory/memory.h"
@@ -120,7 +119,14 @@ static inline bool fun_collections_equals_string(const void *k1, const void *k2)
 static inline bool fun_collections_equals_bytes(const void *k1, const void *k2,
 												size_t size)
 {
-	return memcmp(k1, k2, size) == 0;
+	const uint8_t *p1 = (const uint8_t *)k1;
+	const uint8_t *p2 = (const uint8_t *)k2;
+	for (size_t i = 0; i < size; i++) {
+		if (p1[i] != p2[i]) {
+			return false;
+		}
+	}
+	return true;
 }
 
 // ============================================================================

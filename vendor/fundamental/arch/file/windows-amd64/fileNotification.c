@@ -28,7 +28,7 @@ DWORD WINAPI file_monitor_thread(LPVOID param)
 
 	while (!monitoring_should_stop) {
 		// Reset overlapped structure
-		memset(&(state->overlapped), 0, sizeof(OVERLAPPED));
+		fun_memory_fill(&(state->overlapped), 0, sizeof(OVERLAPPED));
 
 		// Watch for changes to the file
 		result = ReadDirectoryChangesW(
@@ -58,7 +58,8 @@ DWORD WINAPI file_monitor_thread(LPVOID param)
 				int len = notifyInfo->FileNameLength / sizeof(WCHAR);
 				if (len >= 256)
 					len = 255;
-				memcpy(fileName, notifyInfo->FileName, len * sizeof(WCHAR));
+				fun_memory_copy(notifyInfo->FileName, fileName,
+								len * sizeof(WCHAR));
 				fileName[len] = L'\0';
 
 				// Convert back to UTF-8 if needed and call the callback
@@ -95,7 +96,7 @@ AsyncResult fun_register_file_change_notification(String filePath,
 	}
 
 	FileNotificationState *state = (FileNotificationState *)stateResult.value;
-	memset(state, 0, sizeof(FileNotificationState));
+	fun_memory_fill(state, 0, sizeof(FileNotificationState));
 
 	// Initialize event for overlapped operations
 	state->overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);

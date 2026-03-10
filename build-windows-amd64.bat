@@ -13,6 +13,7 @@ gcc ^
     -fno-builtin ^
     -fno-exceptions ^
     -fno-unwind-tables ^
+    -mno-stack-arg-probe ^
     -e main ^
     -mconsole ^
     -I . ^
@@ -24,6 +25,9 @@ gcc ^
     commands/cmd_version.c ^
     commands/cmd_help.c ^
     commands/cmd_init.c ^
+    vendor/fundamental/src/async/async.c ^
+    vendor/fundamental/arch/file/windows-amd64/fileWrite.c ^
+    vendor/fundamental/arch/file/windows-amd64/fileWriteMmap.c ^
     vendor/fundamental/src/console/console.c ^
     vendor/fundamental/src/string/stringConversion.c ^
     vendor/fundamental/src/string/stringOperations.c ^
@@ -31,6 +35,8 @@ gcc ^
     vendor/fundamental/src/string/stringValidation.c ^
     vendor/fundamental/arch/console/windows-amd64/console.c ^
     vendor/fundamental/arch/memory/windows-amd64/memory.c ^
+    vendor/fundamental/src/filesystem/directory.c ^
+    vendor/fundamental/arch/filesystem/windows-amd64/directory.c ^
     -lkernel32 ^
     -o fun.exe
 

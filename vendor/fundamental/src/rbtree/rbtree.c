@@ -14,7 +14,7 @@ static RBNode *rbtree_create_node(const RBTree *tree, const void *key,
 		fun_memory_free((Memory *)&node);
 		return NULL;
 	}
-	memcpy(node->key, key, tree->key_size);
+	fun_memory_copy(key, node->key, tree->key_size);
 
 	if (tree->value_size > 0) {
 		node->value = fun_memory_allocate(tree->value_size).value;
@@ -23,7 +23,7 @@ static RBNode *rbtree_create_node(const RBTree *tree, const void *key,
 			fun_memory_free((Memory *)&node);
 			return NULL;
 		}
-		memcpy(node->value, value, tree->value_size);
+		fun_memory_copy(value, node->value, tree->value_size);
 	} else {
 		node->value = NULL;
 	}
@@ -189,7 +189,7 @@ ErrorResult fun_rbtree_insert(RBTree *tree, const void *key, const void *value)
 		// Update existing value
 		RBNode *existing = rbtree_find_node(tree, key);
 		if (tree->value_size > 0 && value) {
-			memcpy(existing->value, value, tree->value_size);
+			fun_memory_copy(value, existing->value, tree->value_size);
 		}
 		return ERROR_RESULT_NO_ERROR;
 	}
@@ -257,7 +257,7 @@ ErrorResult fun_rbtree_get(const RBTree *tree, const void *key, void *out_value)
 	}
 
 	if (tree->value_size > 0) {
-		memcpy(out_value, node->value, tree->value_size);
+		fun_memory_copy(node->value, out_value, tree->value_size);
 	}
 
 	return ERROR_RESULT_NO_ERROR;

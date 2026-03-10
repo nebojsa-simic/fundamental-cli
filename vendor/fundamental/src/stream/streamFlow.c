@@ -8,9 +8,25 @@ bool fun_stream_can_read(FileStream *stream)
 
 bool fun_stream_can_write(FileStream *stream, uint64_t requested_size)
 {
-	(void)stream;
+	if (!stream) {
+		return false;
+	}
+
+	// Check if stream is in write or append mode
+	if (stream->mode != STREAM_MODE_WRITE &&
+		stream->mode != STREAM_MODE_APPEND) {
+		return false;
+	}
+
+	// Check if stream is at end (error state or closed)
+	if (stream->end_of_stream) {
+		return false;
+	}
+
+	// For now, assume we can always write to a valid write stream
+	// The actual write operation will handle disk space / permission errors
 	(void)requested_size;
-	return false;
+	return true;
 }
 
 bool fun_stream_is_end_of_stream(FileStream *stream)

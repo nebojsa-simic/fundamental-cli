@@ -10,6 +10,13 @@
 #define ERROR_CODE_PROCESS_SPAWN_FAILED 2
 #define ERROR_CODE_PROCESS_NOT_FOUND 3
 #define ERROR_CODE_PROCESS_TERMINATE_FAILED 4
+#define ERROR_CODE_DIRECTORY_EXISTS 5
+#define ERROR_CODE_DIRECTORY_NOT_FOUND 6
+#define ERROR_CODE_DIRECTORY_NOT_EMPTY 7
+#define ERROR_CODE_NOT_DIRECTORY 8
+#define ERROR_CODE_PATH_INVALID 9
+#define ERROR_CODE_PERMISSION_DENIED 10
+#define ERROR_CODE_BUFFER_TOO_SMALL 11
 
 typedef struct {
 	uint8_t code;
@@ -59,6 +66,25 @@ static inline ErrorResult fun_error_result(uint8_t code, const char *message)
 static ErrorResult ERROR_RESULT_NO_ERROR = { ERROR_CODE_NO_ERROR, NULL };
 static ErrorResult ERROR_RESULT_NULL_POINTER = { ERROR_CODE_NULL_POINTER,
 												 "Null pointer provided" };
+static ErrorResult ERROR_RESULT_DIRECTORY_EXISTS = {
+	ERROR_CODE_DIRECTORY_EXISTS, "Directory already exists"
+};
+static ErrorResult ERROR_RESULT_DIRECTORY_NOT_FOUND = {
+	ERROR_CODE_DIRECTORY_NOT_FOUND, "Directory not found"
+};
+static ErrorResult ERROR_RESULT_DIRECTORY_NOT_EMPTY = {
+	ERROR_CODE_DIRECTORY_NOT_EMPTY, "Directory is not empty"
+};
+static ErrorResult ERROR_RESULT_NOT_DIRECTORY = { ERROR_CODE_NOT_DIRECTORY,
+												  "Path is not a directory" };
+static ErrorResult ERROR_RESULT_PATH_INVALID = { ERROR_CODE_PATH_INVALID,
+												 "Invalid path" };
+static ErrorResult ERROR_RESULT_PERMISSION_DENIED = {
+	ERROR_CODE_PERMISSION_DENIED, "Permission denied"
+};
+static ErrorResult ERROR_RESULT_BUFFER_TOO_SMALL = {
+	ERROR_CODE_BUFFER_TOO_SMALL, "Buffer too small"
+};
 
 #pragma GCC diagnostic pop
 

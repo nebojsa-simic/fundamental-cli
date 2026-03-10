@@ -1,3 +1,4 @@
+#define _POSIX_C_SOURCE 200809L
 #include "async/async.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -5,8 +6,16 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/wait.h>
+#include <sys/signal.h>
 #include <signal.h>
 #include <errno.h>
+#include <sys/ioctl.h>
+#include <stdbool.h>
+
+static bool executable_exists(const char *path)
+{
+	return access(path, X_OK) == 0;
+}
 
 static AsyncStatus read_pipe_to_buffer(int fd, uint8_t *buffer,
 									   size_t buffer_size, size_t *write_pos,
@@ -45,6 +54,13 @@ AsyncResult platform_process_spawn(AsyncResult *result, const char *executable,
 								   const ProcessSpawnOptions *options)
 {
 	(void)options;
+
+	if (!executable_exists(executable)) {
+		result->status = ASYNC_ERROR;
+		result->error = fun_error_result(ERROR_CODE_PROCESS_NOT_FOUND,
+										 "Executable not found");
+		return *result;
+	}
 
 	int stdout_pipe[2];
 	int stderr_pipe[2];

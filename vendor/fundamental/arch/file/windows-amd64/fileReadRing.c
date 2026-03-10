@@ -47,7 +47,9 @@ static inline AsyncStatus poll_io_ring(AsyncResult *result)
 		AsyncStatus status = state->async_status;
 		if (state->file_handle != INVALID_HANDLE_VALUE) {
 			CloseHandle(state->file_handle);
-			fun_memory_free(&state);
+			// Free state memory - cast to void* for proper free
+			void *state_memory = state;
+			fun_memory_free(&state_memory);
 		}
 		return status;
 	} else if (SUCCEEDED(
@@ -58,7 +60,9 @@ static inline AsyncStatus poll_io_ring(AsyncResult *result)
 		if (cqe.UserData == state->request_id) {
 			if (state->file_handle != INVALID_HANDLE_VALUE) {
 				CloseHandle(state->file_handle);
-				fun_memory_free(&state);
+				// Free state memory - cast to void* for proper free
+				void *state_memory = state;
+				fun_memory_free(&state_memory);
 			}
 			return status;
 		}
@@ -132,8 +136,10 @@ AsyncResult fun_read_file_in_memory(Read parameters)
 						  .status = ASYNC_PENDING };
 
 cleanup:
+	// Free state memory - cast to void* for proper free
 	if (state) {
-		fun_memory_free(&state);
+		void *state_memory = state;
+		fun_memory_free(&state_memory);
 	}
 	if (file != INVALID_HANDLE_VALUE) {
 		CloseHandle(file);

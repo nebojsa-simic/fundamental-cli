@@ -1,6 +1,5 @@
-#include <string.h>
-
 #include "../../include/set/set.h"
+#include "../../include/memory/memory.h"
 
 HashSetResult fun_set_create(size_t value_size, size_t initial_bucket_count,
 							 HashFunction hash_fn, KeyEqualFunction equals_fn)
@@ -67,7 +66,7 @@ ErrorResult fun_set_add(HashSet *set, const void *value)
 								"Failed to allocate value");
 	}
 
-	memcpy(new_entry->value, value, set->value_size);
+	fun_memory_copy(value, new_entry->value, set->value_size);
 	new_entry->next = set->buckets[bucket_idx];
 	set->buckets[bucket_idx] = new_entry;
 	set->entry_count++;
