@@ -1,5 +1,5 @@
 #include "cmd_version.h"
-#include "../src/cli.h"
+#include "cli.h"
 
 int cmd_version_execute(int argc, const char **argv)
 {

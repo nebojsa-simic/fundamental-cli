@@ -22,9 +22,9 @@ gcc ^
     vendor/fundamental/arch/startup/windows-amd64/windows.c ^
     src/main.c ^
     src/cli.c ^
-    commands/cmd_version.c ^
-    commands/cmd_help.c ^
-    commands/cmd_init.c ^
+    src/commands/cmd_version.c ^
+    src/commands/cmd_help.c ^
+    src/commands/cmd_init.c ^
     vendor/fundamental/src/async/async.c ^
     vendor/fundamental/arch/file/windows-amd64/fileWrite.c ^
     vendor/fundamental/arch/file/windows-amd64/fileWriteMmap.c ^

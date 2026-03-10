@@ -8,8 +8,8 @@
 #include "vendor/fundamental/include/string/string.h"
 
 static const char *T_MAIN =
-	"#include \"commands/cmd_version.h\"\n#include "
-	"\"commands/cmd_help.h\"\n#include \"cli.h\"\n\nint cli_main(int argc, "
+	"#include \"src/commands/cmd_version.h\"\n#include "
+	"\"src/commands/cmd_help.h\"\n#include \"cli.h\"\n\nint cli_main(int argc, "
 	"const char **argv) {\n  cli_init();\n  cli_register((Command){.name = "
 	"\"version\", .description = \"Show version information\", .execute = "
 	"cmd_version_execute});\n  cli_register((Command){.name = \"help\", "
@@ -75,7 +75,7 @@ static const char *T_BAT =
 	"-fno-exceptions -fno-unwind-tables -e main -mconsole -I . -I "
 	"vendor/fundamental/include vendor/fundamental/src/startup/startup.c "
 	"vendor/fundamental/arch/startup/windows-amd64/windows.c src/main.c "
-	"src/cli.c commands/cmd_version.c commands/cmd_help.c "
+	"src/cli.c src/commands/cmd_version.c src/commands/cmd_help.c "
 	"vendor/fundamental/src/console/console.c "
 	"vendor/fundamental/src/string/stringConversion.c "
 	"vendor/fundamental/src/string/stringOperations.c "
@@ -89,7 +89,7 @@ static const char *T_SH =
 	"-fno-exceptions -fno-unwind-tables -e main -I . -I "
 	"vendor/fundamental/include vendor/fundamental/src/startup/startup.c "
 	"vendor/fundamental/arch/startup/linux-amd64/linux.c src/main.c src/cli.c "
-	"commands/cmd_version.c commands/cmd_help.c "
+	"src/commands/cmd_version.c src/commands/cmd_help.c "
 	"vendor/fundamental/src/console/console.c "
 	"vendor/fundamental/src/string/stringConversion.c "
 	"vendor/fundamental/src/string/stringOperations.c "
@@ -158,10 +158,10 @@ int cmd_init_execute(int argc, const char **argv)
 	write_file("src/main.c", T_MAIN);
 	write_file("src/cli.h", T_CLI_H);
 	write_file("src/cli.c", T_CLI_C);
-	write_file("commands/cmd_version.h", T_VH);
-	write_file("commands/cmd_version.c", T_VC);
-	write_file("commands/cmd_help.h", T_HH);
-	write_file("commands/cmd_help.c", T_HC);
+	write_file("src/commands/cmd_version.h", T_VH);
+	write_file("src/commands/cmd_version.c", T_VC);
+	write_file("src/commands/cmd_help.h", T_HH);
+	write_file("src/commands/cmd_help.c", T_HC);
 	fun_console_write_line("✓ Created source files\n");
 
 	fun_console_write_line("Writing build scripts...\n");
