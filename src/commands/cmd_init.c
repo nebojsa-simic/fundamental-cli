@@ -83,7 +83,7 @@ static const char *T_BAT =
 	"vendor/fundamental/src/string/stringValidation.c "
 	"vendor/fundamental/arch/console/windows-amd64/console.c "
 	"vendor/fundamental/arch/memory/windows-amd64/memory.c -lkernel32 -o "
-	"fun.exe\nstrip --strip-unneeded fun.exe\necho Build complete: fun.exe\n";
+	"app.exe\nstrip --strip-unneeded app.exe\necho Build complete: app.exe\n";
 static const char *T_SH =
 	"#!/bin/bash\n# Compile fun CLI\ngcc --std=c17 -Os -nostdlib -fno-builtin "
 	"-fno-exceptions -fno-unwind-tables -e main -I . -I "
@@ -96,8 +96,8 @@ static const char *T_SH =
 	"vendor/fundamental/src/string/stringTemplate.c "
 	"vendor/fundamental/src/string/stringValidation.c "
 	"vendor/fundamental/arch/console/linux-amd64/console.c "
-	"vendor/fundamental/arch/memory/linux-amd64/memory.c -o fun\nstrip "
-	"--strip-unneeded fun\necho Build complete: fun\n";
+	"vendor/fundamental/arch/memory/linux-amd64/memory.c -o app\nstrip "
+	"--strip-unneeded app\necho Build complete: app\n";
 static const char *T_INI =
 	"name = my-project\nversion = 0.1.0\ndescription = My fundamental CLI "
 	"app\nentry = src/main.c\noutput = fun.exe\n\n[dependencies]\nfundamental "
@@ -108,8 +108,8 @@ static const char *T_README =
 	"[fundamental](https://github.com/nebojsa-simic/fundamental) "
 	"library.\n\n## Building\n\n### "
 	"Windows\n```batch\n.\\build-windows-amd64.bat\n```\n\n### "
-	"Linux\n```bash\n./build-linux-amd64.sh\n```\n\n## Usage\n```bash\n./fun "
-	"--help\n./fun version\n```\n\n## License\nSame as fundamental library.\n";
+	"Linux\n```bash\n./build-linux-amd64.sh\n```\n\n## Usage\n```bash\n./app "
+	"--help\n./app version\n```\n\n## License\nSame as fundamental library.\n";
 static const char *T_ARCH = "void __main(void) {}\n";
 static const char *T_SKILL =
 	"---\nname: fundamental-expert\ndescription: Expert guide for building "
@@ -147,7 +147,7 @@ int cmd_init_execute(int argc, const char **argv)
 
 	fun_console_write_line("Creating directories...\n");
 	fun_filesystem_create_directory((String) "src");
-	fun_filesystem_create_directory((String) "commands");
+	fun_filesystem_create_directory((String) "src/commands");
 	fun_filesystem_create_directory(
 		(String) ".opencode/skills/fundamental-expert");
 	fun_filesystem_create_directory((String) "arch/startup/windows-amd64");
@@ -194,7 +194,7 @@ int cmd_init_execute(int argc, const char **argv)
 		"     Linux:   cp -r ../fundamental vendor/fundamental\n\n");
 	fun_console_write_line(
 		"  2. Build: .\\build-windows-amd64.bat or ./build-linux-amd64.sh\n\n");
-	fun_console_write_line("  3. Run: .\\fun.exe or ./fun\n\n");
+	fun_console_write_line("  3. Run: .\\app.exe or ./app\n\n");
 
 	return 0;
 }
