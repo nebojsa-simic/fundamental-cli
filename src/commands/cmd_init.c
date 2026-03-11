@@ -37,8 +37,8 @@ static const char *T_CLI_C =
 	"reached\"); return fun_error_result(1, \"Command limit exceeded\"); } "
 	"commands[command_count] = cmd; command_count++; return "
 	"ERROR_RESULT_NO_ERROR; }\nint cli_show_help(void) { "
-	"fun_console_write_line(\"fun - A CLI built with fundamental library\"); "
-	"fun_console_write_line(\"\"); fun_console_write_line(\"Usage: fun "
+	"fun_console_write_line(\"app - A CLI built with fundamental library\"); "
+	"fun_console_write_line(\"\"); fun_console_write_line(\"Usage: app "
 	"<command> [arguments]\"); fun_console_write_line(\"\"); "
 	"fun_console_write_line(\"Available commands:\"); for (size_t i = 0; i < "
 	"command_count; i++) { fun_console_write(\"  \"); "
@@ -61,7 +61,7 @@ static const char *T_VH =
 static const char *T_VC =
 	"#include \"cmd_version.h\"\n#include \"src/cli.h\"\nint "
 	"cmd_version_execute(int argc, const char **argv) { (void)argc; "
-	"(void)argv; fun_console_write_line(\"fun v0.1.0\"); "
+	"(void)argv; fun_console_write_line(\"app v0.1.0\"); "
 	"fun_console_write_line(\"Built with fundamental library\"); return 0; }\n";
 static const char *T_HH =
 	"#ifndef CMD_HELP_H\n#define CMD_HELP_H\nint cmd_help_execute(int argc, "
@@ -71,7 +71,7 @@ static const char *T_HC =
 	"cmd_help_execute(int argc, const char **argv) { (void)argc; (void)argv; "
 	"return cli_show_help(); }\n";
 static const char *T_BAT =
-	"@ECHO OFF\nREM Compile fun CLI\ngcc --std=c17 -Os -nostdlib -fno-builtin "
+	"@ECHO OFF\nREM Compile app CLI\ngcc --std=c17 -Os -nostdlib -fno-builtin "
 	"-fno-exceptions -fno-unwind-tables -e main -mconsole -I . -I "
 	"vendor/fundamental/include vendor/fundamental/src/startup/startup.c "
 	"vendor/fundamental/arch/startup/windows-amd64/windows.c src/main.c "
@@ -85,7 +85,7 @@ static const char *T_BAT =
 	"vendor/fundamental/arch/memory/windows-amd64/memory.c -lkernel32 -o "
 	"app.exe\nstrip --strip-unneeded app.exe\necho Build complete: app.exe\n";
 static const char *T_SH =
-	"#!/bin/bash\n# Compile fun CLI\ngcc --std=c17 -Os -nostdlib -fno-builtin "
+	"#!/bin/bash\n# Compile app CLI\ngcc --std=c17 -Os -nostdlib -fno-builtin "
 	"-fno-exceptions -fno-unwind-tables -e main -I . -I "
 	"vendor/fundamental/include vendor/fundamental/src/startup/startup.c "
 	"vendor/fundamental/arch/startup/linux-amd64/linux.c src/main.c src/cli.c "
@@ -100,7 +100,7 @@ static const char *T_SH =
 	"--strip-unneeded app\necho Build complete: app\n";
 static const char *T_INI =
 	"name = my-project\nversion = 0.1.0\ndescription = My fundamental CLI "
-	"app\nentry = src/main.c\noutput = fun.exe\n\n[dependencies]\nfundamental "
+	"app\nentry = src/main.c\noutput = app.exe\n\n[dependencies]\nfundamental "
 	"= local\n\n[build]\nstandard = -nostdlib\nflags = -fno-builtin "
 	"-fno-exceptions\n";
 static const char *T_README =
