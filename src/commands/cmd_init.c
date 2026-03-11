@@ -59,7 +59,7 @@ static const char *T_VH =
 	"#ifndef CMD_VERSION_H\n#define CMD_VERSION_H\nint cmd_version_execute(int "
 	"argc, const char **argv);\n#endif\n";
 static const char *T_VC =
-	"#include \"cmd_version.h\"\n#include \"cli.h\"\nint "
+	"#include \"cmd_version.h\"\n#include \"src/cli.h\"\nint "
 	"cmd_version_execute(int argc, const char **argv) { (void)argc; "
 	"(void)argv; fun_console_write_line(\"fun v0.1.0\"); "
 	"fun_console_write_line(\"Built with fundamental library\"); return 0; }\n";
@@ -67,7 +67,7 @@ static const char *T_HH =
 	"#ifndef CMD_HELP_H\n#define CMD_HELP_H\nint cmd_help_execute(int argc, "
 	"const char **argv);\n#endif\n";
 static const char *T_HC =
-	"#include \"cmd_help.h\"\n#include \"cli.h\"\nint "
+	"#include \"cmd_help.h\"\n#include \"src/cli.h\"\nint "
 	"cmd_help_execute(int argc, const char **argv) { (void)argc; (void)argv; "
 	"return cli_show_help(); }\n";
 static const char *T_BAT =
