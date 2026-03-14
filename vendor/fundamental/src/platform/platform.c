@@ -5,18 +5,10 @@
 PlatformOS fun_platform_os(void);
 PlatformArch fun_platform_arch(void);
 
-CanReturnError(Platform) fun_platform_get(OutputPlatform platform)
+void fun_platform_get(OutputPlatform platform)
 {
-	PlatformResult result;
-	result.error = ERROR_RESULT_NO_ERROR;
-	result.value.os = fun_platform_os();
-	result.value.arch = fun_platform_arch();
-
-	if (platform != NULL) {
-		*platform = result.value;
-	}
-
-	return result;
+	platform->os = fun_platform_os();
+	platform->arch = fun_platform_arch();
 }
 
 ErrorResult fun_platform_os_to_string(PlatformOS os,

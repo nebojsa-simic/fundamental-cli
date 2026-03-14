@@ -8,7 +8,9 @@
  */
 static inline Platform platform_get(void)
 {
-	return fun_platform_get(NULL).value;
+	Platform p;
+	fun_platform_get(&p);
+	return p;
 }
 
 /**

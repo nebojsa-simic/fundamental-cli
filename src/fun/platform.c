@@ -7,8 +7,8 @@
  */
 String platform_get_build_script(void)
 {
-	PlatformResult r = fun_platform_get(NULL);
-	Platform platform = r.value;
+	Platform platform;
+	fun_platform_get(&platform);
 	static char buffer[64];
 
 	char os_buf[16];

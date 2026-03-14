@@ -28,8 +28,6 @@ typedef struct {
 
 typedef Platform *OutputPlatform;
 
-DEFINE_RESULT_TYPE(Platform);
-
 // ------------------------------------------------------------------
 // Platform Detection
 // ------------------------------------------------------------------
@@ -38,19 +36,16 @@ DEFINE_RESULT_TYPE(Platform);
  * Get the current platform (OS + architecture)
  *
  * Values are provided by the arch layer at link time.
+ * Cannot fail — simple constant lookup.
  *
- * @param platform OPTIONAL - output pointer to fill, or NULL
- *
- * @return PlatformResult with value populated, error always NO_ERROR
+ * @param platform REQUIRED - output pointer to fill
  *
  * Example:
- * PlatformResult r = fun_platform_get(NULL);
- * if (r.value.os == PLATFORM_OS_WINDOWS) { ... }
- *
  * Platform p;
  * fun_platform_get(&p);
+ * if (p.os == PLATFORM_OS_WINDOWS) { ... }
  */
-CanReturnError(Platform) fun_platform_get(OutputPlatform platform);
+void fun_platform_get(OutputPlatform platform);
 
 // ------------------------------------------------------------------
 // Platform String Conversion
