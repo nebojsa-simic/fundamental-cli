@@ -1,6 +1,7 @@
 # Build outputs
-fun.exe
-fun
+/fun.exe
+/fun
+!src/fun/
 
 # Object files
 *.o
