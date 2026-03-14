@@ -36,6 +36,22 @@ vendor/
 3. Register in `src/main.c` with `cli_register(...)`
 4. Add both source files to `build-windows-amd64.bat` and `build-linux-amd64.sh`
 
+## Vendored Fundamental Skills
+
+The fundamental library's AI agent skills are vendored into `vendor/fundamental/.opencode/skills/`. Load the relevant skill before writing code that uses the library — each skill contains copy-paste patterns with full error handling for its module.
+
+| Skill file | Domain |
+|------------|--------|
+| `fundamental-file-io.md` | Read, write, append, stream I/O |
+| `fundamental-memory.md` | Allocate, free, copy, fill, compare |
+| `fundamental-console.md` | Output, error messages |
+| `fundamental-directory.md` | Create, list, remove directories |
+| `fundamental-string.md` | Copy, join, template, convert |
+| `fundamental-collections.md` | Arrays, hashmaps, sets, RB-trees |
+| `fundamental-async.md` | Await, poll, spawn processes |
+| `fundamental-platform.md` | Detect OS/arch |
+| `fundamental-skills-index.md` | Central cross-reference |
+
 ## Rules
 
 - Uses vendored fundamental library from `vendor/fundamental/` — includes via `vendor/fundamental/include/`

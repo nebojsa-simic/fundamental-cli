@@ -58,6 +58,22 @@ cli_register((Command){
 | `build` | Build project for current platform |
 | `clean` | Remove build artifacts |
 
+## Vendored Fundamental Skills
+
+The fundamental library's AI agent skills are vendored alongside the source code into `vendor/fundamental/.opencode/skills/`. These provide copy-paste patterns for every fundamental module (file I/O, memory, string, async, filesystem, platform, etc.). When writing code that uses the fundamental library, load the relevant skill for ready-made examples.
+
+| Skill file | Domain |
+|------------|--------|
+| `fundamental-file-io.md` | Read, write, append, stream I/O |
+| `fundamental-memory.md` | Allocate, free, copy, fill, compare |
+| `fundamental-console.md` | Output, error messages |
+| `fundamental-directory.md` | Create, list, remove directories |
+| `fundamental-string.md` | Copy, join, template, convert |
+| `fundamental-collections.md` | Arrays, hashmaps, sets, RB-trees |
+| `fundamental-async.md` | Await, poll, spawn processes |
+| `fundamental-platform.md` | Detect OS/arch |
+| `fundamental-skills-index.md` | Central cross-reference |
+
 ## Rules
 
 - Uses vendored fundamental library from `vendor/fundamental/` — includes reference it via `vendor/fundamental/include/`
