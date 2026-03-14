@@ -30,7 +30,14 @@ gcc ^
     src/commands/cmd_init.c ^
     src/commands/cmd_clean.c ^
     src/commands/cmd_build.c ^
+    src/commands/cmd_test.c ^
+    src/commands/cmd_test_add.c ^
     src/fun/platform.c ^
+    src/test/discovery.c ^
+    src/test/scaffolder.c ^
+    src/test/module_map.c ^
+    src/test/runner.c ^
+    src/test/reporter.c ^
     vendor/fundamental/src/platform/platform.c ^
     vendor/fundamental/arch/platform/windows-amd64/platform.c ^
     vendor/fundamental/src/async/async.c ^
@@ -47,6 +54,7 @@ gcc ^
     vendor/fundamental/src/string/stringOperations.c ^
     vendor/fundamental/src/string/stringTemplate.c ^
     vendor/fundamental/src/string/stringValidation.c ^
+    vendor/fundamental/src/array/array.c ^
     vendor/fundamental/arch/console/windows-amd64/console.c ^
     vendor/fundamental/arch/memory/windows-amd64/memory.c ^
     vendor/fundamental/src/filesystem/directory.c ^
