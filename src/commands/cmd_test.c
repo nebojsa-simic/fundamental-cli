@@ -69,7 +69,8 @@ int cmd_test_execute(int argc, const char **argv)
 
 	if (discover_result.status == TEST_DISCOVERY_NO_TESTS) {
 		if (verbose)
-			fun_console_write("DEBUG: "); fun_console_write_line(discover_result.error_message);
+			fun_console_write("DEBUG: ");
+		fun_console_write_line(discover_result.error_message);
 		fun_console_write_line("No tests found");
 		test_discovery_free(&discover_result);
 		return 0;

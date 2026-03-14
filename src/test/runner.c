@@ -76,21 +76,32 @@ int test_build_module(TestModule *module, int verbose)
 
 	char build_script[520];
 	StringLength path_len = fun_string_length(module->path);
-	if (path_len + 25 >= sizeof(build_script)) { return 1; }
+	if (path_len + 25 >= sizeof(build_script)) {
+		return 1;
+	}
 
 	fun_string_copy(module->path, build_script);
 	build_script[path_len] = '/';
-	fun_string_copy((String) "build-windows-amd64.bat", build_script + path_len + 1);
+	fun_string_copy((String) "build-windows-amd64.bat",
+					build_script + path_len + 1);
 	build_script[path_len + 1 + 23] = '\0';
 
 	boolResult exists = fun_file_exists(build_script);
 	if (!fun_error_is_ok(exists.error) || !exists.value) {
-		if (verbose) fun_console_write_line("Build script not found");
+		if (verbose)
+			fun_console_write_line("Build script not found");
 		return 1;
 	}
 
 	// Use cmd.exe /c cd /d <dir> && <script>
-	const char *args[] = { "cmd.exe", "/c", "cd", "/d", module->path, "&&", "build-windows-amd64.bat", NULL };
+	const char *args[] = { "cmd.exe",
+						   "/c",
+						   "cd",
+						   "/d",
+						   module->path,
+						   "&&",
+						   "build-windows-amd64.bat",
+						   NULL };
 	AsyncResult spawn_result = fun_async_process_spawn("cmd.exe", args, NULL);
 	fun_async_await(&spawn_result);
 
@@ -116,7 +127,9 @@ int test_execute_module(TestModule *module, int verbose)
 
 	char test_exe[520];
 	StringLength path_len = fun_string_length(module->path);
-	if (path_len + 10 >= sizeof(test_exe)) { return 1; }
+	if (path_len + 10 >= sizeof(test_exe)) {
+		return 1;
+	}
 
 	fun_string_copy(module->path, test_exe);
 	test_exe[path_len] = '/';
@@ -125,12 +138,14 @@ int test_execute_module(TestModule *module, int verbose)
 
 	boolResult exists = fun_file_exists(test_exe);
 	if (!fun_error_is_ok(exists.error) || !exists.value) {
-		if (verbose) fun_console_write_line("Test executable not found");
+		if (verbose)
+			fun_console_write_line("Test executable not found");
 		return 1;
 	}
 
 	// Run from test directory
-	const char *args[] = { "cmd.exe", "/c", "cd", "/d", module->path, "&&", "test.exe", NULL };
+	const char *args[] = { "cmd.exe",	 "/c", "cd",	   "/d",
+						   module->path, "&&", "test.exe", NULL };
 	AsyncResult spawn_result = fun_async_process_spawn("cmd.exe", args, NULL);
 	fun_async_await(&spawn_result);
 
