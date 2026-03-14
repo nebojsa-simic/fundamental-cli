@@ -12,6 +12,15 @@ CLI application built with the [Fundamental Library](../fundamental/). Demonstra
 - **Code Formatting**: `code-format.bat`
 - **Vendor Update**: `vendor-fundamental.bat` (copies latest fundamental library into `vendor/`)
 
+## Smoke Tests
+
+End-to-end smoke tests that verify the full `fun init` → vendor → `fun build` → run cycle:
+
+- **Windows**: `smoke-test-windows-amd64.bat`
+- **Linux**: `./smoke-test-linux-amd64.sh`
+
+**Run the smoke test after any change to:** `fun init` templates, `fun build` logic, executor, detector, generator, or platform detection. The smoke test creates `../fundamental-cli-smoke/`, runs the full workflow, and reports pass/fail counts.
+
 ## Architecture
 
 ```
