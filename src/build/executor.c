@@ -2,6 +2,7 @@
 #include "../fun/platform.h"
 #include "vendor/fundamental/include/async/async.h"
 #include "vendor/fundamental/include/console/console.h"
+#include "vendor/fundamental/include/filesystem/filesystem.h"
 
 /**
  * Execute Windows batch script
@@ -9,6 +10,14 @@
 BuildExecutionResult build_execute_windows(String script_path, int verbose)
 {
 	BuildExecutionResult result;
+
+	char cwd[512];
+	char full_path[1024];
+	ErrorResult cwd_result = fun_filesystem_get_working_directory(cwd);
+	if (fun_error_is_ok(cwd_result)) {
+		fun_path_join(cwd, script_path, full_path);
+		script_path = full_path;
+	}
 
 	if (verbose) {
 		fun_console_write_line("Executing Windows build script...");
@@ -42,6 +51,14 @@ BuildExecutionResult build_execute_windows(String script_path, int verbose)
 BuildExecutionResult build_execute_linux(String script_path, int verbose)
 {
 	BuildExecutionResult result;
+
+	char cwd[512];
+	char full_path[1024];
+	ErrorResult cwd_result = fun_filesystem_get_working_directory(cwd);
+	if (fun_error_is_ok(cwd_result)) {
+		fun_path_join(cwd, script_path, full_path);
+		script_path = full_path;
+	}
 
 	if (verbose) {
 		fun_console_write_line("Executing Linux build script...");

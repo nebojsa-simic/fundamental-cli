@@ -97,7 +97,7 @@ AsyncResult platform_process_spawn(AsyncResult *result, const char *executable,
 	cmd_line[1 + exe_len] = '"';
 	cmd_line[2 + exe_len] = '\0';
 	if (args != NULL) {
-		for (int i = 0; args[i] != NULL; i++) {
+		for (int i = 1; args[i] != NULL; i++) {
 			StringLength cur_len = fun_string_length((String)cmd_line);
 			cmd_line[cur_len] = ' ';
 			fun_string_copy((String)args[i], cmd_line + cur_len + 1);

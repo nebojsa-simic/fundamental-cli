@@ -190,4 +190,20 @@ boolResult fun_directory_exists(String path);
  */
 boolResult fun_path_exists(String path);
 
+/**
+ * Get the current working directory
+ *
+ * @param output REQUIRED - Buffer to store the working directory path
+ *
+ * @return ErrorResult with operation status
+ *
+ * Example:
+ * char cwd[512];
+ * ErrorResult result = fun_filesystem_get_working_directory(cwd);
+ * if (fun_error_is_ok(result)) {
+ *     // cwd contains the current working directory
+ * }
+ */
+ErrorResult fun_filesystem_get_working_directory(OutputString output);
+
 #endif // LIBRARY_FILESYSTEM_H

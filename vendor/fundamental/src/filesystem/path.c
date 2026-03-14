@@ -1,8 +1,9 @@
 #include "filesystem/filesystem.h"
 #include <stdbool.h>
 
-// Platform-specific separator provided by arch layer
+// Platform-specific functions provided by arch layer
 char fun_platform_path_separator(void);
+int fun_platform_get_working_directory(char *output, size_t output_size);
 
 // Task: Implement fun_path_separator
 char fun_path_separator(void)
@@ -331,6 +332,24 @@ ErrorResult fun_path_get_parent(String path, OutputString output)
 			output[i] = path[i];
 		}
 		output[parent_len] = '\0';
+	}
+
+	return ERROR_RESULT_NO_ERROR;
+}
+
+// Task 3.7: Implement fun_filesystem_get_working_directory
+ErrorResult fun_filesystem_get_working_directory(OutputString output)
+{
+	if (output == NULL) {
+		return fun_error_result(ERROR_CODE_NULL_POINTER,
+								"Output buffer is NULL");
+	}
+
+	int result = fun_platform_get_working_directory(output, 512);
+	if (result < 0) {
+		output[0] = '\0';
+		return fun_error_result(ERROR_CODE_PATH_INVALID,
+								"Failed to get working directory");
 	}
 
 	return ERROR_RESULT_NO_ERROR;
