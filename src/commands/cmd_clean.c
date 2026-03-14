@@ -18,8 +18,7 @@ static void remove_file(const char *path)
 	AsyncResult spawn_result;
 
 	if (platform.os == PLATFORM_OS_WINDOWS) {
-		const char *args[] = { "cmd.exe", "/c", "del", "/f", "/q", path,
-							   NULL };
+		const char *args[] = { "cmd.exe", "/c", "del", "/f", "/q", path, NULL };
 		spawn_result = fun_async_process_spawn("cmd.exe", args, NULL);
 	} else {
 		const char *args[] = { "rm", "-f", path, NULL };

@@ -34,6 +34,6 @@ String platform_get_build_script(void)
 	}
 
 	return (platform.os == PLATFORM_OS_WINDOWS) ?
-			       (String) "build-windows-amd64.bat" :
-			       (String) "build-linux-amd64.sh";
+			   (String) "build-windows-amd64.bat" :
+			   (String) "build-linux-amd64.sh";
 }

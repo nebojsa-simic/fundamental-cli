@@ -124,15 +124,17 @@ int cmd_build_execute(int argc, const char **argv)
 		return 0;
 	} else if (exec_result.status == BUILD_EXEC_FAILED) {
 		fun_console_write("Build failed with exit code: ");
-		MemoryResult exit_str_result = fun_memory_allocate(16); // Enough for int64_t in base 10
+		MemoryResult exit_str_result =
+			fun_memory_allocate(16); // Enough for int64_t in base 10
 		if (fun_error_is_error(exit_str_result.error)) {
-			fun_console_write_line("Error allocating memory for exit code string");
+			fun_console_write_line(
+				"Error allocating memory for exit code string");
 			return 1;
 		}
-		String exit_str = (String) exit_str_result.value;
+		String exit_str = (String)exit_str_result.value;
 		fun_string_from_int(exec_result.exit_code, 10, (OutputString)exit_str);
 		fun_console_write_line(exit_str);
-		fun_memory_free((Memory*)exit_str);
+		fun_memory_free((Memory *)exit_str);
 		return exec_result.exit_code;
 	} else {
 		fun_console_write("Build error: ");

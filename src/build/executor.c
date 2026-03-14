@@ -17,8 +17,7 @@ BuildExecutionResult build_execute_windows(String script_path, int verbose)
 	}
 
 	const char *args[] = { "cmd.exe", "/c", script_path, NULL };
-	AsyncResult spawn_result =
-		fun_async_process_spawn("cmd.exe", args, NULL);
+	AsyncResult spawn_result = fun_async_process_spawn("cmd.exe", args, NULL);
 	fun_async_await(&spawn_result);
 
 	int exit_code = fun_process_get_exit_code(&spawn_result);

@@ -68,7 +68,7 @@ void fun_platform_get(OutputPlatform platform);
  * // buf == "linux"
  */
 ErrorResult fun_platform_os_to_string(PlatformOS os,
-				       OutputString platformOsResult);
+									  OutputString platformOsResult);
 
 /**
  * Write architecture name into caller-provided buffer
@@ -87,7 +87,7 @@ ErrorResult fun_platform_os_to_string(PlatformOS os,
  * // buf == "amd64"
  */
 ErrorResult fun_platform_arch_to_string(PlatformArch arch,
-					 OutputString platformArchResult);
+										OutputString platformArchResult);
 
 /**
  * Write full platform string into caller-provided buffer
@@ -105,7 +105,7 @@ ErrorResult fun_platform_arch_to_string(PlatformArch arch,
  * fun_platform_to_string(fun_platform_get(NULL).value, buf);
  * // buf == "windows-amd64"
  */
-CanReturnError(void) fun_platform_to_string(Platform platform,
-					     OutputString output);
+CanReturnError(void)
+	fun_platform_to_string(Platform platform, OutputString output);
 
 #endif // LIBRARY_PLATFORM_H

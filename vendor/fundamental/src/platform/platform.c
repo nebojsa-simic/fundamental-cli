@@ -12,7 +12,7 @@ void fun_platform_get(OutputPlatform platform)
 }
 
 ErrorResult fun_platform_os_to_string(PlatformOS os,
-				       OutputString platformOsResult)
+									  OutputString platformOsResult)
 {
 	if (platformOsResult == NULL) {
 		return ERROR_RESULT_NULL_POINTER;
@@ -37,7 +37,7 @@ ErrorResult fun_platform_os_to_string(PlatformOS os,
 }
 
 ErrorResult fun_platform_arch_to_string(PlatformArch arch,
-					 OutputString platformArchResult)
+										OutputString platformArchResult)
 {
 	if (platformArchResult == NULL) {
 		return ERROR_RESULT_NULL_POINTER;
@@ -58,8 +58,8 @@ ErrorResult fun_platform_arch_to_string(PlatformArch arch,
 	return ERROR_RESULT_NO_ERROR;
 }
 
-CanReturnError(void) fun_platform_to_string(Platform platform,
-					     OutputString output)
+CanReturnError(void)
+	fun_platform_to_string(Platform platform, OutputString output)
 {
 	voidResult result;
 
@@ -77,8 +77,7 @@ CanReturnError(void) fun_platform_to_string(Platform platform,
 		return result;
 	}
 
-	ErrorResult arch_err =
-		fun_platform_arch_to_string(platform.arch, arch_buf);
+	ErrorResult arch_err = fun_platform_arch_to_string(platform.arch, arch_buf);
 	if (fun_error_is_error(arch_err)) {
 		result.error = arch_err;
 		return result;
