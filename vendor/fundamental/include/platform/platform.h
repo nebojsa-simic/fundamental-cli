@@ -37,7 +37,7 @@ DEFINE_RESULT_TYPE(Platform);
 /**
  * Get the current platform (OS + architecture)
  *
- * Determined at compile time via preprocessor macros.
+ * Values are provided by the arch layer at link time.
  *
  * @param platform OPTIONAL - output pointer to fill, or NULL
  *
@@ -57,26 +57,42 @@ CanReturnError(Platform) fun_platform_get(OutputPlatform platform);
 // ------------------------------------------------------------------
 
 /**
- * Get OS name as a string literal
+ * Write OS name into caller-provided buffer
  *
- * @param os PlatformOS value
- * @return "windows", "linux", "darwin", or "unknown"
+ * Writes "windows", "linux", "darwin", or "unknown".
+ * Buffer must be at least 16 bytes.
+ *
+ * @param os              PlatformOS value
+ * @param platformOsResult REQUIRED - caller-allocated output buffer
+ *
+ * @return ErrorResult with operation status
  *
  * Example:
- * String name = fun_platform_os_to_string(PLATFORM_OS_LINUX);
+ * char buf[16];
+ * fun_platform_os_to_string(PLATFORM_OS_LINUX, buf);
+ * // buf == "linux"
  */
-String fun_platform_os_to_string(PlatformOS os);
+ErrorResult fun_platform_os_to_string(PlatformOS os,
+				       OutputString platformOsResult);
 
 /**
- * Get architecture name as a string literal
+ * Write architecture name into caller-provided buffer
  *
- * @param arch PlatformArch value
- * @return "amd64", "arm64", or "unknown"
+ * Writes "amd64", "arm64", or "unknown".
+ * Buffer must be at least 16 bytes.
+ *
+ * @param arch              PlatformArch value
+ * @param platformArchResult REQUIRED - caller-allocated output buffer
+ *
+ * @return ErrorResult with operation status
  *
  * Example:
- * String name = fun_platform_arch_to_string(PLATFORM_ARCH_AMD64);
+ * char buf[16];
+ * fun_platform_arch_to_string(PLATFORM_ARCH_AMD64, buf);
+ * // buf == "amd64"
  */
-String fun_platform_arch_to_string(PlatformArch arch);
+ErrorResult fun_platform_arch_to_string(PlatformArch arch,
+					 OutputString platformArchResult);
 
 /**
  * Write full platform string into caller-provided buffer
@@ -95,6 +111,6 @@ String fun_platform_arch_to_string(PlatformArch arch);
  * // buf == "windows-amd64"
  */
 CanReturnError(void) fun_platform_to_string(Platform platform,
-											OutputString output);
+					     OutputString output);
 
 #endif // LIBRARY_PLATFORM_H

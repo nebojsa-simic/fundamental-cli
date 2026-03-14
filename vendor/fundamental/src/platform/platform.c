@@ -1,28 +1,16 @@
 #include "platform/platform.h"
 #include "string/string.h"
 
+// Arch-layer functions - implemented per platform in arch/platform/<platform>/
+PlatformOS fun_platform_os(void);
+PlatformArch fun_platform_arch(void);
+
 CanReturnError(Platform) fun_platform_get(OutputPlatform platform)
 {
 	PlatformResult result;
 	result.error = ERROR_RESULT_NO_ERROR;
-
-#if defined(_WIN32) || defined(_WIN64)
-	result.value.os = PLATFORM_OS_WINDOWS;
-#elif defined(__linux__)
-	result.value.os = PLATFORM_OS_LINUX;
-#elif defined(__APPLE__) && defined(__MACH__)
-	result.value.os = PLATFORM_OS_DARWIN;
-#else
-	result.value.os = PLATFORM_OS_UNKNOWN;
-#endif
-
-#if defined(_M_X64) || defined(__x86_64__) || defined(__amd64__)
-	result.value.arch = PLATFORM_ARCH_AMD64;
-#elif defined(_M_ARM64) || defined(__aarch64__)
-	result.value.arch = PLATFORM_ARCH_ARM64;
-#else
-	result.value.arch = PLATFORM_ARCH_UNKNOWN;
-#endif
+	result.value.os = fun_platform_os();
+	result.value.arch = fun_platform_arch();
 
 	if (platform != NULL) {
 		*platform = result.value;
@@ -31,33 +19,55 @@ CanReturnError(Platform) fun_platform_get(OutputPlatform platform)
 	return result;
 }
 
-String fun_platform_os_to_string(PlatformOS os)
+ErrorResult fun_platform_os_to_string(PlatformOS os,
+				       OutputString platformOsResult)
 {
+	if (platformOsResult == NULL) {
+		return ERROR_RESULT_NULL_POINTER;
+	}
+
 	switch (os) {
 	case PLATFORM_OS_WINDOWS:
-		return (String) "windows";
+		fun_string_copy((String) "windows", platformOsResult);
+		break;
 	case PLATFORM_OS_LINUX:
-		return (String) "linux";
+		fun_string_copy((String) "linux", platformOsResult);
+		break;
 	case PLATFORM_OS_DARWIN:
-		return (String) "darwin";
+		fun_string_copy((String) "darwin", platformOsResult);
+		break;
 	default:
-		return (String) "unknown";
+		fun_string_copy((String) "unknown", platformOsResult);
+		break;
 	}
+
+	return ERROR_RESULT_NO_ERROR;
 }
 
-String fun_platform_arch_to_string(PlatformArch arch)
+ErrorResult fun_platform_arch_to_string(PlatformArch arch,
+					 OutputString platformArchResult)
 {
+	if (platformArchResult == NULL) {
+		return ERROR_RESULT_NULL_POINTER;
+	}
+
 	switch (arch) {
 	case PLATFORM_ARCH_AMD64:
-		return (String) "amd64";
+		fun_string_copy((String) "amd64", platformArchResult);
+		break;
 	case PLATFORM_ARCH_ARM64:
-		return (String) "arm64";
+		fun_string_copy((String) "arm64", platformArchResult);
+		break;
 	default:
-		return (String) "unknown";
+		fun_string_copy((String) "unknown", platformArchResult);
+		break;
 	}
+
+	return ERROR_RESULT_NO_ERROR;
 }
 
-CanReturnError(void) fun_platform_to_string(Platform platform, OutputString output)
+CanReturnError(void) fun_platform_to_string(Platform platform,
+					     OutputString output)
 {
 	voidResult result;
 
@@ -66,14 +76,28 @@ CanReturnError(void) fun_platform_to_string(Platform platform, OutputString outp
 		return result;
 	}
 
-	String os_str = fun_platform_os_to_string(platform.os);
-	String arch_str = fun_platform_arch_to_string(platform.arch);
-	StringLength os_len = fun_string_length(os_str);
-	StringLength arch_len = fun_string_length(arch_str);
+	char os_buf[16];
+	char arch_buf[16];
 
-	fun_string_copy(os_str, output);
+	ErrorResult os_err = fun_platform_os_to_string(platform.os, os_buf);
+	if (fun_error_is_error(os_err)) {
+		result.error = os_err;
+		return result;
+	}
+
+	ErrorResult arch_err =
+		fun_platform_arch_to_string(platform.arch, arch_buf);
+	if (fun_error_is_error(arch_err)) {
+		result.error = arch_err;
+		return result;
+	}
+
+	StringLength os_len = fun_string_length((String)os_buf);
+	StringLength arch_len = fun_string_length((String)arch_buf);
+
+	fun_string_copy((String)os_buf, output);
 	output[os_len] = '-';
-	fun_string_copy(arch_str, output + os_len + 1);
+	fun_string_copy((String)arch_buf, output + os_len + 1);
 	output[os_len + 1 + arch_len] = '\0';
 
 	result.error = ERROR_RESULT_NO_ERROR;

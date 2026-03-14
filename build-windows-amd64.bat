@@ -32,6 +32,7 @@ gcc ^
     src/commands/cmd_build.c ^
     src/fun/platform.c ^
     vendor/fundamental/src/platform/platform.c ^
+    vendor/fundamental/arch/platform/windows-amd64/platform.c ^
     vendor/fundamental/src/async/async.c ^
     vendor/fundamental/src/async/process.c ^
     vendor/fundamental/arch/async/windows-amd64/process.c ^
