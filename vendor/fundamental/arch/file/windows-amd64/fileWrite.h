@@ -5,13 +5,14 @@
 #include <memoryapi.h>
 
 typedef struct {
-	Write parameters; // Original write parameters
-	HANDLE file_handle; // File handle from CreateFile
-	HANDLE mapping_handle; // File mapping handle from CreateFileMapping
-	LPVOID mapped_view; // Mapped memory view from MapViewOfFile
-	uint64_t adjusted_offset; // Page-aligned offset for mapping
-	uint64_t original_file_size; // Original file size before extension
-	bool file_extended; // Whether file was extended for this operation
+	Write parameters;
+	HANDLE file_handle;
+	HANDLE mapping_handle;
+	LPVOID mapped_view;
+	uint64_t adjusted_offset;
+	uint64_t original_file_size;
+	bool file_extended;
 } MMapWriteState;
 
 AsyncStatus poll_mmap_write(AsyncResult *result);
+AsyncResult create_ring_write(Write parameters);

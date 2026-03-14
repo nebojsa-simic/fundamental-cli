@@ -1,5 +1,5 @@
 #include "fileWrite.h"
-#include "memory/memory.h"
+#include "fileAdaptive.h"
 
 #include <stdint.h>
 #include <stddef.h>
@@ -10,24 +10,16 @@ typedef long ssize_t;
 typedef unsigned long size_t;
 typedef long off_t;
 
-#define SYS_read 0
 #define SYS_write 1
 #define SYS_open 2
 #define SYS_close 3
 #define SYS_fstat 5
-#define SYS_lseek 8
 #define SYS_mmap 9
 #define SYS_munmap 11
 #define SYS_ftruncate 77
 
-#define O_RDONLY 0
-#define O_WRONLY 1
 #define O_RDWR 2
 #define O_CREAT 0100
-#define O_TRUNC 01000
-
-#define SEEK_SET 0
-#define SEEK_END 2
 
 #define PROT_READ 0x1
 #define PROT_WRITE 0x2
@@ -120,6 +112,8 @@ static inline int sys_ftruncate(int fd, off_t length)
 AsyncStatus poll_mmap_write(AsyncResult *result)
 {
 	MMapWriteState *state = (MMapWriteState *)result->state;
+	FileAdaptiveState *adaptive = state->parameters.adaptive;
+	uint64_t bytes = state->parameters.bytes_to_write;
 	AsyncStatus final_status = ASYNC_COMPLETED;
 
 	if (state->file_descriptor < 0) {
@@ -153,7 +147,6 @@ AsyncStatus poll_mmap_write(AsyncResult *result)
 				goto cleanup;
 			}
 		}
-
 		state->file_extended = true;
 		return ASYNC_PENDING;
 	}
@@ -162,7 +155,6 @@ AsyncStatus poll_mmap_write(AsyncResult *result)
 		uint64_t granularity = PAGE_SIZE;
 		state->adjusted_offset =
 			(state->parameters.offset / granularity) * granularity;
-
 		uint64_t view_size =
 			state->parameters.bytes_to_write +
 			(state->parameters.offset - state->adjusted_offset);
@@ -176,7 +168,6 @@ AsyncStatus poll_mmap_write(AsyncResult *result)
 			final_status = ASYNC_ERROR;
 			goto cleanup;
 		}
-
 		state->mapped_address = mapped;
 		return ASYNC_PENDING;
 	}
@@ -186,10 +177,6 @@ AsyncStatus poll_mmap_write(AsyncResult *result)
 	fun_memory_copy(state->parameters.input, write_location,
 					state->parameters.bytes_to_write);
 
-	if (syscall2(SYS_fstat, state->file_descriptor,
-				 (long)&state->original_file_size) < 0) {
-	}
-
 cleanup:
 	if (state->mapped_address && state->mapped_address != (void *)-1) {
 		uint64_t view_size =
@@ -197,10 +184,10 @@ cleanup:
 			(state->parameters.offset - state->adjusted_offset);
 		sys_munmap(state->mapped_address, view_size);
 	}
-	if (state->file_descriptor >= 0) {
+	if (state->file_descriptor >= 0)
 		syscall1(SYS_close, state->file_descriptor);
-	}
 	fun_memory_free((Memory *)&state);
-
+	if (final_status == ASYNC_COMPLETED)
+		file_adaptive_update(adaptive, bytes);
 	return final_status;
 }

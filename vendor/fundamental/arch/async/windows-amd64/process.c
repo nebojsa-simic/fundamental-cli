@@ -1,6 +1,5 @@
 #include "async/async.h"
-#include <stdio.h>
-#include <string.h>
+#include "string/string.h"
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -92,11 +91,16 @@ AsyncResult platform_process_spawn(AsyncResult *result, const char *executable,
 	}
 
 	char cmd_line[4096] = { 0 };
-	snprintf(cmd_line, sizeof(cmd_line), "\"%s\"", executable);
+	cmd_line[0] = '"';
+	fun_string_copy(executable, cmd_line + 1);
+	StringLength exe_len = fun_string_length(executable);
+	cmd_line[1 + exe_len] = '"';
+	cmd_line[2 + exe_len] = '\0';
 	if (args != NULL) {
 		for (int i = 0; args[i] != NULL; i++) {
-			strcat(cmd_line, " ");
-			strcat(cmd_line, args[i]);
+			StringLength cur_len = fun_string_length((String)cmd_line);
+			cmd_line[cur_len] = ' ';
+			fun_string_copy((String)args[i], cmd_line + cur_len + 1);
 		}
 	}
 

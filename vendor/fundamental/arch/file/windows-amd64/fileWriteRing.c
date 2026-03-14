@@ -1,4 +1,4 @@
-#include "fileRead.h"
+#include "fileWrite.h"
 #include "fileAdaptive.h"
 
 #include <windows.h>
@@ -13,20 +13,20 @@ typedef struct {
 	HIORING io_ring;
 	IORING_CREATE_FLAGS flags;
 	IORING_INFO info;
-} IoRingContext;
+} IoRingWriteContext;
 
 typedef struct {
-	Read parameters;
-	IoRingContext *global_context;
+	Write parameters;
+	IoRingWriteContext *global_context;
 	HANDLE file_handle;
 	uint64_t request_id;
 	AsyncStatus async_status;
-} RingReadState;
+} RingWriteState;
 
-static IoRingContext global_read_context = { 0 };
-static uint64_t next_read_request_id = 0;
+static IoRingWriteContext global_write_context = { 0 };
+static uint64_t next_write_request_id = 0;
 
-static inline ErrorResult initialize_io_ring(IoRingContext *ctx)
+static inline ErrorResult initialize_write_io_ring(IoRingWriteContext *ctx)
 {
 	IORING_CREATE_FLAGS flags =
 		(IORING_CREATE_FLAGS){ .Advisory = IORING_CREATE_ADVISORY_FLAGS_NONE,
@@ -40,15 +40,15 @@ static inline ErrorResult initialize_io_ring(IoRingContext *ctx)
 	return ERROR_RESULT_NO_ERROR;
 }
 
-static inline AsyncStatus poll_ring_read(AsyncResult *result)
+static AsyncStatus poll_ring_write(AsyncResult *result)
 {
-	RingReadState *state = result->state;
+	RingWriteState *state = result->state;
 	IORING_CQE cqe;
 
 	if (state->async_status != ASYNC_PENDING) {
 		AsyncStatus status = state->async_status;
 		FileAdaptiveState *adaptive = state->parameters.adaptive;
-		uint64_t bytes = state->parameters.bytes_to_read;
+		uint64_t bytes = state->parameters.bytes_to_write;
 		if (state->file_handle != INVALID_HANDLE_VALUE)
 			CloseHandle(state->file_handle);
 		void *mem = state;
@@ -64,7 +64,7 @@ static inline AsyncStatus poll_ring_read(AsyncResult *result)
 		state->async_status = status;
 		if (cqe.UserData == state->request_id) {
 			FileAdaptiveState *adaptive = state->parameters.adaptive;
-			uint64_t bytes = state->parameters.bytes_to_read;
+			uint64_t bytes = state->parameters.bytes_to_write;
 			if (state->file_handle != INVALID_HANDLE_VALUE)
 				CloseHandle(state->file_handle);
 			void *mem = state;
@@ -77,41 +77,40 @@ static inline AsyncStatus poll_ring_read(AsyncResult *result)
 	return ASYNC_PENDING;
 }
 
-AsyncResult create_ring_read(Read parameters)
+AsyncResult create_ring_write(Write parameters)
 {
-	MemoryResult mem_result = fun_memory_allocate(sizeof(RingReadState));
+	MemoryResult mem_result = fun_memory_allocate(sizeof(RingWriteState));
 	if (fun_error_is_error(mem_result.error))
 		return (AsyncResult){ .status = ASYNC_ERROR,
 							  .error = mem_result.error };
 
 	HANDLE file = INVALID_HANDLE_VALUE;
-	RingReadState *state = (RingReadState *)mem_result.value;
-	state->global_context = &global_read_context;
-	state->request_id = next_read_request_id++;
+	RingWriteState *state = (RingWriteState *)mem_result.value;
+	state->global_context = &global_write_context;
+	state->request_id = next_write_request_id++;
 	state->async_status = ASYNC_PENDING;
 	state->parameters = parameters;
 
 	if (!state->global_context->io_ring) {
-		ErrorResult init = initialize_io_ring(state->global_context);
+		ErrorResult init = initialize_write_io_ring(state->global_context);
 		if (fun_error_is_error(init))
 			goto cleanup;
 	}
 
-	file = CreateFile(parameters.file_path, GENERIC_READ, FILE_SHARE_READ, NULL,
-					  OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
+	file = CreateFile(parameters.file_path, GENERIC_WRITE, 0, NULL, OPEN_ALWAYS,
+					  FILE_FLAG_OVERLAPPED, NULL);
 	if (file == INVALID_HANDLE_VALUE)
 		goto cleanup;
 
 	state->file_handle = file;
 
 	IORING_HANDLE_REF file_ref = IoRingHandleRefFromHandle(file);
-	IORING_BUFFER_REF buffer_ref =
-		IoRingBufferRefFromPointer(parameters.output);
+	IORING_BUFFER_REF buffer_ref = IoRingBufferRefFromPointer(parameters.input);
 
-	HRESULT hr = BuildIoRingReadFile(state->global_context->io_ring, file_ref,
-									 buffer_ref, parameters.bytes_to_read,
-									 parameters.offset, state->request_id,
-									 IOSQE_FLAGS_NONE);
+	HRESULT hr = BuildIoRingWriteFile(state->global_context->io_ring, file_ref,
+									  buffer_ref, parameters.bytes_to_write,
+									  parameters.offset, FILE_WRITE_FLAGS_NONE,
+									  state->request_id, IOSQE_FLAGS_NONE);
 	if (FAILED(hr))
 		goto cleanup;
 
@@ -121,7 +120,7 @@ AsyncResult create_ring_read(Read parameters)
 		goto cleanup;
 
 	return (AsyncResult){ .state = state,
-						  .poll = poll_ring_read,
+						  .poll = poll_ring_write,
 						  .status = ASYNC_PENDING };
 
 cleanup:
@@ -133,5 +132,5 @@ cleanup:
 		CloseHandle(file);
 	return (AsyncResult){ .status = ASYNC_ERROR,
 						  .error = { .code = 1,
-									 .message = "Ring read setup failed" } };
+									 .message = "Ring write setup failed" } };
 }

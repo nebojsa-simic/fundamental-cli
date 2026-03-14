@@ -135,4 +135,59 @@ ErrorResult fun_path_get_parent(String path, OutputString output);
  */
 ErrorResult fun_path_get_filename(String path, OutputString output);
 
+// ------------------------------------------------------------------
+// Path Existence Checks
+// ------------------------------------------------------------------
+
+/**
+ * Check if a file exists at the specified path
+ * 
+ * @param path REQUIRED - Path to check
+ * 
+ * @return boolResult with value=true if file exists, false otherwise.
+ *         Error codes: ERROR_CODE_NO_ERROR, ERROR_CODE_NULL_POINTER,
+ *         ERROR_CODE_PATH_INVALID, ERROR_CODE_PERMISSION_DENIED
+ * 
+ * Example:
+ * boolResult result = fun_file_exists("/home/user/file.txt");
+ * if (fun_error_is_ok(result.error) && result.value) {
+ *     // File exists
+ * }
+ */
+boolResult fun_file_exists(String path);
+
+/**
+ * Check if a directory exists at the specified path
+ * 
+ * @param path REQUIRED - Path to check
+ * 
+ * @return boolResult with value=true if directory exists, false otherwise.
+ *         Error codes: ERROR_CODE_NO_ERROR, ERROR_CODE_NULL_POINTER,
+ *         ERROR_CODE_PATH_INVALID, ERROR_CODE_PERMISSION_DENIED
+ * 
+ * Example:
+ * boolResult result = fun_directory_exists("/home/user/documents");
+ * if (fun_error_is_ok(result.error) && result.value) {
+ *     // Directory exists
+ * }
+ */
+boolResult fun_directory_exists(String path);
+
+/**
+ * Check if any path (file or directory) exists at the specified path
+ * 
+ * @param path REQUIRED - Path to check
+ * 
+ * @return boolResult with value=true if path exists, false otherwise.
+ *         Error codes: ERROR_CODE_NO_ERROR, ERROR_CODE_NULL_POINTER,
+ *         ERROR_CODE_PATH_INVALID, ERROR_CODE_PERMISSION_DENIED
+ * 
+ * Example:
+ * boolResult result = fun_path_exists("/home/user/documents");
+ * if (fun_error_is_ok(result.error) && result.value) {
+ *     // Path exists (either file or directory)
+ * }
+ */
+boolResult fun_path_exists(String path);
+
 #endif // LIBRARY_FILESYSTEM_H

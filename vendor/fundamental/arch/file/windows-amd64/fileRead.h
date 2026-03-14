@@ -13,3 +13,4 @@ typedef struct {
 } MMapState;
 
 AsyncStatus poll_mmap(AsyncResult *result);
+AsyncResult create_ring_read(Read parameters);

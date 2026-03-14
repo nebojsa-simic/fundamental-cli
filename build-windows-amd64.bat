@@ -22,12 +22,24 @@ gcc ^
     vendor/fundamental/arch/startup/windows-amd64/windows.c ^
     src/main.c ^
     src/cli.c ^
+    src/build/detector.c ^
+    src/build/generator.c ^
+    src/build/executor.c ^
     src/commands/cmd_version.c ^
     src/commands/cmd_help.c ^
     src/commands/cmd_init.c ^
+    src/commands/cmd_clean.c ^
+    src/commands/cmd_build.c ^
+    src/fun/platform.c ^
     vendor/fundamental/src/async/async.c ^
+    vendor/fundamental/src/async/process.c ^
+    vendor/fundamental/arch/async/windows-amd64/process.c ^
+    vendor/fundamental/arch/file/windows-amd64/fileRead.c ^
+    vendor/fundamental/arch/file/windows-amd64/fileReadMmap.c ^
+    vendor/fundamental/arch/file/windows-amd64/fileReadRing.c ^
     vendor/fundamental/arch/file/windows-amd64/fileWrite.c ^
     vendor/fundamental/arch/file/windows-amd64/fileWriteMmap.c ^
+    vendor/fundamental/arch/file/windows-amd64/fileWriteRing.c ^
     vendor/fundamental/src/console/console.c ^
     vendor/fundamental/src/string/stringConversion.c ^
     vendor/fundamental/src/string/stringOperations.c ^
@@ -36,7 +48,11 @@ gcc ^
     vendor/fundamental/arch/console/windows-amd64/console.c ^
     vendor/fundamental/arch/memory/windows-amd64/memory.c ^
     vendor/fundamental/src/filesystem/directory.c ^
+    vendor/fundamental/src/filesystem/file_exists.c ^
+    vendor/fundamental/src/filesystem/path.c ^
     vendor/fundamental/arch/filesystem/windows-amd64/directory.c ^
+    vendor/fundamental/arch/filesystem/windows-amd64/file_exists.c ^
+    vendor/fundamental/arch/filesystem/windows-amd64/path.c ^
     -lkernel32 ^
     -o fun.exe
 

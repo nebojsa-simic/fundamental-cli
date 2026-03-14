@@ -1,4 +1,4 @@
-#include "fileRead.h"
+#include "fileWrite.h"
 #include "fileAdaptive.h"
 
 #include <stdint.h>
@@ -12,10 +12,12 @@
 #define SYS_mmap 9
 #define SYS_munmap 11
 
-#define IORING_OP_READV 1
+#define IORING_OP_WRITEV 2
 #define IORING_ENTER_GETEVENTS 0x01
 
-#define O_RDONLY 0
+#define O_WRONLY 1
+#define O_CREAT 0100
+#define O_TRUNC 01000
 
 struct io_uring_sqe {
 	uint8_t opcode;
@@ -68,6 +70,16 @@ static inline long syscall2(long n, long a1, long a2)
 	return ret;
 }
 
+static inline long syscall3(long n, long a1, long a2, long a3)
+{
+	long ret;
+	__asm__ __volatile__("syscall"
+						 : "=a"(ret)
+						 : "a"(n), "D"(a1), "S"(a2), "d"(a3)
+						 : "rcx", "r11", "memory");
+	return ret;
+}
+
 static inline long syscall4(long n, long a1, long a2, long a3, long a4)
 {
 	long ret;
@@ -94,11 +106,11 @@ static inline long syscall6(long n, long a1, long a2, long a3, long a4, long a5,
 	return ret;
 }
 
-static AsyncStatus poll_io_ring(AsyncResult *result)
+static AsyncStatus poll_ring_write(AsyncResult *result)
 {
-	RingReadState *state = (RingReadState *)result->state;
+	RingWriteState *state = (RingWriteState *)result->state;
 	FileAdaptiveState *adaptive = state->parameters.adaptive;
-	uint64_t bytes = state->parameters.bytes_to_read;
+	uint64_t bytes = state->parameters.bytes_to_write;
 	AsyncStatus final_status = ASYNC_COMPLETED;
 
 	if (!state->ring_initialized) {
@@ -136,15 +148,13 @@ static AsyncStatus poll_io_ring(AsyncResult *result)
 			goto cleanup;
 		}
 		state->cq_ring = cq_mmap;
-		state->ring_mask = params.sq_entries - 1;
-		state->ring_entries = params.sq_entries;
 		state->ring_initialized = true;
 		return ASYNC_PENDING;
 	}
 
 	if (!state->file_opened) {
-		int fd = (int)syscall2(SYS_open, (long)state->parameters.file_path,
-							   O_RDONLY);
+		int fd = (int)syscall3(SYS_open, (long)state->parameters.file_path,
+							   O_WRONLY | O_CREAT | O_TRUNC, 0644);
 		if (fd < 0) {
 			result->error = fun_error_result(-fd, "Failed to open file");
 			final_status = ASYNC_ERROR;
@@ -157,11 +167,11 @@ static AsyncStatus poll_io_ring(AsyncResult *result)
 
 	if (!state->io_submitted) {
 		struct io_uring_sqe *sqe = (struct io_uring_sqe *)state->sq_ring;
-		sqe->opcode = IORING_OP_READV;
+		sqe->opcode = IORING_OP_WRITEV;
 		sqe->fd = state->file_fd;
 		sqe->off = state->parameters.offset;
-		sqe->addr = (uint64_t)(long)state->parameters.output;
-		sqe->len = state->parameters.bytes_to_read;
+		sqe->addr = (uint64_t)(long)state->parameters.input;
+		sqe->len = state->parameters.bytes_to_write;
 		sqe->user_data = 1;
 
 		long ret = syscall4(SYS_io_uring_enter, state->ring_fd, 1, 1,
@@ -171,7 +181,6 @@ static AsyncStatus poll_io_ring(AsyncResult *result)
 			final_status = ASYNC_ERROR;
 			goto cleanup;
 		}
-
 		state->io_submitted = true;
 		return ASYNC_PENDING;
 	}
@@ -179,7 +188,8 @@ static AsyncStatus poll_io_ring(AsyncResult *result)
 	struct io_uring_cqe *cqe = (struct io_uring_cqe *)state->cq_ring;
 	if (cqe->user_data == 1) {
 		if (cqe->res < 0) {
-			result->error = fun_error_result(-cqe->res, "io_uring read failed");
+			result->error =
+				fun_error_result(-cqe->res, "io_uring write failed");
 			final_status = ASYNC_ERROR;
 		} else {
 			result->error = ERROR_RESULT_NO_ERROR;
@@ -203,25 +213,24 @@ cleanup:
 	return final_status;
 }
 
-AsyncResult create_ring_read(Read parameters)
+AsyncResult create_ring_write(Write parameters)
 {
-	MemoryResult mem_result = fun_memory_allocate(sizeof(RingReadState));
+	MemoryResult mem_result = fun_memory_allocate(sizeof(RingWriteState));
 	if (fun_error_is_error(mem_result.error))
 		return (AsyncResult){ .status = ASYNC_ERROR,
 							  .error = mem_result.error };
 
-	RingReadState *state = (RingReadState *)mem_result.value;
-	*state = (RingReadState){ .parameters = parameters,
-							  .ring_fd = -1,
-							  .file_fd = -1,
-							  .sq_ring = NULL,
-							  .cq_ring = NULL,
-							  .ring_initialized = false,
-							  .file_opened = false,
-							  .io_submitted = false,
-							  .mapped_buffer = NULL };
+	RingWriteState *state = (RingWriteState *)mem_result.value;
+	*state = (RingWriteState){ .parameters = parameters,
+							   .ring_fd = -1,
+							   .file_fd = -1,
+							   .sq_ring = NULL,
+							   .cq_ring = NULL,
+							   .ring_initialized = false,
+							   .file_opened = false,
+							   .io_submitted = false };
 
 	return (AsyncResult){ .state = state,
-						  .poll = poll_io_ring,
+						  .poll = poll_ring_write,
 						  .status = ASYNC_PENDING };
 }

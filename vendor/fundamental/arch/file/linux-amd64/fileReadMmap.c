@@ -1,11 +1,11 @@
 #include "fileRead.h"
+#include "fileAdaptive.h"
 
 #include <stdint.h>
 #include <stddef.h>
 
 #define NULL ((void *)0)
 
-typedef long ssize_t;
 typedef unsigned long size_t;
 typedef long off_t;
 
@@ -18,9 +18,7 @@ typedef long off_t;
 #define O_RDONLY 0
 
 #define PROT_READ 0x1
-#define PROT_WRITE 0x2
 #define MAP_PRIVATE 0x2
-#define MAP_SHARED 0x1
 
 struct stat {
 	unsigned long st_dev;
@@ -94,6 +92,8 @@ static inline int sys_munmap(void *addr, size_t length)
 AsyncStatus poll_mmap(AsyncResult *result)
 {
 	MMapState *state = (MMapState *)result->state;
+	FileAdaptiveState *adaptive = state->parameters.adaptive;
+	uint64_t bytes = state->parameters.bytes_to_read;
 	AsyncStatus final_status = ASYNC_COMPLETED;
 
 	if (state->file_descriptor == 0) {
@@ -119,7 +119,6 @@ AsyncStatus poll_mmap(AsyncResult *result)
 		uint64_t granularity = PAGE_SIZE;
 		state->adjusted_offset =
 			(state->parameters.offset / granularity) * granularity;
-
 		uint64_t view_size =
 			state->parameters.bytes_to_read +
 			(state->parameters.offset - state->adjusted_offset);
@@ -144,7 +143,6 @@ AsyncStatus poll_mmap(AsyncResult *result)
 	if (fun_error_is_error(copy_result.error)) {
 		result->error = copy_result.error;
 		final_status = ASYNC_ERROR;
-		goto cleanup;
 	}
 
 cleanup:
@@ -155,10 +153,11 @@ cleanup:
 				(state->parameters.offset - state->adjusted_offset);
 			sys_munmap(state->mapped_address, view_size);
 		}
-		if (state->file_descriptor >= 0) {
+		if (state->file_descriptor >= 0)
 			syscall1(SYS_close, state->file_descriptor);
-		}
 		fun_memory_free((Memory *)&state);
 	}
+	if (final_status == ASYNC_COMPLETED)
+		file_adaptive_update(adaptive, bytes);
 	return final_status;
 }
