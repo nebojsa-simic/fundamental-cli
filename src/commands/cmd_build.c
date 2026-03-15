@@ -79,35 +79,25 @@ int cmd_build_execute(int argc, const char **argv)
 		fun_console_error_line("Warning: Unknown architecture, assuming amd64");
 	}
 
-	// Check for existing build scripts
-	BuildDetectionResult detect_result = build_detect_current();
-
+	// Always regenerate the build script so new/removed source files are picked up
 	if (verbose) {
-		fun_console_write("Checking for build script: ");
-		fun_console_write_line(detect_result.script_path);
+		fun_console_write_line("Generating build script...");
 	}
 
 	BuildGenerationResult gen_result;
 	BuildExecutionResult exec_result;
 
-	if (detect_result.status == BUILD_DETECTED_MISSING) {
-		// No existing script found, generate one
-		if (verbose) {
-			fun_console_write_line("No build script found, generating...");
-		}
+	gen_result = build_generate_current();
 
-		gen_result = build_generate_current();
+	if (gen_result.status != BUILD_GENERATED_SUCCESS) {
+		fun_console_write("Error generating build script: ");
+		fun_console_write_line(gen_result.error_message);
+		return 1;
+	}
 
-		if (gen_result.status != BUILD_GENERATED_SUCCESS) {
-			fun_console_write("Error generating build script: ");
-			fun_console_write_line(gen_result.error_message);
-			return 1;
-		}
-
-		if (verbose) {
-			fun_console_write("Generated: ");
-			fun_console_write_line(gen_result.script_path);
-		}
+	if (verbose) {
+		fun_console_write("Generated: ");
+		fun_console_write_line(gen_result.script_path);
 	}
 
 	// Execute the build script

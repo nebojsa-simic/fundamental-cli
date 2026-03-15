@@ -115,22 +115,22 @@ REM -----------------------------------------------------------------------
 echo.
 echo [CHECK] Build output
 
-if not exist "build\app-windows-amd64.exe" (
-    echo [FAIL] build\app-windows-amd64.exe not found
+if not exist "build\my-project-windows-amd64.exe" (
+    echo [FAIL] build\my-project-windows-amd64.exe not found
     exit /b 1
 )
-echo [PASS] build\app-windows-amd64.exe exists
+echo [PASS] build\my-project-windows-amd64.exe exists
 set /a PASS+=1
 
 REM -----------------------------------------------------------------------
 echo.
-echo [RUN] Execute build\app-windows-amd64.exe
-"%SMOKE_DIR%\build\app-windows-amd64.exe"
+echo [RUN] Execute build\my-project-windows-amd64.exe
+"%SMOKE_DIR%\build\my-project-windows-amd64.exe"
 if %ERRORLEVEL% neq 0 (
-    echo [FAIL] build\app-windows-amd64.exe exited non-zero
+    echo [FAIL] build\my-project-windows-amd64.exe exited non-zero
     exit /b 1
 )
-echo [PASS] build\app-windows-amd64.exe ran successfully
+echo [PASS] build\my-project-windows-amd64.exe ran successfully
 set /a PASS+=1
 
 REM -----------------------------------------------------------------------
