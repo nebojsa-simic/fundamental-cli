@@ -3,14 +3,14 @@
 
 /* Forward declarations for arch-layer functions */
 AsyncResult fun_process_arch_spawn(const char *executable, const char **args,
-                                   const ProcessSpawnOptions *options,
-                                   ProcessResult *out);
+								   const ProcessSpawnOptions *options,
+								   ProcessResult *out);
 CanReturnError(void) fun_process_arch_terminate(ProcessResult *out);
 CanReturnError(void) fun_process_arch_free(ProcessResult *out);
 
 AsyncResult fun_process_spawn(const char *executable, const char **args,
-                               const ProcessSpawnOptions *options,
-                               ProcessResult *out)
+							  const ProcessSpawnOptions *options,
+							  ProcessResult *out)
 {
 	AsyncResult err;
 	err.poll = NULL;

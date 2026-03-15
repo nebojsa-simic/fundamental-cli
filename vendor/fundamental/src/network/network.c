@@ -3,51 +3,30 @@
  *
  * Implements:
  *   - NetworkAddress parse / format
- *   - NetworkBuffer slice / vector utilities
- *   - NetworkLoop lifecycle wrappers (delegate to arch layer)
- *   - TCP / UDP API wrappers (validate args, delegate to arch layer)
+ *   - Connection pool management
+ *   - Async poll functions for connect, send, receive_exact
+ *   - Public API: fun_network_tcp_connect/send/receive_exact/close/udp_send
  *
- * No OS-specific code lives here. Platform logic is in arch/network/.
+ * No OS-specific code lives here.  Platform logic is in arch/network/.
  */
 
 #include "../../include/network/network.h"
+#include "../../include/memory/memory.h"
 #include "../../include/string/string.h"
 
 /* ------------------------------------------------------------------
  * Arch-layer declarations (implemented per platform in arch/network/)
  * ------------------------------------------------------------------ */
 
-/* Loop */
-int fun_network_arch_loop_init(NetworkLoop *loop);
-void fun_network_arch_loop_destroy(NetworkLoop *loop);
-int fun_network_arch_loop_run(NetworkLoop *loop);
-int fun_network_arch_loop_run_once(NetworkLoop *loop, int timeout_ms);
-void fun_network_arch_loop_stop(NetworkLoop *loop);
-
-/* TCP */
-int fun_network_arch_tcp_connect(NetworkLoop *loop,
-								 NetworkConnection *connection,
-								 NetworkAddress address,
-								 NetworkBufferVector receive_buffers,
-								 NetworkHandlers handlers, int timeout_ms);
-int fun_network_arch_tcp_send(NetworkConnection *connection,
-							  NetworkBuffer buffer);
-int fun_network_arch_tcp_send_vector(NetworkConnection *connection,
-									 NetworkBufferVector vec);
-void fun_network_arch_tcp_close(NetworkConnection *connection);
-
-/* UDP */
-int fun_network_arch_udp_bind(NetworkLoop *loop, NetworkConnection *connection,
-							  NetworkAddress local_address,
-							  NetworkBuffer recv_buffer,
-							  NetworkHandlers handlers);
-int fun_network_arch_udp_send_to(NetworkConnection *connection,
-								 NetworkBuffer buffer,
-								 NetworkAddress destination);
-void fun_network_arch_udp_close(NetworkConnection *connection);
-
-/* Connection */
-void *fun_network_arch_connection_get_user_data(NetworkConnection *connection);
+int fun_network_arch_tcp_connect(NetworkAddress addr, intptr_t *out_fd);
+int fun_network_arch_tcp_poll_connect(intptr_t fd);
+int fun_network_arch_tcp_send(intptr_t fd, const void *data, size_t len,
+							  size_t *sent);
+int fun_network_arch_tcp_recv(intptr_t fd, void *data, size_t len,
+							  size_t *received);
+void fun_network_arch_tcp_close_fd(intptr_t fd);
+int fun_network_arch_udp_send(NetworkAddress addr, const void *data,
+							  size_t len);
 
 /* ------------------------------------------------------------------
  * Internal helpers
@@ -84,7 +63,7 @@ static int parse_hex_nibble(char c)
 
 /*
  * Parse a colon-separated port suffix ":NNNN" at str[pos..end).
- * Returns the port (0–65535) on success, or -1 on failure.
+ * Returns the port (0-65535) on success, or -1 on failure.
  */
 static int64_t parse_port_suffix(const char *str, size_t pos, size_t end)
 {
@@ -402,237 +381,404 @@ voidResult fun_network_address_to_string(NetworkAddress address, char *out_buf,
 }
 
 /* ------------------------------------------------------------------
- * NetworkBuffer utilities
+ * Connection pool
  * ------------------------------------------------------------------ */
 
-NetworkBufferResult fun_network_buffer_slice(NetworkBuffer buffer,
-											 size_t offset, size_t length)
+#define NETWORK_POOL_SIZE 16
+#define NETWORK_RX_BUF_DEFAULT 4096
+
+#define CONN_OP_NONE 0
+#define CONN_OP_CONNECT 1
+#define CONN_OP_SEND 2
+#define CONN_OP_RECV_EXACT 3
+
+struct TcpNetworkConnection_s {
+	intptr_t fd; /* socket fd; -1 = not connected */
+	int in_use;
+	Memory rx_buf; /* overflow / staging buffer */
+	size_t rx_head; /* offset of first valid byte in rx_buf */
+	size_t rx_len; /* bytes of valid data in rx_buf */
+	size_t rx_cap; /* total capacity of rx_buf */
+	int op_type; /* current op: CONN_OP_* */
+	union {
+		struct {
+			OutputTcpNetworkConnection out_conn;
+		} connect;
+		struct {
+			const void *data;
+			size_t total;
+			size_t sent;
+		} send;
+		struct {
+			OutputNetworkBuffer response;
+			size_t bytes;
+			size_t received;
+		} recv_exact;
+	} op;
+};
+
+static struct TcpNetworkConnection_s conn_pool[NETWORK_POOL_SIZE];
+static int pool_ready = 0;
+static size_t g_rx_buf_size = NETWORK_RX_BUF_DEFAULT;
+
+static void pool_init(void)
 {
-	NetworkBufferResult result;
-	result.error = ERROR_RESULT_NO_ERROR;
-
-	if (offset + length > buffer.length) {
-		result.error = ERROR_RESULT_NETWORK_ADDRESS_PARSE_FAILED;
-		return result;
+	if (pool_ready)
+		return;
+	for (int i = 0; i < NETWORK_POOL_SIZE; i++) {
+		conn_pool[i].fd = -1;
+		conn_pool[i].in_use = 0;
+		conn_pool[i].rx_buf = (Memory)0;
+		conn_pool[i].rx_head = 0;
+		conn_pool[i].rx_len = 0;
+		conn_pool[i].rx_cap = 0;
+		conn_pool[i].op_type = CONN_OP_NONE;
 	}
-
-	result.value.data = (char *)buffer.data + offset;
-	result.value.length = length;
-	return result;
+	pool_ready = 1;
 }
 
-size_t fun_network_buffer_vector_total_length(NetworkBufferVector vec)
+static struct TcpNetworkConnection_s *pool_acquire(void)
 {
-	size_t total = 0;
-	for (size_t i = 0; i < vec.count; i++)
-		total += vec.buffers[i].length;
-	return total;
+	pool_init();
+	for (int i = 0; i < NETWORK_POOL_SIZE; i++) {
+		if (!conn_pool[i].in_use) {
+			conn_pool[i].in_use = 1;
+			conn_pool[i].fd = -1;
+			conn_pool[i].rx_head = 0;
+			conn_pool[i].rx_len = 0;
+			conn_pool[i].op_type = CONN_OP_NONE;
+			return &conn_pool[i];
+		}
+	}
+	return (struct TcpNetworkConnection_s *)0;
+}
+
+static void pool_release(struct TcpNetworkConnection_s *conn)
+{
+	if (!conn)
+		return;
+	if (conn->fd != -1) {
+		fun_network_arch_tcp_close_fd(conn->fd);
+		conn->fd = -1;
+	}
+	if (conn->rx_buf) {
+		fun_memory_free(&conn->rx_buf);
+		conn->rx_buf = (Memory)0;
+	}
+	conn->rx_head = 0;
+	conn->rx_len = 0;
+	conn->rx_cap = 0;
+	conn->op_type = CONN_OP_NONE;
+	conn->in_use = 0;
 }
 
 /* ------------------------------------------------------------------
- * NetworkLoop — lifecycle (delegate to arch)
+ * Poll functions
  * ------------------------------------------------------------------ */
 
-voidResult fun_network_loop_init(NetworkLoop *loop)
+static AsyncStatus poll_connect(AsyncResult *result)
 {
-	voidResult result;
-	result.error = ERROR_RESULT_NO_ERROR;
-	if (!loop) {
-		result.error = ERROR_RESULT_NULL_POINTER;
-		return result;
+	struct TcpNetworkConnection_s *conn =
+		(struct TcpNetworkConnection_s *)result->state;
+
+	int rc = fun_network_arch_tcp_poll_connect(conn->fd);
+	if (rc == 0) {
+		/* Still pending */
+		result->status = ASYNC_PENDING;
+		return ASYNC_PENDING;
 	}
-	if (fun_network_arch_loop_init(loop) != 0)
-		result.error = ERROR_RESULT_NETWORK_INIT_FAILED;
-	return result;
+	if (rc == 1) {
+		/* Connected — allocate rx staging buffer */
+		MemoryResult mr = fun_memory_allocate(g_rx_buf_size);
+		if (fun_error_is_error(mr.error)) {
+			pool_release(conn);
+			result->status = ASYNC_ERROR;
+			result->error = ERROR_RESULT_NETWORK_CONNECT_FAILED;
+			return ASYNC_ERROR;
+		}
+		conn->rx_buf = mr.value;
+		conn->rx_cap = g_rx_buf_size;
+		conn->rx_head = 0;
+		conn->rx_len = 0;
+		conn->op_type = CONN_OP_NONE;
+		*(conn->op.connect.out_conn) = conn;
+		result->status = ASYNC_COMPLETED;
+		result->error = ERROR_RESULT_NO_ERROR;
+		return ASYNC_COMPLETED;
+	}
+	/* Error */
+	pool_release(conn);
+	result->status = ASYNC_ERROR;
+	result->error = ERROR_RESULT_NETWORK_CONNECT_FAILED;
+	return ASYNC_ERROR;
 }
 
-voidResult fun_network_loop_run(NetworkLoop *loop)
+static AsyncStatus poll_send(AsyncResult *result)
 {
-	voidResult result;
-	result.error = ERROR_RESULT_NO_ERROR;
-	if (!loop) {
-		result.error = ERROR_RESULT_NULL_POINTER;
-		return result;
+	struct TcpNetworkConnection_s *conn =
+		(struct TcpNetworkConnection_s *)result->state;
+
+	const uint8_t *data = (const uint8_t *)conn->op.send.data;
+	size_t total = conn->op.send.total;
+	size_t sent = conn->op.send.sent;
+
+	while (sent < total) {
+		size_t chunk = 0;
+		int rc = fun_network_arch_tcp_send(conn->fd, data + sent, total - sent,
+										   &chunk);
+		if (rc == 1) {
+			/* Would-block */
+			conn->op.send.sent = sent;
+			result->status = ASYNC_PENDING;
+			return ASYNC_PENDING;
+		}
+		if (rc == -1) {
+			conn->op_type = CONN_OP_NONE;
+			result->status = ASYNC_ERROR;
+			result->error = ERROR_RESULT_NETWORK_SEND_FAILED;
+			return ASYNC_ERROR;
+		}
+		sent += chunk;
 	}
-	if (fun_network_arch_loop_run(loop) != 0)
-		result.error =
-			fun_error_result(ERROR_CODE_NETWORK_INIT_FAILED, "Loop run failed");
-	return result;
+
+	conn->op.send.sent = sent;
+	conn->op_type = CONN_OP_NONE;
+	result->status = ASYNC_COMPLETED;
+	result->error = ERROR_RESULT_NO_ERROR;
+	return ASYNC_COMPLETED;
 }
 
-voidResult fun_network_loop_run_once(NetworkLoop *loop, int timeout_ms)
+static AsyncStatus poll_recv_exact(AsyncResult *result)
 {
-	voidResult result;
-	result.error = ERROR_RESULT_NO_ERROR;
-	if (!loop) {
-		result.error = ERROR_RESULT_NULL_POINTER;
-		return result;
-	}
-	if (fun_network_arch_loop_run_once(loop, timeout_ms) != 0)
-		result.error = fun_error_result(ERROR_CODE_NETWORK_INIT_FAILED,
-										"Loop run_once failed");
-	return result;
-}
+	struct TcpNetworkConnection_s *conn =
+		(struct TcpNetworkConnection_s *)result->state;
 
-voidResult fun_network_loop_stop(NetworkLoop *loop)
-{
-	voidResult result;
-	result.error = ERROR_RESULT_NO_ERROR;
-	if (!loop) {
-		result.error = ERROR_RESULT_NULL_POINTER;
-		return result;
-	}
-	fun_network_arch_loop_stop(loop);
-	return result;
-}
+	uint8_t *dest = (uint8_t *)conn->op.recv_exact.response->data;
+	size_t bytes = conn->op.recv_exact.bytes;
+	size_t received = conn->op.recv_exact.received;
 
-voidResult fun_network_loop_destroy(NetworkLoop *loop)
-{
-	voidResult result;
-	result.error = ERROR_RESULT_NO_ERROR;
-	if (!loop) {
-		result.error = ERROR_RESULT_NULL_POINTER;
-		return result;
+	/* Step 1: drain from rx_buf first */
+	if (conn->rx_len > 0 && received < bytes) {
+		size_t take = bytes - received;
+		if (take > conn->rx_len)
+			take = conn->rx_len;
+		voidResult cr =
+			fun_memory_copy((Memory)((uint8_t *)conn->rx_buf + conn->rx_head),
+							(Memory)(dest + received), take);
+		(void)cr;
+		conn->rx_head += take;
+		conn->rx_len -= take;
+		if (conn->rx_len == 0)
+			conn->rx_head = 0;
+		received += take;
 	}
-	fun_network_arch_loop_destroy(loop);
-	return result;
+
+	if (received >= bytes) {
+		conn->op.recv_exact.received = received;
+		conn->op.recv_exact.response->length = bytes;
+		conn->op_type = CONN_OP_NONE;
+		result->status = ASYNC_COMPLETED;
+		result->error = ERROR_RESULT_NO_ERROR;
+		return ASYNC_COMPLETED;
+	}
+
+	/* Step 2: need more bytes from socket — recv into rx_buf */
+	/* Compact rx_buf if needed to make space at the tail */
+	size_t space = conn->rx_cap - conn->rx_head - conn->rx_len;
+	if (space == 0) {
+		/* Compact: move rx_len bytes to front */
+		if (conn->rx_head > 0 && conn->rx_len > 0) {
+			uint8_t *buf = (uint8_t *)conn->rx_buf;
+			for (size_t i = 0; i < conn->rx_len; i++)
+				buf[i] = buf[conn->rx_head + i];
+			conn->rx_head = 0;
+		}
+		space = conn->rx_cap - conn->rx_len;
+	}
+
+	if (space == 0) {
+		/* Buffer full, can't recv more — should not happen normally */
+		result->status = ASYNC_PENDING;
+		return ASYNC_PENDING;
+	}
+
+	/* Recv into the tail of rx_buf */
+	uint8_t *tail = (uint8_t *)conn->rx_buf + conn->rx_head + conn->rx_len;
+	size_t got = 0;
+	int rc = fun_network_arch_tcp_recv(conn->fd, tail, space, &got);
+	if (rc == 1) {
+		/* Would-block */
+		conn->op.recv_exact.received = received;
+		result->status = ASYNC_PENDING;
+		return ASYNC_PENDING;
+	}
+	if (rc == -1) {
+		conn->op_type = CONN_OP_NONE;
+		result->status = ASYNC_ERROR;
+		result->error = ERROR_RESULT_NETWORK_RECEIVE_FAILED;
+		return ASYNC_ERROR;
+	}
+	if (got == 0) {
+		/* EOF / connection closed */
+		conn->op_type = CONN_OP_NONE;
+		result->status = ASYNC_ERROR;
+		result->error = ERROR_RESULT_NETWORK_CLOSED;
+		return ASYNC_ERROR;
+	}
+	conn->rx_len += got;
+
+	/* Drain what we need from rx_buf into dest */
+	size_t take = bytes - received;
+	if (take > conn->rx_len)
+		take = conn->rx_len;
+	voidResult cr =
+		fun_memory_copy((Memory)((uint8_t *)conn->rx_buf + conn->rx_head),
+						(Memory)(dest + received), take);
+	(void)cr;
+	conn->rx_head += take;
+	conn->rx_len -= take;
+	if (conn->rx_len == 0)
+		conn->rx_head = 0;
+	received += take;
+	conn->op.recv_exact.received = received;
+
+	if (received >= bytes) {
+		conn->op.recv_exact.response->length = bytes;
+		conn->op_type = CONN_OP_NONE;
+		result->status = ASYNC_COMPLETED;
+		result->error = ERROR_RESULT_NO_ERROR;
+		return ASYNC_COMPLETED;
+	}
+
+	result->status = ASYNC_PENDING;
+	return ASYNC_PENDING;
 }
 
 /* ------------------------------------------------------------------
- * TCP — delegate to arch
+ * Public API
  * ------------------------------------------------------------------ */
 
-voidResult fun_network_tcp_connect(NetworkLoop *loop,
-								   NetworkConnection *connection,
-								   NetworkAddress address,
-								   NetworkBufferVector receive_buffers,
-								   NetworkHandlers handlers, int timeout_ms)
+AsyncResult fun_network_tcp_connect(NetworkAddress address,
+									OutputTcpNetworkConnection out_conn)
 {
-	voidResult result;
+	AsyncResult result;
+	result.poll = poll_connect;
+	result.state = (void *)0;
 	result.error = ERROR_RESULT_NO_ERROR;
-	if (!loop || !connection) {
+
+	if (!out_conn) {
+		result.status = ASYNC_ERROR;
 		result.error = ERROR_RESULT_NULL_POINTER;
 		return result;
 	}
-	if (receive_buffers.count > 0 && !receive_buffers.buffers) {
-		result.error = ERROR_RESULT_NULL_POINTER;
-		return result;
-	}
-	int rc = fun_network_arch_tcp_connect(
-		loop, connection, address, receive_buffers, handlers, timeout_ms);
-	if (rc != 0)
+
+	struct TcpNetworkConnection_s *conn = pool_acquire();
+	if (!conn) {
+		result.status = ASYNC_ERROR;
 		result.error = ERROR_RESULT_NETWORK_CONNECT_FAILED;
+		return result;
+	}
+
+	intptr_t fd = -1;
+	int rc = fun_network_arch_tcp_connect(address, &fd);
+	if (rc == -1) {
+		pool_release(conn);
+		result.status = ASYNC_ERROR;
+		result.error = ERROR_RESULT_NETWORK_CONNECT_FAILED;
+		return result;
+	}
+
+	conn->fd = fd;
+	conn->op_type = CONN_OP_CONNECT;
+	conn->op.connect.out_conn = out_conn;
+	*out_conn = (TcpNetworkConnection)0;
+
+	result.state = (void *)conn;
+	result.status = ASYNC_PENDING;
 	return result;
 }
 
-voidResult fun_network_tcp_send(NetworkConnection *connection,
-								NetworkBuffer buffer)
+AsyncResult fun_network_tcp_send(TcpNetworkConnection conn, const void *data,
+								 size_t length)
 {
-	voidResult result;
+	AsyncResult result;
+	result.poll = poll_send;
+	result.state = (void *)0;
 	result.error = ERROR_RESULT_NO_ERROR;
-	if (!connection) {
+
+	if (!conn || !data) {
+		result.status = ASYNC_ERROR;
 		result.error = ERROR_RESULT_NULL_POINTER;
 		return result;
 	}
-	int rc = fun_network_arch_tcp_send(connection, buffer);
-	if (rc == 1)
-		result.error = ERROR_RESULT_NETWORK_WOULD_BLOCK;
-	else if (rc != 0)
+
+	conn->op_type = CONN_OP_SEND;
+	conn->op.send.data = data;
+	conn->op.send.total = length;
+	conn->op.send.sent = 0;
+
+	result.state = (void *)conn;
+	result.status = ASYNC_PENDING;
+	return result;
+}
+
+AsyncResult fun_network_tcp_receive_exact(TcpNetworkConnection conn,
+										  OutputNetworkBuffer response,
+										  size_t bytes)
+{
+	AsyncResult result;
+	result.poll = poll_recv_exact;
+	result.state = (void *)0;
+	result.error = ERROR_RESULT_NO_ERROR;
+
+	if (!conn || !response) {
+		result.status = ASYNC_ERROR;
+		result.error = ERROR_RESULT_NULL_POINTER;
+		return result;
+	}
+
+	conn->op_type = CONN_OP_RECV_EXACT;
+	conn->op.recv_exact.response = response;
+	conn->op.recv_exact.bytes = bytes;
+	conn->op.recv_exact.received = 0;
+
+	result.state = (void *)conn;
+	result.status = ASYNC_PENDING;
+	return result;
+}
+
+voidResult fun_network_tcp_close(TcpNetworkConnection conn)
+{
+	voidResult result;
+	result.error = ERROR_RESULT_NO_ERROR;
+	if (!conn) {
+		result.error = ERROR_RESULT_NULL_POINTER;
+		return result;
+	}
+	pool_release(conn);
+	return result;
+}
+
+AsyncResult fun_network_udp_send(NetworkAddress addr, const void *data,
+								 size_t length)
+{
+	AsyncResult result;
+	result.poll = (AsyncPollFn)0;
+	result.state = (void *)0;
+
+	if (!data) {
+		result.status = ASYNC_ERROR;
+		result.error = ERROR_RESULT_NULL_POINTER;
+		return result;
+	}
+
+	int rc = fun_network_arch_udp_send(addr, data, length);
+	if (rc == 0) {
+		result.status = ASYNC_COMPLETED;
+		result.error = ERROR_RESULT_NO_ERROR;
+	} else {
+		result.status = ASYNC_ERROR;
 		result.error = ERROR_RESULT_NETWORK_SEND_FAILED;
-	return result;
-}
-
-voidResult fun_network_tcp_send_vector(NetworkConnection *connection,
-									   NetworkBufferVector vec)
-{
-	voidResult result;
-	result.error = ERROR_RESULT_NO_ERROR;
-	if (!connection) {
-		result.error = ERROR_RESULT_NULL_POINTER;
-		return result;
 	}
-	if (vec.count > 0 && !vec.buffers) {
-		result.error = ERROR_RESULT_NULL_POINTER;
-		return result;
-	}
-	int rc = fun_network_arch_tcp_send_vector(connection, vec);
-	if (rc == 1)
-		result.error = ERROR_RESULT_NETWORK_WOULD_BLOCK;
-	else if (rc != 0)
-		result.error = ERROR_RESULT_NETWORK_SEND_FAILED;
 	return result;
-}
-
-voidResult fun_network_tcp_close(NetworkConnection *connection)
-{
-	voidResult result;
-	result.error = ERROR_RESULT_NO_ERROR;
-	if (!connection) {
-		result.error = ERROR_RESULT_NULL_POINTER;
-		return result;
-	}
-	fun_network_arch_tcp_close(connection);
-	return result;
-}
-
-/* ------------------------------------------------------------------
- * UDP — delegate to arch
- * ------------------------------------------------------------------ */
-
-voidResult fun_network_udp_bind(NetworkLoop *loop,
-								NetworkConnection *connection,
-								NetworkAddress local_address,
-								NetworkBuffer recv_buffer,
-								NetworkHandlers handlers)
-{
-	voidResult result;
-	result.error = ERROR_RESULT_NO_ERROR;
-	if (!loop || !connection) {
-		result.error = ERROR_RESULT_NULL_POINTER;
-		return result;
-	}
-	int rc = fun_network_arch_udp_bind(loop, connection, local_address,
-									   recv_buffer, handlers);
-	if (rc != 0)
-		result.error = ERROR_RESULT_NETWORK_BIND_FAILED;
-	return result;
-}
-
-voidResult fun_network_udp_send_to(NetworkConnection *connection,
-								   NetworkBuffer buffer,
-								   NetworkAddress destination)
-{
-	voidResult result;
-	result.error = ERROR_RESULT_NO_ERROR;
-	if (!connection) {
-		result.error = ERROR_RESULT_NULL_POINTER;
-		return result;
-	}
-	int rc = fun_network_arch_udp_send_to(connection, buffer, destination);
-	if (rc != 0)
-		result.error = ERROR_RESULT_NETWORK_SEND_FAILED;
-	return result;
-}
-
-voidResult fun_network_udp_close(NetworkConnection *connection)
-{
-	voidResult result;
-	result.error = ERROR_RESULT_NO_ERROR;
-	if (!connection) {
-		result.error = ERROR_RESULT_NULL_POINTER;
-		return result;
-	}
-	fun_network_arch_udp_close(connection);
-	return result;
-}
-
-/* ------------------------------------------------------------------
- * Connection — user data
- * ------------------------------------------------------------------ */
-
-void *fun_network_connection_get_user_data(NetworkConnection *connection)
-{
-	if (!connection)
-		return NULL;
-	return fun_network_arch_connection_get_user_data(connection);
 }

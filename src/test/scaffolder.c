@@ -25,15 +25,17 @@ ScaffoldResult test_scaffold_build_scripts(String test_dir, String module_name,
 		return result;
 	}
 
-	fun_string_copy(test_dir, win_script_path);
+	fun_string_copy(test_dir, win_script_path, sizeof(win_script_path));
 	win_script_path[len] = '/';
 	fun_string_copy((String) "build-windows-amd64.bat",
-					win_script_path + len + 1);
+	                win_script_path + len + 1,
+	                sizeof(win_script_path) - len - 1);
 	win_script_path[len + 1 + 23] = '\0';
 
-	fun_string_copy(test_dir, lin_script_path);
+	fun_string_copy(test_dir, lin_script_path, sizeof(lin_script_path));
 	lin_script_path[len] = '/';
-	fun_string_copy((String) "build-linux-amd64.sh", lin_script_path + len + 1);
+	fun_string_copy((String) "build-linux-amd64.sh", lin_script_path + len + 1,
+	                sizeof(lin_script_path) - len - 1);
 	lin_script_path[len + 1 + 20] = '\0';
 
 	if (test_has_build_scripts(test_dir)) {
@@ -83,7 +85,7 @@ ScaffoldResult test_scaffold_build_scripts(String test_dir, String module_name,
 		"\r\n"
 		"echo Build complete: test.exe\r\n";
 
-	fun_string_copy(win_content, win_mem.value);
+	fun_string_copy(win_content, win_mem.value, 4096);
 
 	AsyncResult win_result = fun_write_memory_to_file(
 		(Write){ .file_path = win_script_path,
@@ -134,7 +136,7 @@ ScaffoldResult test_scaffold_build_scripts(String test_dir, String module_name,
 		"\n"
 		"echo \"Build complete: test\"\n";
 
-	fun_string_copy(lin_content, lin_mem.value);
+	fun_string_copy(lin_content, lin_mem.value, 4096);
 
 	AsyncResult lin_result = fun_write_memory_to_file(
 		(Write){ .file_path = lin_script_path,
@@ -167,14 +169,16 @@ int test_has_build_scripts(String test_dir)
 		return 0;
 	}
 
-	fun_string_copy(test_dir, windows_path);
+	fun_string_copy(test_dir, windows_path, sizeof(windows_path));
 	windows_path[len] = '/';
-	fun_string_copy((String) "build-windows-amd64.bat", windows_path + len + 1);
+	fun_string_copy((String) "build-windows-amd64.bat", windows_path + len + 1,
+	                sizeof(windows_path) - len - 1);
 	windows_path[len + 1 + 23] = '\0';
 
-	fun_string_copy(test_dir, linux_path);
+	fun_string_copy(test_dir, linux_path, sizeof(linux_path));
 	linux_path[len] = '/';
-	fun_string_copy((String) "build-linux-amd64.sh", linux_path + len + 1);
+	fun_string_copy((String) "build-linux-amd64.sh", linux_path + len + 1,
+	                sizeof(linux_path) - len - 1);
 	linux_path[len + 1 + 20] = '\0';
 
 	boolResult win_exists = fun_file_exists(windows_path);

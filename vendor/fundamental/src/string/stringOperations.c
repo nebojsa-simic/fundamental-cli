@@ -23,7 +23,6 @@ StringPosition fun_string_index_of(String haystack, String needle,
 	if (!haystack || !needle || *needle == '\0')
 		return -1;
 
-	String original_begin = haystack; // Store original start position
 	haystack += start; // Move to search start position
 
 	StringPosition index_of = start;
@@ -111,29 +110,53 @@ void fun_string_reverse_in_place(OutputString source)
 
 // Out-of-place operations
 
-void fun_string_join(String left, String right, OutputString output)
+voidResult fun_string_join(String left, String right, OutputString output,
+						   size_t output_size)
 {
-	if (!output)
-		return;
+	voidResult out;
+	if (!output) {
+		out.error = fun_error_result(ERROR_CODE_NULL_POINTER, "Null output");
+		return out;
+	}
 
-	while (left && *left) {
+	StringLength left_len = left ? fun_string_length(left) : 0;
+	StringLength right_len = right ? fun_string_length(right) : 0;
+	if (left_len + right_len + 1 > output_size) {
+		out.error = fun_error_result(ERROR_CODE_BUFFER_TOO_SMALL,
+									 "Output buffer too small");
+		return out;
+	}
+
+	while (left && *left)
 		*output++ = *left++;
-	}
-
-	while (right && *right) {
+	while (right && *right)
 		*output++ = *right++;
-	}
-
 	*output = '\0';
+
+	out.error = ERROR_RESULT_NO_ERROR;
+	return out;
 }
 
-void fun_string_copy(String source, OutputString output)
+voidResult fun_string_copy(String source, OutputString output,
+						   size_t output_size)
 {
-	if (!source || !output)
-		return;
-
-	while (*source) {
-		*output++ = *source++;
+	voidResult out;
+	if (!source || !output) {
+		out.error = fun_error_result(ERROR_CODE_NULL_POINTER, "Null argument");
+		return out;
 	}
+
+	StringLength len = fun_string_length(source);
+	if (len + 1 > output_size) {
+		out.error = fun_error_result(ERROR_CODE_BUFFER_TOO_SMALL,
+									 "Output buffer too small");
+		return out;
+	}
+
+	while (*source)
+		*output++ = *source++;
 	*output = '\0';
+
+	out.error = ERROR_RESULT_NO_ERROR;
+	return out;
 }

@@ -21,7 +21,7 @@ static inline Platform platform_get(void)
 static inline String platform_to_string(Platform platform)
 {
 	static char buf[32];
-	fun_platform_to_string(platform, buf);
+	fun_platform_to_string(platform, buf, sizeof(buf));
 	return (String)buf;
 }
 

@@ -102,9 +102,10 @@ TestDiscoveryResult test_discover(String tests_dir)
 			}
 			break;
 		}
-		fun_string_copy(tests_dir, test_path);
+		fun_string_copy(tests_dir, test_path, sizeof(test_path));
 		test_path[tests_len] = '/';
-		fun_string_copy(entry_name, test_path + tests_len + 1);
+		fun_string_copy(entry_name, test_path + tests_len + 1,
+		                sizeof(test_path) - tests_len - 1);
 		test_path[tests_len + 1 + entry_len] = '\0';
 
 		if (!test_has_test_file(test_path)) {
@@ -124,7 +125,7 @@ TestDiscoveryResult test_discover(String tests_dir)
 			}
 			break;
 		}
-		fun_string_copy(entry_name, name_mem.value);
+		fun_string_copy(entry_name, name_mem.value, entry_len + 1);
 		module.name = name_mem.value;
 
 		StringLength path_len = fun_string_length(test_path);
@@ -137,7 +138,7 @@ TestDiscoveryResult test_discover(String tests_dir)
 			}
 			break;
 		}
-		fun_string_copy(test_path, path_mem.value);
+		fun_string_copy(test_path, path_mem.value, path_len + 1);
 		module.path = path_mem.value;
 
 		MemoryResult file_mem = fun_memory_allocate(path_len + 8);
@@ -150,7 +151,7 @@ TestDiscoveryResult test_discover(String tests_dir)
 			}
 			break;
 		}
-		fun_string_copy(test_path, file_mem.value);
+		fun_string_copy(test_path, file_mem.value, path_len + 8);
 		char *file_ptr = (char *)file_mem.value;
 		file_ptr[path_len] = '/';
 		String test_c = (String) "test.c";
@@ -194,9 +195,10 @@ int test_has_test_file(String dir_path)
 	if (len + 7 >= sizeof(test_c_path)) {
 		return 0;
 	}
-	fun_string_copy(dir_path, test_c_path);
+	fun_string_copy(dir_path, test_c_path, sizeof(test_c_path));
 	test_c_path[len] = '/';
-	fun_string_copy((String) "test.c", test_c_path + len + 1);
+	fun_string_copy((String) "test.c", test_c_path + len + 1,
+	                sizeof(test_c_path) - len - 1);
 	test_c_path[len + 1 + 6] = '\0';
 	boolResult exists = fun_file_exists(test_c_path);
 	return fun_error_is_ok(exists.error) && exists.value;

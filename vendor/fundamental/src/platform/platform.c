@@ -12,54 +12,61 @@ void fun_platform_get(OutputPlatform platform)
 }
 
 ErrorResult fun_platform_os_to_string(PlatformOS os,
-									  OutputString platformOsResult)
+									  OutputString platformOsResult,
+									  size_t output_size)
 {
 	if (platformOsResult == NULL) {
 		return ERROR_RESULT_NULL_POINTER;
 	}
 
+	String value;
 	switch (os) {
 	case PLATFORM_OS_WINDOWS:
-		fun_string_copy((String) "windows", platformOsResult);
+		value = "windows";
 		break;
 	case PLATFORM_OS_LINUX:
-		fun_string_copy((String) "linux", platformOsResult);
+		value = "linux";
 		break;
 	case PLATFORM_OS_DARWIN:
-		fun_string_copy((String) "darwin", platformOsResult);
+		value = "darwin";
 		break;
 	default:
-		fun_string_copy((String) "unknown", platformOsResult);
+		value = "unknown";
 		break;
 	}
 
-	return ERROR_RESULT_NO_ERROR;
+	voidResult cr = fun_string_copy(value, platformOsResult, output_size);
+	return cr.error;
 }
 
 ErrorResult fun_platform_arch_to_string(PlatformArch arch,
-										OutputString platformArchResult)
+										OutputString platformArchResult,
+										size_t output_size)
 {
 	if (platformArchResult == NULL) {
 		return ERROR_RESULT_NULL_POINTER;
 	}
 
+	String value;
 	switch (arch) {
 	case PLATFORM_ARCH_AMD64:
-		fun_string_copy((String) "amd64", platformArchResult);
+		value = "amd64";
 		break;
 	case PLATFORM_ARCH_ARM64:
-		fun_string_copy((String) "arm64", platformArchResult);
+		value = "arm64";
 		break;
 	default:
-		fun_string_copy((String) "unknown", platformArchResult);
+		value = "unknown";
 		break;
 	}
 
-	return ERROR_RESULT_NO_ERROR;
+	voidResult cr = fun_string_copy(value, platformArchResult, output_size);
+	return cr.error;
 }
 
 CanReturnError(void)
-	fun_platform_to_string(Platform platform, OutputString output)
+	fun_platform_to_string(Platform platform, OutputString output,
+						   size_t output_size)
 {
 	voidResult result;
 
@@ -71,13 +78,15 @@ CanReturnError(void)
 	char os_buf[16];
 	char arch_buf[16];
 
-	ErrorResult os_err = fun_platform_os_to_string(platform.os, os_buf);
+	ErrorResult os_err =
+		fun_platform_os_to_string(platform.os, os_buf, sizeof(os_buf));
 	if (fun_error_is_error(os_err)) {
 		result.error = os_err;
 		return result;
 	}
 
-	ErrorResult arch_err = fun_platform_arch_to_string(platform.arch, arch_buf);
+	ErrorResult arch_err =
+		fun_platform_arch_to_string(platform.arch, arch_buf, sizeof(arch_buf));
 	if (fun_error_is_error(arch_err)) {
 		result.error = arch_err;
 		return result;
@@ -86,9 +95,24 @@ CanReturnError(void)
 	StringLength os_len = fun_string_length((String)os_buf);
 	StringLength arch_len = fun_string_length((String)arch_buf);
 
-	fun_string_copy((String)os_buf, output);
+	if (os_len + 1 + arch_len + 1 > output_size) {
+		result.error = fun_error_result(ERROR_CODE_BUFFER_TOO_SMALL,
+										"Output buffer too small");
+		return result;
+	}
+
+	voidResult cr = fun_string_copy((String)os_buf, output, output_size);
+	if (fun_error_is_error(cr.error)) {
+		result.error = cr.error;
+		return result;
+	}
 	output[os_len] = '-';
-	fun_string_copy((String)arch_buf, output + os_len + 1);
+	cr = fun_string_copy((String)arch_buf, output + os_len + 1,
+						 output_size - os_len - 1);
+	if (fun_error_is_error(cr.error)) {
+		result.error = cr.error;
+		return result;
+	}
 	output[os_len + 1 + arch_len] = '\0';
 
 	result.error = ERROR_RESULT_NO_ERROR;

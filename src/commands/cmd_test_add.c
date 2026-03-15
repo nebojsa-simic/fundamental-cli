@@ -26,8 +26,8 @@ int cmd_test_add_execute(int argc, const char **argv)
 		return 1;
 	}
 
-	fun_string_copy((String) "tests/", test_dir);
-	fun_string_copy(module_name, test_dir + 6);
+	fun_string_copy((String) "tests/", test_dir, sizeof(test_dir));
+	fun_string_copy(module_name, test_dir + 6, sizeof(test_dir) - 6);
 	test_dir[6 + module_len] = '\0';
 
 	ErrorResult mkdir_result = fun_filesystem_create_directory(test_dir);
@@ -40,24 +40,27 @@ int cmd_test_add_execute(int argc, const char **argv)
 	// Build test.c path
 	char test_c_path[520];
 	StringLength test_dir_len = fun_string_length(test_dir);
-	fun_string_copy(test_dir, test_c_path);
+	fun_string_copy(test_dir, test_c_path, sizeof(test_c_path));
 	test_c_path[test_dir_len] = '/';
-	fun_string_copy((String) "test.c", test_c_path + test_dir_len + 1);
+	fun_string_copy((String) "test.c", test_c_path + test_dir_len + 1,
+	                sizeof(test_c_path) - test_dir_len - 1);
 	test_c_path[test_dir_len + 1 + 6] = '\0';
 
 	// Build script paths
 	char win_script_path[520];
 	char lin_script_path[520];
-	fun_string_copy(test_dir, win_script_path);
+	fun_string_copy(test_dir, win_script_path, sizeof(win_script_path));
 	win_script_path[test_dir_len] = '/';
 	fun_string_copy((String) "build-windows-amd64.bat",
-					win_script_path + test_dir_len + 1);
+	                win_script_path + test_dir_len + 1,
+	                sizeof(win_script_path) - test_dir_len - 1);
 	win_script_path[test_dir_len + 1 + 23] = '\0';
 
-	fun_string_copy(test_dir, lin_script_path);
+	fun_string_copy(test_dir, lin_script_path, sizeof(lin_script_path));
 	lin_script_path[test_dir_len] = '/';
 	fun_string_copy((String) "build-linux-amd64.sh",
-					lin_script_path + test_dir_len + 1);
+	                lin_script_path + test_dir_len + 1,
+	                sizeof(lin_script_path) - test_dir_len - 1);
 	lin_script_path[test_dir_len + 1 + 20] = '\0';
 
 	// Write test.c file
@@ -76,14 +79,15 @@ int cmd_test_add_execute(int argc, const char **argv)
 		"	\n"
 		"	return 0;\n"
 		"}\n";
-	fun_string_template(test_template, params, 1, test_content);
+	fun_string_template(test_template, params, 1, test_content,
+	                    sizeof(test_content));
 
 	MemoryResult mem_result = fun_memory_allocate(512);
 	if (fun_error_is_error(mem_result.error)) {
 		fun_console_error_line("Error: Failed to allocate memory");
 		return 1;
 	}
-	fun_string_copy(test_content, mem_result.value);
+	fun_string_copy(test_content, mem_result.value, 512);
 
 	AsyncResult write_result = fun_write_memory_to_file(
 		(Write){ .file_path = test_c_path,

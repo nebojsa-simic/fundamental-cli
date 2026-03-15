@@ -28,7 +28,8 @@ void test_report_single(TestResult *test_result)
 		fun_console_write(test_result->name);
 		fun_console_write(" (exit code: ");
 		char code_str[16];
-		fun_string_from_int(test_result->exit_code, 10, code_str);
+		fun_string_from_int(test_result->exit_code, 10, code_str,
+		                    sizeof(code_str));
 		fun_console_write(code_str);
 		fun_console_write_line(")");
 	}
@@ -42,7 +43,7 @@ void test_report_summary(int passed, int failed, int total)
 	if (passed > 0) {
 		fun_console_write("\x1b[32m");
 		char passed_str[16];
-		fun_string_from_int(passed, 10, passed_str);
+		fun_string_from_int(passed, 10, passed_str, sizeof(passed_str));
 		fun_console_write(passed_str);
 		fun_console_write(" passed\x1b[0m");
 	}
@@ -54,14 +55,14 @@ void test_report_summary(int passed, int failed, int total)
 	if (failed > 0) {
 		fun_console_write("\x1b[31m");
 		char failed_str[16];
-		fun_string_from_int(failed, 10, failed_str);
+		fun_string_from_int(failed, 10, failed_str, sizeof(failed_str));
 		fun_console_write(failed_str);
 		fun_console_write(" failed\x1b[0m");
 	}
 
 	fun_console_write(" / ");
 	char total_str[16];
-	fun_string_from_int(total, 10, total_str);
+	fun_string_from_int(total, 10, total_str, sizeof(total_str));
 	fun_console_write(total_str);
 	fun_console_write_line(" total");
 }

@@ -43,14 +43,11 @@ static AsyncStatus win_process_poll(AsyncResult *result)
 		DWORD bytes_read = 0;
 		DWORD available = 0;
 		while (PeekNamedPipe(h->hStdout, NULL, 0, NULL, &available, NULL) &&
-			   available > 0 &&
-			   out->stdout_length < out->stdout_capacity) {
-			DWORD to_read =
-				(DWORD)(out->stdout_capacity - out->stdout_length);
+			   available > 0 && out->stdout_length < out->stdout_capacity) {
+			DWORD to_read = (DWORD)(out->stdout_capacity - out->stdout_length);
 			if (to_read > available)
 				to_read = available;
-			if (!ReadFile(h->hStdout,
-						  out->stdout_data + out->stdout_length,
+			if (!ReadFile(h->hStdout, out->stdout_data + out->stdout_length,
 						  to_read, &bytes_read, NULL))
 				break;
 			out->stdout_length += bytes_read;
@@ -63,14 +60,11 @@ static AsyncStatus win_process_poll(AsyncResult *result)
 		DWORD bytes_read = 0;
 		DWORD available = 0;
 		while (PeekNamedPipe(h->hStderr, NULL, 0, NULL, &available, NULL) &&
-			   available > 0 &&
-			   out->stderr_length < out->stderr_capacity) {
-			DWORD to_read =
-				(DWORD)(out->stderr_capacity - out->stderr_length);
+			   available > 0 && out->stderr_length < out->stderr_capacity) {
+			DWORD to_read = (DWORD)(out->stderr_capacity - out->stderr_length);
 			if (to_read > available)
 				to_read = available;
-			if (!ReadFile(h->hStderr,
-						  out->stderr_data + out->stderr_length,
+			if (!ReadFile(h->hStderr, out->stderr_data + out->stderr_length,
 						  to_read, &bytes_read, NULL))
 				break;
 			out->stderr_length += bytes_read;
@@ -84,8 +78,8 @@ static AsyncStatus win_process_poll(AsyncResult *result)
 }
 
 AsyncResult fun_process_arch_spawn(const char *executable, const char **args,
-                                   const ProcessSpawnOptions *options,
-                                   ProcessResult *out)
+								   const ProcessSpawnOptions *options,
+								   ProcessResult *out)
 {
 	(void)options;
 
@@ -110,7 +104,7 @@ AsyncResult fun_process_arch_spawn(const char *executable, const char **args,
 	if (!CreatePipe(&stdout_read, &stdout_write, &sa, 0)) {
 		result.status = ASYNC_ERROR;
 		result.error = fun_error_result(ERROR_CODE_PROCESS_SPAWN_FAILED,
-		                                "Failed to create stdout pipe");
+										"Failed to create stdout pipe");
 		return result;
 	}
 	if (!CreatePipe(&stderr_read, &stderr_write, &sa, 0)) {
@@ -118,7 +112,7 @@ AsyncResult fun_process_arch_spawn(const char *executable, const char **args,
 		CloseHandle(stdout_write);
 		result.status = ASYNC_ERROR;
 		result.error = fun_error_result(ERROR_CODE_PROCESS_SPAWN_FAILED,
-		                                "Failed to create stderr pipe");
+										"Failed to create stderr pipe");
 		return result;
 	}
 
@@ -128,15 +122,33 @@ AsyncResult fun_process_arch_spawn(const char *executable, const char **args,
 	/* Build command line */
 	char cmd_line[4096] = { 0 };
 	cmd_line[0] = '"';
-	fun_string_copy(executable, cmd_line + 1);
+	voidResult copy_r =
+		fun_string_copy(executable, cmd_line + 1, sizeof(cmd_line) - 1);
+	if (fun_error_is_error(copy_r.error)) {
+		result.status = ASYNC_ERROR;
+		result.error = copy_r.error;
+		return result;
+	}
 	StringLength exe_len = fun_string_length(executable);
 	cmd_line[1 + exe_len] = '"';
 	cmd_line[2 + exe_len] = '\0';
 	if (args != NULL) {
 		for (int i = 1; args[i] != NULL; i++) {
 			StringLength cur_len = fun_string_length((String)cmd_line);
+			if (cur_len + 2 >= sizeof(cmd_line)) {
+				result.status = ASYNC_ERROR;
+				result.error = fun_error_result(ERROR_CODE_BUFFER_TOO_SMALL,
+												"Command line too long");
+				return result;
+			}
 			cmd_line[cur_len] = ' ';
-			fun_string_copy((String)args[i], cmd_line + cur_len + 1);
+			copy_r = fun_string_copy((String)args[i], cmd_line + cur_len + 1,
+									 sizeof(cmd_line) - cur_len - 1);
+			if (fun_error_is_error(copy_r.error)) {
+				result.status = ASYNC_ERROR;
+				result.error = copy_r.error;
+				return result;
+			}
 		}
 	}
 
@@ -149,8 +161,8 @@ AsyncResult fun_process_arch_spawn(const char *executable, const char **args,
 
 	PROCESS_INFORMATION pi = { 0 };
 
-	if (!CreateProcessA(NULL, cmd_line, NULL, NULL, TRUE, 0, NULL, NULL,
-	                    &si, &pi)) {
+	if (!CreateProcessA(NULL, cmd_line, NULL, NULL, TRUE, 0, NULL, NULL, &si,
+						&pi)) {
 		DWORD err = GetLastError();
 		CloseHandle(stdout_read);
 		CloseHandle(stdout_write);
@@ -159,10 +171,10 @@ AsyncResult fun_process_arch_spawn(const char *executable, const char **args,
 		result.status = ASYNC_ERROR;
 		if (err == ERROR_FILE_NOT_FOUND) {
 			result.error = fun_error_result(ERROR_CODE_PROCESS_NOT_FOUND,
-			                                "Executable not found");
+											"Executable not found");
 		} else {
 			result.error = fun_error_result(ERROR_CODE_PROCESS_SPAWN_FAILED,
-			                                "Failed to create process");
+											"Failed to create process");
 		}
 		return result;
 	}
@@ -173,8 +185,8 @@ AsyncResult fun_process_arch_spawn(const char *executable, const char **args,
 	/* Store handles — use caller's _handle field with a stack-local struct.
 	 * We allocate with LocalAlloc (Windows heap, no stdlib) to persist
 	 * across poll calls. */
-	WinProcHandles *h = (WinProcHandles *)LocalAlloc(LMEM_ZEROINIT,
-	                                                  sizeof(WinProcHandles));
+	WinProcHandles *h =
+		(WinProcHandles *)LocalAlloc(LMEM_ZEROINIT, sizeof(WinProcHandles));
 	if (h == NULL) {
 		TerminateProcess(pi.hProcess, 1);
 		CloseHandle(pi.hProcess);
@@ -183,7 +195,7 @@ AsyncResult fun_process_arch_spawn(const char *executable, const char **args,
 		CloseHandle(stderr_read);
 		result.status = ASYNC_ERROR;
 		result.error = fun_error_result(ERROR_CODE_PROCESS_SPAWN_FAILED,
-		                                "Failed to allocate process handles");
+										"Failed to allocate process handles");
 		return result;
 	}
 
@@ -209,7 +221,7 @@ voidResult fun_process_arch_terminate(ProcessResult *out)
 	if (h->hProcess != NULL) {
 		if (!TerminateProcess(h->hProcess, 1)) {
 			r.error = fun_error_result(ERROR_CODE_PROCESS_TERMINATE_FAILED,
-			                           "Failed to terminate process");
+									   "Failed to terminate process");
 		}
 	}
 	return r;

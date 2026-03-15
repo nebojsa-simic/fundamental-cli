@@ -32,8 +32,8 @@
  * ProcessSpawnOptions — optional spawn configuration
  * ------------------------------------------------------------------ */
 typedef struct {
-	const char **environment;    /* NULL-terminated env vars; NULL = inherit */
-	int inherit_environment;     /* non-zero = inherit parent environment     */
+	const char **environment; /* NULL-terminated env vars; NULL = inherit */
+	int inherit_environment; /* non-zero = inherit parent environment     */
 } ProcessSpawnOptions;
 
 /* ------------------------------------------------------------------
@@ -43,14 +43,14 @@ typedef struct {
  * on completion, and sets _handle immediately after spawn.
  * ------------------------------------------------------------------ */
 typedef struct {
-	void *_handle;           /* opaque OS handle; for terminate/free only   */
-	char *stdout_data;       /* caller-provided buffer                      */
-	size_t stdout_capacity;  /* size of stdout_data buffer                  */
-	size_t stdout_length;    /* bytes written on completion                 */
-	char *stderr_data;       /* caller-provided buffer                      */
-	size_t stderr_capacity;  /* size of stderr_data buffer                  */
-	size_t stderr_length;    /* bytes written on completion                 */
-	int exit_code;           /* process exit code on completion             */
+	void *_handle; /* opaque OS handle; for terminate/free only   */
+	char *stdout_data; /* caller-provided buffer                      */
+	size_t stdout_capacity; /* size of stdout_data buffer                  */
+	size_t stdout_length; /* bytes written on completion                 */
+	char *stderr_data; /* caller-provided buffer                      */
+	size_t stderr_capacity; /* size of stderr_data buffer                  */
+	size_t stderr_length; /* bytes written on completion                 */
+	int exit_code; /* process exit code on completion             */
 } ProcessResult;
 
 /* ------------------------------------------------------------------
@@ -65,8 +65,8 @@ typedef struct {
  * options: NULL uses defaults (inherit parent environment).
  * ------------------------------------------------------------------ */
 AsyncResult fun_process_spawn(const char *executable, const char **args,
-                               const ProcessSpawnOptions *options,
-                               ProcessResult *out);
+							  const ProcessSpawnOptions *options,
+							  ProcessResult *out);
 
 /* ------------------------------------------------------------------
  * fun_process_terminate — forcefully kill a running process.

@@ -1,25 +1,8 @@
 #include "async/async.h"
 #include "error/error.h"
 
-#ifdef _WIN32
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#include <windows.h>
-static unsigned long long async_now_ms(void)
-{
-	return (unsigned long long)GetTickCount64();
-}
-#else
-#include <time.h>
-static unsigned long long async_now_ms(void)
-{
-	struct timespec ts;
-	clock_gettime(CLOCK_MONOTONIC, &ts);
-	return (unsigned long long)ts.tv_sec * 1000ULL +
-		   (unsigned long long)ts.tv_nsec / 1000000ULL;
-}
-#endif
+/* Arch-layer declaration (implemented per platform in arch/async/) */
+extern unsigned long long arch_async_now_ms(void);
 
 static void set_timeout_error(AsyncResult *result)
 {
@@ -45,14 +28,14 @@ voidResult fun_async_await(AsyncResult *result, int timeout_ms)
 
 	unsigned long long deadline = 0;
 	if (timeout_ms > 0) {
-		deadline = async_now_ms() + (unsigned long long)timeout_ms;
+		deadline = arch_async_now_ms() + (unsigned long long)timeout_ms;
 	}
 
 	while (result->status == ASYNC_PENDING) {
 		result->status = result->poll(result);
 
 		if (result->status == ASYNC_PENDING && timeout_ms > 0) {
-			if (async_now_ms() >= deadline) {
+			if (arch_async_now_ms() >= deadline) {
 				set_timeout_error(result);
 				out.error = ERROR_RESULT_ASYNC_TIMEOUT;
 				return out;
@@ -74,7 +57,7 @@ voidResult fun_async_await_all(AsyncResult **results, size_t count,
 
 	unsigned long long deadline = 0;
 	if (timeout_ms > 0) {
-		deadline = async_now_ms() + (unsigned long long)timeout_ms;
+		deadline = arch_async_now_ms() + (unsigned long long)timeout_ms;
 	}
 
 	while (1) {
@@ -106,7 +89,7 @@ voidResult fun_async_await_all(AsyncResult **results, size_t count,
 			return out;
 		}
 
-		if (timeout_ms > 0 && async_now_ms() >= deadline) {
+		if (timeout_ms > 0 && arch_async_now_ms() >= deadline) {
 			for (size_t i = 0; i < count; i++) {
 				if (results[i]->status == ASYNC_PENDING) {
 					set_timeout_error(results[i]);

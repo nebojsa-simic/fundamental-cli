@@ -55,39 +55,43 @@ void fun_platform_get(OutputPlatform platform);
  * Write OS name into caller-provided buffer
  *
  * Writes "windows", "linux", "darwin", or "unknown".
- * Buffer must be at least 16 bytes.
+ * Buffer must be at least 8 bytes.
  *
  * @param os              PlatformOS value
  * @param platformOsResult REQUIRED - caller-allocated output buffer
+ * @param output_size      size of the output buffer in bytes
  *
  * @return ErrorResult with operation status
  *
  * Example:
  * char buf[16];
- * fun_platform_os_to_string(PLATFORM_OS_LINUX, buf);
+ * fun_platform_os_to_string(PLATFORM_OS_LINUX, buf, sizeof(buf));
  * // buf == "linux"
  */
 ErrorResult fun_platform_os_to_string(PlatformOS os,
-									  OutputString platformOsResult);
+									  OutputString platformOsResult,
+									  size_t output_size);
 
 /**
  * Write architecture name into caller-provided buffer
  *
  * Writes "amd64", "arm64", or "unknown".
- * Buffer must be at least 16 bytes.
+ * Buffer must be at least 8 bytes.
  *
  * @param arch              PlatformArch value
  * @param platformArchResult REQUIRED - caller-allocated output buffer
+ * @param output_size        size of the output buffer in bytes
  *
  * @return ErrorResult with operation status
  *
  * Example:
  * char buf[16];
- * fun_platform_arch_to_string(PLATFORM_ARCH_AMD64, buf);
+ * fun_platform_arch_to_string(PLATFORM_ARCH_AMD64, buf, sizeof(buf));
  * // buf == "amd64"
  */
 ErrorResult fun_platform_arch_to_string(PlatformArch arch,
-										OutputString platformArchResult);
+										OutputString platformArchResult,
+										size_t output_size);
 
 /**
  * Write full platform string into caller-provided buffer
@@ -95,17 +99,19 @@ ErrorResult fun_platform_arch_to_string(PlatformArch arch,
  * Format: "<os>-<arch>" (e.g., "windows-amd64", "linux-arm64")
  * Buffer must be at least 32 bytes.
  *
- * @param platform Platform to convert
- * @param output   REQUIRED - caller-allocated output buffer
+ * @param platform    Platform to convert
+ * @param output      REQUIRED - caller-allocated output buffer
+ * @param output_size size of the output buffer in bytes
  *
  * @return ErrorResult with operation status
  *
  * Example:
  * char buf[32];
- * fun_platform_to_string(fun_platform_get(NULL).value, buf);
+ * fun_platform_to_string(p, buf, sizeof(buf));
  * // buf == "windows-amd64"
  */
 CanReturnError(void)
-	fun_platform_to_string(Platform platform, OutputString output);
+	fun_platform_to_string(Platform platform, OutputString output,
+						   size_t output_size);
 
 #endif // LIBRARY_PLATFORM_H

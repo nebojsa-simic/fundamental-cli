@@ -168,7 +168,8 @@ static void scan_directory_recursive(String dir_path, SourceScanResult *result,
 			StringLength full_len = fun_string_length((String)full_path);
 			if (path_storage_pos + full_len + 1 <= MAX_PATH_STORAGE) {
 				fun_string_copy((String)full_path,
-				                path_storage + path_storage_pos);
+				                path_storage + path_storage_pos,
+				                MAX_PATH_STORAGE - path_storage_pos);
 				result->sources[result->count] =
 					(String)(path_storage + path_storage_pos);
 				result->count++;
@@ -218,7 +219,8 @@ static void build_sources_string(SourceScanResult scan_result, char *buffer,
 	for (size_t i = 0; i < scan_result.count; i++) {
 		StringLength src_len = fun_string_length(scan_result.sources[i]);
 		if (pos + src_len + 2 < buffer_size) {
-			fun_string_copy(scan_result.sources[i], buffer + pos);
+			fun_string_copy(scan_result.sources[i], buffer + pos,
+			                buffer_size - pos);
 			pos += src_len;
 			buffer[pos++] = ' ';
 			buffer[pos] = '\0';
@@ -229,10 +231,10 @@ static void build_sources_string(SourceScanResult scan_result, char *buffer,
 /* --------------------------------------------------------------------------
  * Append a string literal to ptr, advance ptr, return new ptr
  * -------------------------------------------------------------------------- */
-static char *append(char *ptr, const char *s)
+static char *append(char *ptr, const char *s, char *buf_end)
 {
 	StringLength len = fun_string_length((String)s);
-	fun_string_copy((String)s, ptr);
+	fun_string_copy((String)s, ptr, (size_t)(buf_end - ptr));
 	return ptr + len;
 }
 
@@ -275,13 +277,13 @@ static BuildGenerationResult write_script(const char *script_path,
 	delete_file_if_exists(script_path);
 
 	StringLength total_len = fun_string_length((String)content);
-	MemoryResult mem_result = fun_memory_allocate(total_len);
+	MemoryResult mem_result = fun_memory_allocate(total_len + 1);
 	if (fun_error_is_error(mem_result.error)) {
 		result.status = BUILD_GENERATED_ERROR;
 		result.error_message = (String)"Failed to allocate memory";
 		return result;
 	}
-	fun_string_copy((String)content, (char *)mem_result.value);
+	fun_string_copy((String)content, (char *)mem_result.value, total_len + 1);
 
 	AsyncResult write_result = fun_write_memory_to_file(
 		(Write){ .file_path = (String)script_path,
@@ -314,12 +316,13 @@ BuildGenerationResult build_generate_windows(SourceScanResult scan_result)
 
 	/* Read project name from fun.ini, fall back to "app" */
 	if (!fun_ini_read_name(name, sizeof(name))) {
-		fun_string_copy((String)"app", name);
+		fun_string_copy((String)"app", name, sizeof(name));
 	}
 
 	build_sources_string(scan_result, sources_buffer, sizeof(sources_buffer));
 
 	char *ptr = script_buffer;
+	char *buf_end = script_buffer + sizeof(script_buffer);
 
 	ptr = append(ptr,
 	    "@ECHO OFF\r\n"
@@ -333,16 +336,18 @@ BuildGenerationResult build_generate_windows(SourceScanResult scan_result)
 	    " -fno-unwind-tables -mno-stack-arg-probe -e main -mconsole"
 	    " -I . -I vendor/fundamental/include"
 	    " vendor/fundamental/src/startup/startup.c"
-	    " vendor/fundamental/arch/startup/windows-amd64/windows.c ");
+	    " vendor/fundamental/arch/startup/windows-amd64/windows.c ",
+	    buf_end);
 
 	/* Project source files */
-	ptr = append(ptr, sources_buffer);
+	ptr = append(ptr, sources_buffer, buf_end);
 
 	/* Comprehensive fundamental vendor modules */
 	ptr = append(ptr,
 	    "vendor/fundamental/src/platform/platform.c"
 	    " vendor/fundamental/arch/platform/windows-amd64/platform.c"
 	    " vendor/fundamental/src/async/async.c"
+	    " vendor/fundamental/arch/async/windows-amd64/async.c"
 	    " vendor/fundamental/src/process/process.c"
 	    " vendor/fundamental/arch/process/windows-amd64/process.c"
 	    " vendor/fundamental/arch/file/windows-amd64/fileRead.c"
@@ -365,17 +370,18 @@ BuildGenerationResult build_generate_windows(SourceScanResult scan_result)
 	    " vendor/fundamental/arch/filesystem/windows-amd64/directory.c"
 	    " vendor/fundamental/arch/filesystem/windows-amd64/file_exists.c"
 	    " vendor/fundamental/arch/filesystem/windows-amd64/path.c"
-	    " -lkernel32 -o build/");
+	    " -lkernel32 -o build/",
+	    buf_end);
 
 	/* Binary name: build/<name>-windows-amd64.exe */
-	ptr = append(ptr, name);
-	ptr = append(ptr, "-windows-amd64.exe\r\n\r\n");
-	ptr = append(ptr, "strip --strip-unneeded build/");
-	ptr = append(ptr, name);
-	ptr = append(ptr, "-windows-amd64.exe\r\n\r\n");
-	ptr = append(ptr, "ECHO Build complete: build/");
-	ptr = append(ptr, name);
-	ptr = append(ptr, "-windows-amd64.exe\r\n");
+	ptr = append(ptr, name, buf_end);
+	ptr = append(ptr, "-windows-amd64.exe\r\n\r\n", buf_end);
+	ptr = append(ptr, "strip --strip-unneeded build/", buf_end);
+	ptr = append(ptr, name, buf_end);
+	ptr = append(ptr, "-windows-amd64.exe\r\n\r\n", buf_end);
+	ptr = append(ptr, "ECHO Build complete: build/", buf_end);
+	ptr = append(ptr, name, buf_end);
+	ptr = append(ptr, "-windows-amd64.exe\r\n", buf_end);
 	*ptr = '\0';
 
 	return write_script("build-windows-amd64.bat", script_buffer);
@@ -391,12 +397,13 @@ BuildGenerationResult build_generate_linux(SourceScanResult scan_result)
 	char name[64];
 
 	if (!fun_ini_read_name(name, sizeof(name))) {
-		fun_string_copy((String)"app", name);
+		fun_string_copy((String)"app", name, sizeof(name));
 	}
 
 	build_sources_string(scan_result, sources_buffer, sizeof(sources_buffer));
 
 	char *ptr = script_buffer;
+	char *buf_end = script_buffer + sizeof(script_buffer);
 
 	ptr = append(ptr,
 	    "#!/bin/bash\n"
@@ -410,14 +417,16 @@ BuildGenerationResult build_generate_linux(SourceScanResult scan_result)
 	    " -fno-unwind-tables -e main"
 	    " -I . -I vendor/fundamental/include"
 	    " vendor/fundamental/src/startup/startup.c"
-	    " vendor/fundamental/arch/startup/linux-amd64/linux.c ");
+	    " vendor/fundamental/arch/startup/linux-amd64/linux.c ",
+	    buf_end);
 
-	ptr = append(ptr, sources_buffer);
+	ptr = append(ptr, sources_buffer, buf_end);
 
 	ptr = append(ptr,
 	    "vendor/fundamental/src/platform/platform.c"
 	    " vendor/fundamental/arch/platform/linux-amd64/platform.c"
 	    " vendor/fundamental/src/async/async.c"
+	    " vendor/fundamental/arch/async/linux-amd64/async.c"
 	    " vendor/fundamental/src/process/process.c"
 	    " vendor/fundamental/arch/process/linux-amd64/process.c"
 	    " vendor/fundamental/arch/file/linux-amd64/fileRead.c"
@@ -440,16 +449,17 @@ BuildGenerationResult build_generate_linux(SourceScanResult scan_result)
 	    " vendor/fundamental/arch/filesystem/linux-amd64/directory.c"
 	    " vendor/fundamental/arch/filesystem/linux-amd64/file_exists.c"
 	    " vendor/fundamental/arch/filesystem/linux-amd64/path.c"
-	    " -o build/");
+	    " -o build/",
+	    buf_end);
 
-	ptr = append(ptr, name);
-	ptr = append(ptr, "-linux-amd64\n\n");
-	ptr = append(ptr, "strip --strip-unneeded build/");
-	ptr = append(ptr, name);
-	ptr = append(ptr, "-linux-amd64\n\n");
-	ptr = append(ptr, "echo Build complete: build/");
-	ptr = append(ptr, name);
-	ptr = append(ptr, "-linux-amd64\n");
+	ptr = append(ptr, name, buf_end);
+	ptr = append(ptr, "-linux-amd64\n\n", buf_end);
+	ptr = append(ptr, "strip --strip-unneeded build/", buf_end);
+	ptr = append(ptr, name, buf_end);
+	ptr = append(ptr, "-linux-amd64\n\n", buf_end);
+	ptr = append(ptr, "echo Build complete: build/", buf_end);
+	ptr = append(ptr, name, buf_end);
+	ptr = append(ptr, "-linux-amd64\n", buf_end);
 	*ptr = '\0';
 
 	return write_script("build-linux-amd64.sh", script_buffer);

@@ -30,9 +30,14 @@ typedef struct {
 // Interface
 
 // conversion
-void fun_string_from_pointer(void *ptr, OutputString output);
-void fun_string_from_int(int64_t num, int base, OutputString output);
-void fun_string_from_double(double num, int afterpoint, OutputString output);
+CanReturnError(void)
+	fun_string_from_pointer(void *ptr, OutputString output, size_t output_size);
+CanReturnError(void)
+	fun_string_from_int(int64_t num, int base, OutputString output,
+						size_t output_size);
+CanReturnError(void)
+	fun_string_from_double(double num, int afterpoint, OutputString output,
+						   size_t output_size);
 
 // string validation
 CanReturnError(void)
@@ -47,11 +52,15 @@ StringLength fun_string_length(String source);
 void fun_string_trim_in_place(OutputString source);
 void fun_string_reverse_in_place(OutputString source);
 // out-of-place operations
-void fun_string_join(String left, String right, OutputString output);
-void fun_string_copy(String source, OutputString output);
+CanReturnError(void) fun_string_join(String left, String right,
+									 OutputString output, size_t output_size);
+CanReturnError(void)
+	fun_string_copy(String source, OutputString output, size_t output_size);
 
 // templating
-void fun_string_template(String template, StringTemplateParam *params,
-						 size_t paramCount, OutputString output);
+CanReturnError(void)
+	fun_string_template(String template, StringTemplateParam *params,
+						size_t paramCount, OutputString output,
+						size_t output_size);
 
 #endif // LIBRARY_STRING_H

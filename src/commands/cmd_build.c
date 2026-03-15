@@ -122,7 +122,8 @@ int cmd_build_execute(int argc, const char **argv)
 			return 1;
 		}
 		String exit_str = (String)exit_str_result.value;
-		fun_string_from_int(exec_result.exit_code, 10, (OutputString)exit_str);
+		fun_string_from_int(exec_result.exit_code, 10, (OutputString)exit_str,
+		                    16);
 		fun_console_write_line(exit_str);
 		fun_memory_free((Memory *)exit_str);
 		return exec_result.exit_code;

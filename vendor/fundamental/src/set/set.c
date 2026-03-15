@@ -66,7 +66,7 @@ ErrorResult fun_set_add(HashSet *set, const void *value)
 								"Failed to allocate value");
 	}
 
-	fun_memory_copy(value, new_entry->value, set->value_size);
+	fun_memory_copy((Memory)value, new_entry->value, set->value_size);
 	new_entry->next = set->buckets[bucket_idx];
 	set->buckets[bucket_idx] = new_entry;
 	set->entry_count++;

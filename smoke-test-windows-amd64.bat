@@ -23,12 +23,12 @@ set /a PASS+=1
 REM -----------------------------------------------------------------------
 echo.
 echo [BUILD] Build fundamental-cli
-call "%ORIG_DIR%build-windows-amd64.bat"
+"%ORIG_DIR%fun.exe" build
 if %ERRORLEVEL% neq 0 (
-    echo [FAIL] build-windows-amd64.bat failed
+    echo [FAIL] fun.exe build failed
     exit /b 1
 )
-echo [PASS] fun.exe built
+echo [PASS] fun.exe built fun.exe successfully
 set /a PASS+=1
 
 REM -----------------------------------------------------------------------

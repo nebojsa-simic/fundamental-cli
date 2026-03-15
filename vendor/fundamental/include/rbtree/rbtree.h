@@ -40,8 +40,8 @@ typedef struct {
 } RBTreeResult;
 
 // Error codes specific to RBTree
-#define ERROR_CODE_KEY_EXISTS 301
-#define ERROR_CODE_KEY_NOT_FOUND 302
+#define ERROR_CODE_KEY_EXISTS 241
+#define ERROR_CODE_KEY_NOT_FOUND 242
 
 // Core RBTree API - type-agnostic operations
 RBTreeResult fun_rbtree_create(size_t key_size, size_t value_size,

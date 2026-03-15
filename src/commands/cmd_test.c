@@ -81,7 +81,7 @@ int cmd_test_execute(int argc, const char **argv)
 		char buf[16];
 		fun_string_from_int(
 			(int64_t)fun_array_TestModule_size(&discover_result.modules), 10,
-			buf);
+			buf, sizeof(buf));
 		fun_console_write(buf);
 		fun_console_write_line(" test modules");
 	}

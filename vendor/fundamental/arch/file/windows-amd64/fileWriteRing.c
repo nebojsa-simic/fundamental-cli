@@ -4,6 +4,7 @@
 #include <windows.h>
 
 #define WINAPI_FAMILY WINAPI_FAMILY_DESKTOP_APP
+#undef NTDDI_VERSION
 #define NTDDI_VERSION NTDDI_WIN10_NI
 
 #include "ioringcompat.h"

@@ -14,8 +14,8 @@ String platform_get_build_script(void)
 	char os_buf[16];
 	char arch_buf[16];
 
-	fun_platform_os_to_string(platform.os, os_buf);
-	fun_platform_arch_to_string(platform.arch, arch_buf);
+	fun_platform_os_to_string(platform.os, os_buf, sizeof(os_buf));
+	fun_platform_arch_to_string(platform.arch, arch_buf, sizeof(arch_buf));
 
 	StringLength os_len = fun_string_length((String)os_buf);
 	StringLength arch_len = fun_string_length((String)arch_buf);
@@ -24,11 +24,13 @@ String platform_get_build_script(void)
 	StringLength ext_len = fun_string_length(ext);
 
 	if (6 + os_len + 1 + arch_len + ext_len + 1 <= sizeof(buffer)) {
-		fun_string_copy((String) "build-", buffer);
-		fun_string_copy((String)os_buf, buffer + 6);
+		fun_string_copy((String) "build-", buffer, sizeof(buffer));
+		fun_string_copy((String)os_buf, buffer + 6, sizeof(buffer) - 6);
 		buffer[6 + os_len] = '-';
-		fun_string_copy((String)arch_buf, buffer + 6 + os_len + 1);
-		fun_string_copy((String)ext, buffer + 6 + os_len + 1 + arch_len);
+		fun_string_copy((String)arch_buf, buffer + 6 + os_len + 1,
+		                sizeof(buffer) - 6 - os_len - 1);
+		fun_string_copy((String)ext, buffer + 6 + os_len + 1 + arch_len,
+		                sizeof(buffer) - 6 - os_len - 1 - arch_len);
 		buffer[6 + os_len + 1 + arch_len + ext_len] = '\0';
 		return (String)buffer;
 	}

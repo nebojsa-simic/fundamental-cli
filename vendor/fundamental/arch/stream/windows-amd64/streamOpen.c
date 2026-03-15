@@ -103,3 +103,11 @@ AsyncStatus poll_stream_open(AsyncResult *result)
 	result->error = ERROR_RESULT_NO_ERROR;
 	return ASYNC_COMPLETED;
 }
+
+void arch_stream_close_handle(void *internal_state)
+{
+	StreamReadState *state = (StreamReadState *)internal_state;
+	if (state && state->file_handle != INVALID_HANDLE_VALUE) {
+		CloseHandle(state->file_handle);
+	}
+}

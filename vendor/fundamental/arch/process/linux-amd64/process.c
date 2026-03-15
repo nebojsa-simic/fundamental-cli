@@ -27,7 +27,7 @@ typedef struct {
 static LinuxProcHandle *alloc_handle(void)
 {
 	void *p = mmap(NULL, sizeof(LinuxProcHandle), PROT_READ | PROT_WRITE,
-	               MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+				   MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	if (p == MAP_FAILED)
 		return NULL;
 	return (LinuxProcHandle *)p;
@@ -73,9 +73,9 @@ static AsyncStatus linux_process_poll(AsyncResult *result)
 
 	/* Drain pipes while process may still be running */
 	drain_fd(h->stdout_fd, out->stdout_data, out->stdout_capacity,
-	         &out->stdout_length);
+			 &out->stdout_length);
 	drain_fd(h->stderr_fd, out->stderr_data, out->stderr_capacity,
-	         &out->stderr_length);
+			 &out->stderr_length);
 
 	int status = 0;
 	pid_t ret = waitpid(h->pid, &status, WNOHANG);
@@ -88,9 +88,9 @@ static AsyncStatus linux_process_poll(AsyncResult *result)
 
 	/* Process exited — final drain */
 	drain_fd(h->stdout_fd, out->stdout_data, out->stdout_capacity,
-	         &out->stdout_length);
+			 &out->stdout_length);
 	drain_fd(h->stderr_fd, out->stderr_data, out->stderr_capacity,
-	         &out->stderr_length);
+			 &out->stderr_length);
 
 	if (WIFEXITED(status))
 		out->exit_code = WEXITSTATUS(status);
@@ -111,8 +111,8 @@ static AsyncStatus linux_process_poll(AsyncResult *result)
 }
 
 AsyncResult fun_process_arch_spawn(const char *executable, const char **args,
-                                   const ProcessSpawnOptions *options,
-                                   ProcessResult *out)
+								   const ProcessSpawnOptions *options,
+								   ProcessResult *out)
 {
 	(void)options;
 
@@ -129,7 +129,7 @@ AsyncResult fun_process_arch_spawn(const char *executable, const char **args,
 	if (!executable_exists(executable)) {
 		result.status = ASYNC_ERROR;
 		result.error = fun_error_result(ERROR_CODE_PROCESS_NOT_FOUND,
-		                                "Executable not found");
+										"Executable not found");
 		return result;
 	}
 
@@ -138,7 +138,7 @@ AsyncResult fun_process_arch_spawn(const char *executable, const char **args,
 	if (pipe(stdout_pipe) < 0) {
 		result.status = ASYNC_ERROR;
 		result.error = fun_error_result(ERROR_CODE_PROCESS_SPAWN_FAILED,
-		                                "Failed to create stdout pipe");
+										"Failed to create stdout pipe");
 		return result;
 	}
 	if (pipe(stderr_pipe) < 0) {
@@ -146,7 +146,7 @@ AsyncResult fun_process_arch_spawn(const char *executable, const char **args,
 		close(stdout_pipe[1]);
 		result.status = ASYNC_ERROR;
 		result.error = fun_error_result(ERROR_CODE_PROCESS_SPAWN_FAILED,
-		                                "Failed to create stderr pipe");
+										"Failed to create stderr pipe");
 		return result;
 	}
 
@@ -158,8 +158,8 @@ AsyncResult fun_process_arch_spawn(const char *executable, const char **args,
 		close(stderr_pipe[0]);
 		close(stderr_pipe[1]);
 		result.status = ASYNC_ERROR;
-		result.error = fun_error_result(ERROR_CODE_PROCESS_SPAWN_FAILED,
-		                                "Fork failed");
+		result.error =
+			fun_error_result(ERROR_CODE_PROCESS_SPAWN_FAILED, "Fork failed");
 		return result;
 	}
 
@@ -186,9 +186,9 @@ AsyncResult fun_process_arch_spawn(const char *executable, const char **args,
 	close(stderr_pipe[1]);
 
 	fcntl(stdout_pipe[0], F_SETFL,
-	      fcntl(stdout_pipe[0], F_GETFL, 0) | O_NONBLOCK);
+		  fcntl(stdout_pipe[0], F_GETFL, 0) | O_NONBLOCK);
 	fcntl(stderr_pipe[0], F_SETFL,
-	      fcntl(stderr_pipe[0], F_GETFL, 0) | O_NONBLOCK);
+		  fcntl(stderr_pipe[0], F_GETFL, 0) | O_NONBLOCK);
 
 	LinuxProcHandle *h = alloc_handle();
 	if (h == NULL) {
@@ -198,7 +198,7 @@ AsyncResult fun_process_arch_spawn(const char *executable, const char **args,
 		close(stderr_pipe[0]);
 		result.status = ASYNC_ERROR;
 		result.error = fun_error_result(ERROR_CODE_PROCESS_SPAWN_FAILED,
-		                                "Failed to allocate process handle");
+										"Failed to allocate process handle");
 		return result;
 	}
 
@@ -222,7 +222,7 @@ voidResult fun_process_arch_terminate(ProcessResult *out)
 	if (h->pid > 0) {
 		if (kill(h->pid, SIGKILL) < 0 && errno != ESRCH) {
 			r.error = fun_error_result(ERROR_CODE_PROCESS_TERMINATE_FAILED,
-			                           "Failed to terminate process");
+									   "Failed to terminate process");
 		}
 	}
 	return r;

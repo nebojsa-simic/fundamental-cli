@@ -81,7 +81,7 @@ ErrorResult fun_hashmap_put(HashMap *map, const void *key, const void *value)
 
 	if (existing) {
 		// Update existing value
-		fun_memory_copy(value, existing->value, map->value_size);
+		fun_memory_copy((Memory)value, existing->value, map->value_size);
 		return ERROR_RESULT_NO_ERROR;
 	}
 
@@ -101,7 +101,7 @@ ErrorResult fun_hashmap_put(HashMap *map, const void *key, const void *value)
 		return fun_error_result(ERROR_CODE_HASHMAP_FULL,
 								"Failed to allocate key");
 	}
-	fun_memory_copy(key, key_result.value, map->key_size);
+	fun_memory_copy((Memory)key, key_result.value, map->key_size);
 
 	// Allocate and copy value
 	MemoryResult value_result = fun_memory_allocate(map->value_size);
@@ -111,7 +111,7 @@ ErrorResult fun_hashmap_put(HashMap *map, const void *key, const void *value)
 		return fun_error_result(ERROR_CODE_HASHMAP_FULL,
 								"Failed to allocate value");
 	}
-	fun_memory_copy(value, value_result.value, map->value_size);
+	fun_memory_copy((Memory)value, value_result.value, map->value_size);
 
 	// Set up the new entry
 	new_entry->key = key_result.value;

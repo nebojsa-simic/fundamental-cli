@@ -40,7 +40,7 @@ This is the central index for all Fundamental Library skills for AI coding agent
 | **Async** | [fundamental-async.md](fundamental-async.md) | Await results, poll status, timeout |
 | **Process** | [fundamental-process.md](fundamental-process.md) | Spawn processes, capture stdout/stderr, terminate |
 | **Config** | [fundamental-config.md](fundamental-config.md) | Load configuration, cascade sources, get values |
-| **Network** | [fundamental-network.md](fundamental-network.md) | TCP/UDP client, event loop, address parse, scatter/gather I/O |
+| **Network** | [fundamental-network.md](fundamental-network.md) | Simple async TCP/UDP client, address parse, overflow-buffered receive |
 | **Platform** | [fundamental-platform.md](fundamental-platform.md) | Detect OS and architecture, convert to string |
 
 ---

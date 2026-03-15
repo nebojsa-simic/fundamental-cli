@@ -1,6 +1,8 @@
 #include "stream/stream.h"
 #include "memory/memory.h"
-#include "../arch/stream/windows-amd64/stream.h"
+
+/* Arch-layer declaration (implemented per platform in arch/stream/) */
+extern void arch_stream_close_handle(void *internal_state);
 
 AsyncResult fun_stream_close(FileStream *stream)
 {
@@ -9,11 +11,9 @@ AsyncResult fun_stream_close(FileStream *stream)
 							  .error = ERROR_RESULT_NULL_POINTER };
 	}
 
-	StreamReadState *state = (StreamReadState *)stream->internal_state;
+	void *state = stream->internal_state;
 	if (state) {
-		if (state->file_handle != INVALID_HANDLE_VALUE) {
-			CloseHandle(state->file_handle);
-		}
+		arch_stream_close_handle(state);
 		fun_memory_free((Memory *)&state);
 	}
 

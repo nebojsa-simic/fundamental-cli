@@ -43,22 +43,6 @@ static bool is_separator(char c)
 	return c == '/' || c == '\\';
 }
 
-// Helper: Find last separator in path
-static size_t find_last_separator(const char *path)
-{
-	if (path == NULL) {
-		return 0;
-	}
-
-	size_t len = string_length(path);
-	for (size_t i = len; i > 0; i--) {
-		if (is_separator(path[i - 1])) {
-			return i - 1;
-		}
-	}
-	return 0;
-}
-
 // Task 2.3: Directory existence check helper
 static bool directory_exists(const char *path)
 {
@@ -208,33 +192,6 @@ typedef struct {
 	size_t bytes_written;
 	size_t entry_count;
 } DirectoryListContext;
-
-static void add_entry_to_buffer(DirectoryListContext *ctx, const char *entry)
-{
-	if (ctx == NULL || entry == NULL) {
-		return;
-	}
-
-	size_t entry_len = string_length(entry);
-
-	// Skip . and .. entries
-	if ((entry_len == 1 && entry[0] == '.') ||
-		(entry_len == 2 && entry[0] == '.' && entry[1] == '.')) {
-		return;
-	}
-
-	// Check if we have space (entry + newline + null terminator)
-	if (ctx->bytes_written + entry_len + 2 > ctx->buffer_size) {
-		return; // Buffer too small
-	}
-
-	// Add entry
-	for (size_t i = 0; i < entry_len; i++) {
-		ctx->buffer[ctx->bytes_written++] = entry[i];
-	}
-	ctx->buffer[ctx->bytes_written++] = '\n'; // Separator
-	ctx->entry_count++;
-}
 
 // Task 2.7: Implement fun_filesystem_list_directory with buffer filling
 ErrorResult fun_filesystem_list_directory(const char *path, void *output)

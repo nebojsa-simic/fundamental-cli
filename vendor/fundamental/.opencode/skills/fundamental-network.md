@@ -1,264 +1,229 @@
 ---
 name: fundamental-network
-description: Networking with Fundamental Library - TCP/UDP, event loop, address parse, scatter/gather I/O
+description: Networking with Fundamental Library - simple async TCP/UDP client, address parse, overflow-buffered receive
 license: MIT
 compatibility: Complements fundamental-expert skill
 metadata:
   author: fundamental-library
-  version: "1.0"
+  version: "2.0"
   category: networking
   related: fundamental-async, fundamental-memory
 ---
 
 # Fundamental Library - Network Skill
 
-I provide copy-paste examples for non-blocking TCP/UDP networking using the Fundamental Library.
+I provide copy-paste examples for async TCP/UDP networking using the Fundamental Library.
 
 ---
 
 ## Quick Reference
 
-| Task | Function | Notes |
-|------|----------|-------|
-| Parse address | `fun_network_address_parse()` | Numeric IP only; `"1.2.3.4:80"` or `"[::1]:9000"` |
-| Format address | `fun_network_address_to_string()` | Caller supplies buffer |
-| Init loop | `fun_network_loop_init()` | Caller-allocated storage |
-| Run loop | `fun_network_loop_run()` | Blocking until `loop_stop` |
-| Run once | `fun_network_loop_run_once()` | `0`=poll, `-1`=block, `N`=timeout ms |
-| Stop loop | `fun_network_loop_stop()` | Safe from callback |
-| Destroy loop | `fun_network_loop_destroy()` | After all connections closed |
-| TCP connect | `fun_network_tcp_connect()` | Non-blocking; fires `on_connect` |
-| TCP send | `fun_network_tcp_send()` | Single buffer; fires `on_write_complete` |
-| TCP send vector | `fun_network_tcp_send_vector()` | Scatter/gather; single syscall |
-| TCP close | `fun_network_tcp_close()` | Deferred-safe from callback |
-| UDP bind | `fun_network_udp_bind()` | Port 0 = OS-assigned |
-| UDP send | `fun_network_udp_send_to()` | Single datagram |
-| UDP close | `fun_network_udp_close()` | Deferred-safe from callback |
-| Buffer slice | `fun_network_buffer_slice()` | Sub-buffer without copy |
-| Vector length | `fun_network_buffer_vector_total_length()` | Sum of all segment lengths |
-| Get user data | `fun_network_connection_get_user_data()` | Access per-connection state in callbacks |
+| Task | Function | Returns |
+|------|----------|---------|
+| Parse address | `fun_network_address_parse(str)` | `NetworkAddressResult` |
+| Format address | `fun_network_address_to_string(addr, buf, size)` | `voidResult` |
+| TCP connect | `fun_network_tcp_connect(addr, &conn)` | `AsyncResult` |
+| TCP send | `fun_network_tcp_send(conn, request)` | `AsyncResult` |
+| TCP receive N bytes | `fun_network_tcp_receive_exact(conn, &response, n)` | `AsyncResult` |
+| TCP close | `fun_network_tcp_close(conn)` | `voidResult` |
+| UDP fire-and-forget | `fun_network_udp_send(addr, datagram)` | `AsyncResult` |
 
 ---
 
-## Pattern: TCP Client
+## Task: TCP Connect, Send, Receive, Close
 
 ```c
 #include "network/network.h"
+#include "async/async.h"
+#include "memory/memory.h"
 
-/* Application state — stored on stack or caller-allocated heap */
-typedef struct {
-    int request_sent;
-    char recv_data[4096];
-} MyState;
-
-static void on_connect(NetworkConnection *conn)
+int example_tcp_request(void)
 {
-    MyState *state = (MyState *)fun_network_connection_get_user_data(conn);
-    NetworkBuffer buf = { "GET / HTTP/1.0\r\n\r\n", 18 };
-    fun_network_tcp_send(conn, buf);
-    state->request_sent = 1;
-}
+    /* --- parse address --- */
+    NetworkAddressResult addr_r = fun_network_address_parse("127.0.0.1:8080");
+    if (fun_error_is_error(addr_r.error))
+        return 1;
 
-static void on_read(NetworkConnection *conn, NetworkBufferVector bufs,
-                    int bytes_received)
-{
-    (void)bufs;
-    (void)bytes_received;
-    fun_network_tcp_close(conn);   /* safe to call from callback */
-}
+    /* --- connect --- */
+    TcpNetworkConnection conn = NULL;
+    AsyncResult r = fun_network_tcp_connect(addr_r.value, &conn);
+    if (fun_error_is_error(fun_async_await(&r, 5000).error))
+        return 1;
 
-static void on_close(NetworkConnection *conn)
-{
-    MyState *state = (MyState *)fun_network_connection_get_user_data(conn);
-    (void)state;
-    /* ... */
-}
+    /* --- send --- */
+    const char   req_str[] = "PING\r\n";
+    MemoryResult req_mem   = fun_memory_allocate(sizeof(req_str) - 1);
+    if (fun_error_is_error(req_mem.error))
+        goto close;
+    fun_memory_copy((Memory)req_str, req_mem.value, sizeof(req_str) - 1);
 
-static void on_error(NetworkConnection *conn, ErrorResult error)
-{
-    (void)conn;
-    (void)error;
-    /* error.code is one of ERROR_CODE_NETWORK_* */
-}
+    NetworkBuffer req = { req_mem.value, sizeof(req_str) - 1 };
+    r = fun_network_tcp_send(conn, req);
+    if (fun_error_is_error(fun_async_await(&r, 5000).error))
+        goto free_req;
 
-int main(void)
-{
-    /* 1. Parse address */
-    NetworkAddressResult addr = fun_network_address_parse("93.184.216.34:80");
-    if (fun_error_is_error(addr.error)) return 1;
+    /* --- receive 4-byte header (e.g. length prefix) --- */
+    MemoryResult hdr_mem = fun_memory_allocate(4);
+    if (fun_error_is_error(hdr_mem.error))
+        goto free_req;
+    NetworkBuffer hdr = { hdr_mem.value, 0 };
 
-    /* 2. Allocate loop and connection on the stack */
-    char loop_storage[NETWORK_LOOP_SIZE];
-    NetworkLoop *loop = (NetworkLoop *)loop_storage;
+    r = fun_network_tcp_receive_exact(conn, &hdr, 4);
+    if (fun_error_is_error(fun_async_await(&r, 5000).error))
+        goto free_hdr;
+    /* hdr.length == 4 */
 
-    char conn_storage[NETWORK_CONNECTION_SIZE];
-    NetworkConnection *conn = (NetworkConnection *)conn_storage;
+    /* --- receive body based on header length --- */
+    /* ... parse body_len from hdr.data, then: ... */
+    /* r = fun_network_tcp_receive_exact(conn, &body, body_len); */
 
-    /* 3. Init loop */
-    voidResult r = fun_network_loop_init(loop);
-    if (fun_error_is_error(r.error)) return 1;
-
-    /* 4. Set up receive buffers (scatter across two segments) */
-    MyState state = { 0 };
-    NetworkBuffer recv_bufs[2] = {
-        { state.recv_data,        2048 },
-        { state.recv_data + 2048, 2048 },
-    };
-    NetworkBufferVector recv_vec = { recv_bufs, 2 };
-
-    /* 5. Set up handlers */
-    NetworkHandlers handlers = {
-        .on_connect  = on_connect,
-        .on_read     = on_read,
-        .on_close    = on_close,
-        .on_error    = on_error,
-        .user_data   = &state,
-    };
-
-    /* 6. Connect (non-blocking; 5 s timeout) */
-    r = fun_network_tcp_connect(loop, conn, addr.value, recv_vec, handlers,
-                                5000);
-    if (fun_error_is_error(r.error)) return 1;
-
-    /* 7. Run event loop */
-    fun_network_loop_run(loop);
-
-    /* 8. Destroy */
-    fun_network_loop_destroy(loop);
+free_hdr:  fun_memory_free(&hdr_mem.value);
+free_req:  fun_memory_free(&req_mem.value);
+close:     fun_network_tcp_close(conn);
     return 0;
 }
 ```
 
 ---
 
-## Pattern: Vectored Send (scatter/gather)
+## Task: MySQL-style Two-Phase Receive (header → body)
 
 ```c
-/* Send three non-contiguous buffers in a single syscall */
-char header[32]   = "HTTP/1.0 200 OK\r\nContent-Length: 5\r\n\r\n";
-char body[5]      = "hello";
-char trailer[2]   = "\r\n";
+#define MYSQL_HDR 4   /* 3-byte LE length + 1-byte sequence */
 
-NetworkBuffer bufs[3] = {
-    { header,  38 },
-    { body,     5 },
-    { trailer,  2 },
-};
-NetworkBufferVector vec = { bufs, 3 };
-
-voidResult r = fun_network_tcp_send_vector(conn, vec);
-if (fun_error_is_error(r.error)) {
-    if (r.error.code == ERROR_CODE_NETWORK_WOULD_BLOCK) {
-        /* Wait for on_write_complete, then send again */
-    }
-}
-```
-
----
-
-## Pattern: UDP Loopback
-
-```c
-char loop_storage[NETWORK_LOOP_SIZE];
-NetworkLoop *loop = (NetworkLoop *)loop_storage;
-fun_network_loop_init(loop);
-
-/* Sender socket */
-char sender_storage[NETWORK_CONNECTION_SIZE];
-NetworkConnection *sender = (NetworkConnection *)sender_storage;
-
-NetworkAddressResult local = fun_network_address_parse("0.0.0.0:0");
-char dummy_recv[1];
-NetworkBuffer dummy_buf = { dummy_recv, 1 };
-NetworkHandlers no_handlers = { 0 };
-fun_network_udp_bind(loop, sender, local.value, dummy_buf, no_handlers);
-
-/* Receiver socket */
-char recv_storage[NETWORK_CONNECTION_SIZE];
-NetworkConnection *receiver = (NetworkConnection *)recv_storage;
-
-static void on_datagram(NetworkConnection *conn, NetworkBuffer buf,
-                        NetworkAddress sender_addr)
+int mysql_recv_packet(TcpNetworkConnection conn,
+                      Memory *out_payload, size_t *out_len)
 {
-    (void)conn; (void)sender_addr;
-    /* buf.data contains the datagram bytes, buf.length the byte count */
-    fun_network_loop_stop(/* loop ptr needed — store in user_data */);
+    /* phase 1: read 4-byte header */
+    MemoryResult hdr_mem = fun_memory_allocate(MYSQL_HDR);
+    if (fun_error_is_error(hdr_mem.error)) return 1;
+    NetworkBuffer hdr = { hdr_mem.value, 0 };
+
+    AsyncResult r = fun_network_tcp_receive_exact(conn, &hdr, MYSQL_HDR);
+    if (fun_error_is_error(fun_async_await(&r, 5000).error))
+        goto fail_hdr;
+
+    /* parse 3-byte little-endian length */
+    uint8_t *h   = (uint8_t *)hdr_mem.value;
+    size_t   len = (size_t)h[0] | ((size_t)h[1] << 8) | ((size_t)h[2] << 16);
+
+    /* phase 2: read payload */
+    MemoryResult pay_mem = fun_memory_allocate(len);
+    if (fun_error_is_error(pay_mem.error)) goto fail_hdr;
+    NetworkBuffer payload = { pay_mem.value, 0 };
+
+    r = fun_network_tcp_receive_exact(conn, &payload, len);
+    if (fun_error_is_error(fun_async_await(&r, 5000).error))
+        goto fail_pay;
+
+    fun_memory_free(&hdr_mem.value);
+    *out_payload = pay_mem.value;
+    *out_len     = len;
+    return 0;
+
+fail_pay: fun_memory_free(&pay_mem.value);
+fail_hdr: fun_memory_free(&hdr_mem.value);
+    return 1;
 }
-
-char recv_buf[512];
-NetworkBuffer recv_buffer = { recv_buf, 512 };
-NetworkHandlers recv_handlers = { .on_datagram_read = on_datagram };
-
-NetworkAddressResult bind_addr = fun_network_address_parse("127.0.0.1:9999");
-fun_network_udp_bind(loop, receiver, bind_addr.value, recv_buffer,
-                     recv_handlers);
-
-/* Send datagram */
-NetworkAddressResult dest = fun_network_address_parse("127.0.0.1:9999");
-NetworkBuffer payload = { "ping", 4 };
-fun_network_udp_send_to(sender, payload, dest.value);
-
-fun_network_loop_run(loop);
-fun_network_loop_destroy(loop);
 ```
 
 ---
 
-## Pattern: Address Parse and Format
+## Task: Overflow Buffer — Sequential Receives
+
+The connection owns an internal overflow buffer. When more bytes arrive than a single `receive_exact` call requests, the surplus is held and returned on the next call — no re-reading from the socket.
+
+```c
+/* server sends "ABCDEFGH" (8 bytes) */
+
+NetworkBuffer first  = { mem_a, 0 };
+NetworkBuffer second = { mem_b, 0 };
+
+AsyncResult r = fun_network_tcp_receive_exact(conn, &first, 4);
+fun_async_await(&r, 5000);
+/* first.length == 4, "ABCD" in mem_a; "EFGH" in overflow buffer */
+
+r = fun_network_tcp_receive_exact(conn, &second, 4);
+fun_async_await(&r, 5000);
+/* second.length == 4, "EFGH" from overflow buffer — no socket read */
+```
+
+---
+
+## Task: UDP Fire-and-Forget Send
+
+```c
+int example_udp_send(void)
+{
+    NetworkAddressResult addr_r = fun_network_address_parse("127.0.0.1:5140");
+    if (fun_error_is_error(addr_r.error)) return 1;
+
+    const char   msg[]   = "hello";
+    MemoryResult msg_mem = fun_memory_allocate(sizeof(msg) - 1);
+    if (fun_error_is_error(msg_mem.error)) return 1;
+    fun_memory_copy((Memory)msg, msg_mem.value, sizeof(msg) - 1);
+
+    NetworkBuffer dgram = { msg_mem.value, sizeof(msg) - 1 };
+    AsyncResult r = fun_network_udp_send(addr_r.value, dgram);
+    fun_async_await(&r, 1000); /* completes immediately; no recv */
+
+    fun_memory_free(&msg_mem.value);
+    return 0;
+}
+```
+
+---
+
+## Task: Address Parse and Format
 
 ```c
 /* Parse */
-NetworkAddressResult r = fun_network_address_parse("192.168.1.1:443");
-if (fun_error_is_error(r.error)) { /* bad address */ }
+NetworkAddressResult ar = fun_network_address_parse("93.184.216.34:80");
+if (fun_error_is_error(ar.error)) { /* bad address */ }
+NetworkAddress addr = ar.value;
 
-NetworkAddress addr = r.value;
-/* addr.family == NETWORK_ADDRESS_IPV4 */
-/* addr.bytes[0..3] = 192, 168, 1, 1 */
-/* addr.port == 443 */
-
-/* Format back to string */
+/* Format */
 char buf[64];
-voidResult fmt = fun_network_address_to_string(addr, buf, sizeof(buf));
-if (fun_error_is_error(fmt.error)) { /* buffer too small */ }
-/* buf == "192.168.1.1:443" */
+voidResult fr = fun_network_address_to_string(addr, buf, sizeof(buf));
+if (fun_error_is_error(fr.error)) { /* buffer too small */ }
+/* buf now contains "93.184.216.34:80" */
 
 /* IPv6 */
-NetworkAddressResult r6 = fun_network_address_parse("[::1]:9000");
-/* r6.value.family == NETWORK_ADDRESS_IPV6, port == 9000 */
+NetworkAddressResult ar6 = fun_network_address_parse("[::1]:8080");
 ```
 
 ---
 
-## Backpressure Flow
+## Error Handling Pattern
 
+```c
+AsyncResult r = fun_network_tcp_connect(addr, &conn);
+voidResult  w = fun_async_await(&r, 5000);
+
+if (r.status == ASYNC_ERROR) {
+    /* r.error.code: ERROR_CODE_NETWORK_CONNECT_FAILED, etc. */
+    /* r.error.message: human-readable description              */
+}
 ```
-app calls fun_network_tcp_send()
-  → kernel buffer full → returns ERROR_CODE_NETWORK_WOULD_BLOCK
-  → app stops sending
-  → kernel drains buffer
-  → arch layer fires on_write_complete
-  → app calls fun_network_tcp_send() again
+
+---
+
+## Key Types
+
+```c
+TcpNetworkConnection conn = NULL;   /* opaque handle; pointer-sized */
+OutputTcpNetworkConnection out_conn = &conn;   /* for fun_network_tcp_connect */
+
+NetworkBuffer buf = { mem, 0 };   /* data=Memory, length=size_t */
+OutputNetworkBuffer out_buf = &buf;   /* for receive functions */
+
+NetworkAddress addr;   /* family, bytes[16], port — copy by value */
 ```
 
-## Size Constants
+---
 
-| Constant | Value | Purpose |
-|----------|-------|---------|
-| `NETWORK_LOOP_SIZE` | 1024 | Minimum storage for `NetworkLoop` (stack-allocate: `char buf[NETWORK_LOOP_SIZE]`) |
-| `NETWORK_CONNECTION_SIZE` | 1024 | Minimum storage for `NetworkConnection` |
-| `NETWORK_ADDRESS_MAX_BYTES` | 16 | Raw bytes in `NetworkAddress` (IPv6 max) |
+## See Also
 
-## Error Codes
-
-| Code | Constant | Meaning |
-|------|----------|---------|
-| 230 | `ERROR_CODE_NETWORK_INIT_FAILED` | Loop initialisation failed |
-| 231 | `ERROR_CODE_NETWORK_CONNECT_FAILED` | TCP connect failed |
-| 232 | `ERROR_CODE_NETWORK_CONNECT_TIMEOUT` | Connect timed out |
-| 233 | `ERROR_CODE_NETWORK_SEND_FAILED` | Send failed |
-| 234 | `ERROR_CODE_NETWORK_WOULD_BLOCK` | Kernel send buffer full |
-| 235 | `ERROR_CODE_NETWORK_RECEIVE_FAILED` | Receive failed |
-| 236 | `ERROR_CODE_NETWORK_BIND_FAILED` | UDP bind failed |
-| 237 | `ERROR_CODE_NETWORK_CLOSED` | Connection already closed |
-| 238 | `ERROR_CODE_NETWORK_ADDRESS_PARSE_FAILED` | Address string malformed |
-| 239 | `ERROR_CODE_NETWORK_INVALID_STATE` | Connection in wrong state |
+- `fundamental-async.md` — `fun_async_await`, `fun_async_await_all`
+- `fundamental-memory.md` — `fun_memory_allocate`, `fun_memory_free`, `fun_memory_copy`
+- `include/network/network.h` — complete API reference

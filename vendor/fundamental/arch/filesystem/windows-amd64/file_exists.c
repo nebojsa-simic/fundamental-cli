@@ -5,19 +5,6 @@
 // Wide String Helpers (no stdlib dependencies)
 // ============================================================================
 
-// Get length of wide string
-static int fun_wide_string_length(const wchar_t *s)
-{
-	if (s == NULL) {
-		return 0;
-	}
-	int len = 0;
-	while (s[len] != L'\0') {
-		len++;
-	}
-	return len;
-}
-
 // Convert UTF-8 string to UTF-16 wide string
 static int utf8_to_utf16(const char *utf8, wchar_t *utf16, int utf16_size)
 {

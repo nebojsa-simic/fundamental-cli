@@ -128,10 +128,10 @@ static const char *T_SKILL =
 static ErrorResult write_file(const char *path, const char *content)
 {
 	StringLength len = fun_string_length(content);
-	MemoryResult mem_result = fun_memory_allocate(len);
+	MemoryResult mem_result = fun_memory_allocate(len + 1);
 	if (fun_error_is_error(mem_result.error))
 		return mem_result.error;
-	fun_string_copy(content, (char *)mem_result.value);
+	fun_string_copy(content, (char *)mem_result.value, len + 1);
 	AsyncResult write_result =
 		fun_write_memory_to_file((Write){ .file_path = (String)path,
 										  .input = mem_result.value,

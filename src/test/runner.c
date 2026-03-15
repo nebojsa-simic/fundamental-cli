@@ -81,10 +81,11 @@ int test_build_module(TestModule *module, int verbose)
 		return 1;
 	}
 
-	fun_string_copy(module->path, build_script);
+	fun_string_copy(module->path, build_script, sizeof(build_script));
 	build_script[path_len] = '/';
 	fun_string_copy((String) "build-windows-amd64.bat",
-					build_script + path_len + 1);
+	                build_script + path_len + 1,
+	                sizeof(build_script) - path_len - 1);
 	build_script[path_len + 1 + 23] = '\0';
 
 	boolResult exists = fun_file_exists(build_script);
@@ -117,7 +118,7 @@ int test_build_module(TestModule *module, int verbose)
 	if (exit_code != 0 && verbose) {
 		fun_console_write("Build failed with exit code: ");
 		char code_str[16];
-		fun_string_from_int(exit_code, 10, code_str);
+		fun_string_from_int(exit_code, 10, code_str, sizeof(code_str));
 		fun_console_write_line(code_str);
 	}
 
@@ -137,9 +138,10 @@ int test_execute_module(TestModule *module, int verbose)
 		return 1;
 	}
 
-	fun_string_copy(module->path, test_exe);
+	fun_string_copy(module->path, test_exe, sizeof(test_exe));
 	test_exe[path_len] = '/';
-	fun_string_copy((String) "test.exe", test_exe + path_len + 1);
+	fun_string_copy((String) "test.exe", test_exe + path_len + 1,
+	                sizeof(test_exe) - path_len - 1);
 	test_exe[path_len + 1 + 8] = '\0';
 
 	boolResult exists = fun_file_exists(test_exe);

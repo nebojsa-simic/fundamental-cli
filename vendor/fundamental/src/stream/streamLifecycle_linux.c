@@ -1,14 +1,8 @@
 #include "stream/stream.h"
 #include "memory/memory.h"
-#include <stdint.h>
-#include <stddef.h>
 
-typedef struct {
-	FileStream *stream;
-	int file_descriptor;
-	uint64_t file_size;
-	int file_opened;
-} StreamReadState;
+/* Arch-layer declaration (implemented per platform in arch/stream/) */
+extern void arch_stream_close_handle(void *internal_state);
 
 AsyncResult fun_stream_close(FileStream *stream)
 {
@@ -17,15 +11,9 @@ AsyncResult fun_stream_close(FileStream *stream)
 							  .error = ERROR_RESULT_NULL_POINTER };
 	}
 
-	StreamReadState *state = (StreamReadState *)stream->internal_state;
-	if (state && state->file_descriptor >= 0) {
-		long ret;
-		__asm__ __volatile__("syscall"
-							 : "=a"(ret)
-							 : "a"(3), "D"(state->file_descriptor)
-							 : "rcx", "r11", "memory");
-	}
+	void *state = stream->internal_state;
 	if (state) {
+		arch_stream_close_handle(state);
 		fun_memory_free((Memory *)&state);
 	}
 

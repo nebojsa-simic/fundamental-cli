@@ -163,7 +163,8 @@ CanReturnError(size_t) fun_memory_size(Memory memory)
 }
 
 CanReturnError(void)
-	fun_memory_copy(Memory source, const Memory destination, size_t sizeInBytes)
+	fun_memory_copy(const Memory source, const Memory destination,
+					size_t sizeInBytes)
 {
 	voidResult result;
 
