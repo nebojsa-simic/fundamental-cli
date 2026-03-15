@@ -7,6 +7,8 @@ REM Uses -e main to specify entry point (required with -nostdlib)
 REM Our code calls ZERO stdlib runtime functions (printf, malloc, strlen, etc.)
 REM Windows uses custom startup code to parse command line without MinGW runtime
 
+if not exist build mkdir build
+
 gcc ^
     --std=c17 -Os ^
     -nostdlib ^
@@ -64,9 +66,9 @@ gcc ^
     vendor/fundamental/arch/filesystem/windows-amd64/file_exists.c ^
     vendor/fundamental/arch/filesystem/windows-amd64/path.c ^
     -lkernel32 ^
-    -o fun.exe
+    -o build\fun-windows-amd64.exe
 
 REM Strip unnecessary symbols
-strip --strip-unneeded fun.exe
+strip --strip-unneeded build\fun-windows-amd64.exe
 
-echo Build complete: fun.exe
+echo Build complete: build\fun-windows-amd64.exe

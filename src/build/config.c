@@ -1,5 +1,8 @@
 #include "config.h"
 #include "vendor/fundamental/include/file/file.h"
+#include "vendor/fundamental/include/filesystem/filesystem.h"
+#include "vendor/fundamental/include/async/async.h"
+#include "vendor/fundamental/include/memory/memory.h"
 #include "vendor/fundamental/include/console/console.h"
 #include "vendor/fundamental/include/string/string.h"
 
@@ -138,15 +141,34 @@ BuildConfig build_config_load(void)
 	config.use_nostdlib = 0;
 
 	// Try to read fun.ini
-	ReadFileResult result = fun_read_file((String) "fun.ini");
-
-	if (fun_error_is_error(result.error)) {
-		// No fun.ini found, return defaults
+	boolResult ini_exists = fun_file_exists((String)"fun.ini");
+	if (fun_error_is_error(ini_exists.error) || !ini_exists.value) {
 		return config;
 	}
 
-	// Get content pointer
-	const char *content = (const char *)result.value;
+	static char ini_buf[512];
+	fun_memory_fill((Memory)ini_buf, sizeof(ini_buf), 0);
+
+	static const size_t try_sizes[] = { 256, 128, 64, 32, 0 };
+	int read_ok = 0;
+	for (int t = 0; try_sizes[t] != 0; t++) {
+		AsyncResult r = fun_read_file_in_memory(
+			(Read){ .file_path = (String)"fun.ini",
+				    .output = (Memory)ini_buf,
+				    .bytes_to_read = try_sizes[t] });
+		fun_async_await(&r, -1);
+		if (r.status == ASYNC_COMPLETED) {
+			read_ok = 1;
+			break;
+		}
+		fun_memory_fill((Memory)ini_buf, sizeof(ini_buf), 0);
+	}
+
+	if (!read_ok) {
+		return config;
+	}
+
+	const char *content = (const char *)ini_buf;
 
 	// Parse [build] section
 	config.entry_point = find_ini_value(content, "build", "entry");
@@ -156,8 +178,7 @@ BuildConfig build_config_load(void)
 
 	// Check for nostdlib in standard
 	if (fun_string_length(config.standard) > 0) {
-		if (fun_string_substring(config.standard, 0, 9) ==
-			(String) "-nostdlib") {
+		if (fun_string_index_of(config.standard, (String)"-nostdlib", 0) >= 0) {
 			config.use_nostdlib = 1;
 		}
 	}

@@ -1,4 +1,4 @@
-## ADDED Requirements
+## MODIFIED Requirements
 
 ### Requirement: System removes build artifacts
 The system SHALL clean compiled binaries and temporary files with `fun clean`.

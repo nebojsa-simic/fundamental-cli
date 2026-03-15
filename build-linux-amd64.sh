@@ -4,6 +4,8 @@
 # Uses -fno-builtin to prevent compiler builtin substitution
 # Uses -e main to specify entry point (required with -nostdlib)
 
+mkdir -p build
+
 gcc \
     --std=c17 -Os \
     -nostdlib \
@@ -58,7 +60,7 @@ gcc \
     vendor/fundamental/arch/filesystem/linux-amd64/directory.c \
     vendor/fundamental/arch/filesystem/linux-amd64/file_exists.c \
     vendor/fundamental/arch/filesystem/linux-amd64/path.c \
-    -o fun
+    -o build/fun-linux-amd64
 
-strip --strip-unneeded fun
-echo "Build complete: fun"
+strip --strip-unneeded build/fun-linux-amd64
+echo "Build complete: build/fun-linux-amd64"

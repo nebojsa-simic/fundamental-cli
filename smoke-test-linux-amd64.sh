@@ -39,7 +39,7 @@ pass "fun built"
 # -----------------------------------------------------------------------
 echo
 echo "[SETUP] Copy fun to smoke dir"
-cp ./fun "$SMOKE_DIR/fun" || fail "copy fun failed"
+cp ./build/fun-linux-amd64 "$SMOKE_DIR/fun" || fail "copy fun failed"
 chmod +x "$SMOKE_DIR/fun"
 pass "fun copied and marked executable"
 
@@ -83,18 +83,18 @@ pass "fun build exited 0"
 # -----------------------------------------------------------------------
 echo
 echo "[CHECK] Build output"
-check_file "app"
+check_file "build/app-linux-amd64"
 
-if [ ! -x "app" ]; then
-    fail "app is not executable"
+if [ ! -x "build/app-linux-amd64" ]; then
+    fail "build/app-linux-amd64 is not executable"
 fi
-pass "app is executable"
+pass "build/app-linux-amd64 is executable"
 
 # -----------------------------------------------------------------------
 echo
-echo "[RUN] Execute app"
-./app || fail "app exited non-zero"
-pass "app ran successfully"
+echo "[RUN] Execute build/app-linux-amd64"
+./build/app-linux-amd64 || fail "build/app-linux-amd64 exited non-zero"
+pass "build/app-linux-amd64 ran successfully"
 
 # -----------------------------------------------------------------------
 echo

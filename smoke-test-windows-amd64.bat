@@ -34,9 +34,9 @@ set /a PASS+=1
 REM -----------------------------------------------------------------------
 echo.
 echo [SETUP] Copy fun.exe to smoke dir
-copy /Y fun.exe "%SMOKE_DIR%\fun.exe" >nul
+copy /Y "build\fun-windows-amd64.exe" "%SMOKE_DIR%\fun.exe" >nul
 if %ERRORLEVEL% neq 0 (
-    echo [FAIL] copy fun.exe failed
+    echo [FAIL] copy build\fun-windows-amd64.exe failed
     exit /b 1
 )
 echo [PASS] fun.exe copied
@@ -115,22 +115,22 @@ REM -----------------------------------------------------------------------
 echo.
 echo [CHECK] Build output
 
-if not exist "app.exe" (
-    echo [FAIL] app.exe not found
+if not exist "build\app-windows-amd64.exe" (
+    echo [FAIL] build\app-windows-amd64.exe not found
     exit /b 1
 )
-echo [PASS] app.exe exists
+echo [PASS] build\app-windows-amd64.exe exists
 set /a PASS+=1
 
 REM -----------------------------------------------------------------------
 echo.
-echo [RUN] Execute app.exe
-"%SMOKE_DIR%\app.exe"
+echo [RUN] Execute build\app-windows-amd64.exe
+"%SMOKE_DIR%\build\app-windows-amd64.exe"
 if %ERRORLEVEL% neq 0 (
-    echo [FAIL] app.exe exited non-zero
+    echo [FAIL] build\app-windows-amd64.exe exited non-zero
     exit /b 1
 )
-echo [PASS] app.exe ran successfully
+echo [PASS] build\app-windows-amd64.exe ran successfully
 set /a PASS+=1
 
 REM -----------------------------------------------------------------------

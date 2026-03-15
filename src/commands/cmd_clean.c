@@ -2,19 +2,13 @@
 #include "../fun/platform.h"
 #include "vendor/fundamental/include/async/async.h"
 #include "vendor/fundamental/include/console/console.h"
-#include "vendor/fundamental/include/filesystem/filesystem.h"
 #include "vendor/fundamental/include/process/process.h"
 
 /**
- * Remove a file if it exists, using platform-native delete command
+ * Remove the build/ directory and all its contents
  */
-static void remove_file(const char *path)
+static void remove_build_directory(void)
 {
-	boolResult exists = fun_file_exists((String)path);
-	if (fun_error_is_error(exists.error) || !exists.value) {
-		return;
-	}
-
 	Platform platform = platform_get();
 	char out_buf[256], err_buf[256];
 	ProcessResult proc = { .stdout_data = out_buf,
@@ -24,10 +18,10 @@ static void remove_file(const char *path)
 	AsyncResult spawn_result;
 
 	if (platform.os == PLATFORM_OS_WINDOWS) {
-		const char *args[] = { "cmd.exe", "/c", "del", "/f", "/q", path, NULL };
+		const char *args[] = { "cmd.exe", "/c", "rmdir", "/s", "/q", "build", NULL };
 		spawn_result = fun_process_spawn("cmd.exe", args, NULL, &proc);
 	} else {
-		const char *args[] = { "rm", "-f", path, NULL };
+		const char *args[] = { "rm", "-rf", "build", NULL };
 		spawn_result = fun_process_spawn("rm", args, NULL, &proc);
 	}
 
@@ -43,34 +37,11 @@ int cmd_clean_execute(int argc, const char **argv)
 	(void)argc;
 	(void)argv;
 
-	Platform platform = platform_get();
-
 	fun_console_write_line("Cleaning build artifacts...");
 
-	// Platform-specific binary names
-	const char *binary_name;
-	if (platform.os == PLATFORM_OS_WINDOWS) {
-		binary_name = "app.exe";
-	} else {
-		binary_name = "app";
-	}
-
-	// Remove main binary
-	remove_file(binary_name);
-	fun_console_write("Removed: ");
-	fun_console_write_line(binary_name);
-
-	// Remove object files in src/
-	// Note: A full implementation would scan for .o files
-	// For now, we'll list common locations
-	const char *obj_paths[] = { "src/*.o", "build/*.o", NULL };
-
-	for (int i = 0; obj_paths[i] != NULL; i++) {
-		// In a full implementation, we'd use glob pattern matching
-		// For now, just report what would be cleaned
-	}
-
-	fun_console_write_line("Removed: object files (*.o)");
+	// Remove build/ directory (contains platform-named binary and any object files)
+	remove_build_directory();
+	fun_console_write_line("Removed: build/");
 
 	// Clean generated build scripts (optional - user may want to keep them)
 	// For now, we don't remove build scripts

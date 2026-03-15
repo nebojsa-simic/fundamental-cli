@@ -71,7 +71,8 @@ static const char *T_HC =
 	"cmd_help_execute(int argc, const char **argv) { (void)argc; (void)argv; "
 	"return cli_show_help(); }\n";
 static const char *T_BAT =
-	"@ECHO OFF\nREM Compile app CLI\ngcc --std=c17 -Os -nostdlib -fno-builtin "
+	"@ECHO OFF\nREM Compile app CLI\nif not exist build mkdir build\n\ngcc "
+	"--std=c17 -Os -nostdlib -fno-builtin "
 	"-fno-exceptions -fno-unwind-tables -e main -mconsole -I . -I "
 	"vendor/fundamental/include vendor/fundamental/src/startup/startup.c "
 	"vendor/fundamental/arch/startup/windows-amd64/windows.c src/main.c "
@@ -83,9 +84,12 @@ static const char *T_BAT =
 	"vendor/fundamental/src/string/stringValidation.c "
 	"vendor/fundamental/arch/console/windows-amd64/console.c "
 	"vendor/fundamental/arch/memory/windows-amd64/memory.c -lkernel32 -o "
-	"app.exe\nstrip --strip-unneeded app.exe\necho Build complete: app.exe\n";
+	"build/app-windows-amd64.exe\nstrip --strip-unneeded "
+	"build/app-windows-amd64.exe\necho Build complete: "
+	"build/app-windows-amd64.exe\n";
 static const char *T_SH =
-	"#!/bin/bash\n# Compile app CLI\ngcc --std=c17 -Os -nostdlib -fno-builtin "
+	"#!/bin/bash\n# Compile app CLI\nmkdir -p build\n\ngcc --std=c17 -Os "
+	"-nostdlib -fno-builtin "
 	"-fno-exceptions -fno-unwind-tables -e main -I . -I "
 	"vendor/fundamental/include vendor/fundamental/src/startup/startup.c "
 	"vendor/fundamental/arch/startup/linux-amd64/linux.c src/main.c src/cli.c "
@@ -96,8 +100,9 @@ static const char *T_SH =
 	"vendor/fundamental/src/string/stringTemplate.c "
 	"vendor/fundamental/src/string/stringValidation.c "
 	"vendor/fundamental/arch/console/linux-amd64/console.c "
-	"vendor/fundamental/arch/memory/linux-amd64/memory.c -o app\nstrip "
-	"--strip-unneeded app\necho Build complete: app\n";
+	"vendor/fundamental/arch/memory/linux-amd64/memory.c -o "
+	"build/app-linux-amd64\nstrip --strip-unneeded "
+	"build/app-linux-amd64\necho Build complete: build/app-linux-amd64\n";
 static const char *T_INI =
 	"name = my-project\nversion = 0.1.0\ndescription = My fundamental CLI "
 	"app\nentry = src/main.c\noutput = app.exe\n\n[dependencies]\nfundamental "
@@ -108,8 +113,8 @@ static const char *T_README =
 	"[fundamental](https://github.com/nebojsa-simic/fundamental) "
 	"library.\n\n## Building\n\n### "
 	"Windows\n```batch\n.\\build-windows-amd64.bat\n```\n\n### "
-	"Linux\n```bash\n./build-linux-amd64.sh\n```\n\n## Usage\n```bash\n./app "
-	"--help\n./app version\n```\n\n## License\nSame as fundamental library.\n";
+	"Linux\n```bash\n./build-linux-amd64.sh\n```\n\n## Usage\n```bash\n./build/app-windows-amd64.exe "
+	"--help\n./build/app-linux-amd64 --help\n```\n\n## License\nSame as fundamental library.\n";
 static const char *T_ARCH = "void __main(void) {}\n";
 static const char *T_SKILL =
 	"---\nname: fundamental-expert\ndescription: Expert guide for building "

@@ -1,4 +1,4 @@
-## ADDED Requirements
+## MODIFIED Requirements
 
 ### Requirement: System generates build scripts when missing
 The system SHALL create platform-specific build scripts by scanning source files.
@@ -25,6 +25,8 @@ The system SHALL ensure generated build scripts create the `build/` output direc
 #### Scenario: Linux script creates build directory
 - **WHEN** `build-linux-amd64.sh` is executed
 - **THEN** the script runs `mkdir -p build` before the GCC command
+
+## ADDED Requirements
 
 ### Requirement: Generated scripts include vendor paths
 Build scripts SHALL include proper paths to vendored fundamental library.
