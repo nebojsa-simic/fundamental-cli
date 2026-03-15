@@ -6,6 +6,7 @@
 #include "vendor/fundamental/include/console/console.h"
 #include "vendor/fundamental/include/memory/memory.h"
 #include "vendor/fundamental/include/string/string.h"
+#include "vendor/fundamental/include/process/process.h"
 
 #define MAX_DIR_LISTING  4096
 #define MAX_PATH_STORAGE 16384
@@ -236,6 +237,33 @@ static char *append(char *ptr, const char *s)
 }
 
 /* --------------------------------------------------------------------------
+ * Delete a file if it exists, so the subsequent write truncates cleanly.
+ * -------------------------------------------------------------------------- */
+static void delete_file_if_exists(const char *path)
+{
+	boolResult exists = fun_file_exists((String)path);
+	if (fun_error_is_error(exists.error) || !exists.value)
+		return;
+
+	char out_buf[64], err_buf[64];
+	ProcessResult proc = { .stdout_data = out_buf,
+		                   .stdout_capacity = sizeof(out_buf),
+		                   .stderr_data = err_buf,
+		                   .stderr_capacity = sizeof(err_buf) };
+	AsyncResult r;
+	Platform platform = platform_get();
+	if (platform.os == PLATFORM_OS_WINDOWS) {
+		const char *args[] = { "cmd.exe", "/c", "del", "/f", "/q", path, NULL };
+		r = fun_process_spawn("cmd.exe", args, NULL, &proc);
+	} else {
+		const char *args[] = { "rm", "-f", path, NULL };
+		r = fun_process_spawn("rm", args, NULL, &proc);
+	}
+	fun_async_await(&r, -1);
+	fun_process_free(&proc);
+}
+
+/* --------------------------------------------------------------------------
  * Write script buffer to file
  * -------------------------------------------------------------------------- */
 static BuildGenerationResult write_script(const char *script_path,
@@ -243,6 +271,8 @@ static BuildGenerationResult write_script(const char *script_path,
 {
 	BuildGenerationResult result;
 	result.script_path = (String)script_path;
+
+	delete_file_if_exists(script_path);
 
 	StringLength total_len = fun_string_length((String)content);
 	MemoryResult mem_result = fun_memory_allocate(total_len);
