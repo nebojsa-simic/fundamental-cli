@@ -90,7 +90,7 @@ ScaffoldResult test_scaffold_build_scripts(String test_dir, String module_name,
 				 .input = win_mem.value,
 				 .bytes_to_write = (uint64_t)fun_string_length(win_content),
 				 .offset = 0 });
-	fun_async_await(&win_result);
+	fun_async_await(&win_result, -1);
 	fun_memory_free(&win_mem.value);
 
 	if (win_result.status == ASYNC_ERROR) {
@@ -141,7 +141,7 @@ ScaffoldResult test_scaffold_build_scripts(String test_dir, String module_name,
 				 .input = lin_mem.value,
 				 .bytes_to_write = (uint64_t)fun_string_length(lin_content),
 				 .offset = 0 });
-	fun_async_await(&lin_result);
+	fun_async_await(&lin_result, -1);
 	fun_memory_free(&lin_mem.value);
 
 	if (lin_result.status == ASYNC_ERROR) {

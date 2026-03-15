@@ -206,7 +206,7 @@ BuildGenerationResult build_generate_windows(SourceScanResult scan_result)
 		fun_write_memory_to_file((Write){ .file_path = result.script_path,
 										  .input = mem_result.value,
 										  .bytes_to_write = total_len });
-	fun_async_await(&write_result);
+	fun_async_await(&write_result, -1);
 
 	voidResult free_result = fun_memory_free(&mem_result.value);
 	(void)free_result;
@@ -280,7 +280,7 @@ BuildGenerationResult build_generate_linux(SourceScanResult scan_result)
 		fun_write_memory_to_file((Write){ .file_path = result.script_path,
 										  .input = mem_result.value,
 										  .bytes_to_write = total_len });
-	fun_async_await(&write_result);
+	fun_async_await(&write_result, -1);
 
 	voidResult free_result = fun_memory_free(&mem_result.value);
 	(void)free_result;

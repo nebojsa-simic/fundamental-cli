@@ -41,8 +41,8 @@ gcc ^
     vendor/fundamental/src/platform/platform.c ^
     vendor/fundamental/arch/platform/windows-amd64/platform.c ^
     vendor/fundamental/src/async/async.c ^
-    vendor/fundamental/src/async/process.c ^
-    vendor/fundamental/arch/async/windows-amd64/process.c ^
+    vendor/fundamental/src/process/process.c ^
+    vendor/fundamental/arch/process/windows-amd64/process.c ^
     vendor/fundamental/arch/file/windows-amd64/fileRead.c ^
     vendor/fundamental/arch/file/windows-amd64/fileReadMmap.c ^
     vendor/fundamental/arch/file/windows-amd64/fileReadRing.c ^

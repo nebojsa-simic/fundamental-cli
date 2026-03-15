@@ -131,7 +131,7 @@ static ErrorResult write_file(const char *path, const char *content)
 		fun_write_memory_to_file((Write){ .file_path = (String)path,
 										  .input = mem_result.value,
 										  .bytes_to_write = len });
-	fun_async_await(&write_result);
+	fun_async_await(&write_result, -1);
 	voidResult free_result = fun_memory_free(&mem_result.value);
 	(void)free_result;
 	return (write_result.status != ASYNC_COMPLETED) ?

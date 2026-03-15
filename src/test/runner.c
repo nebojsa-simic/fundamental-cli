@@ -1,8 +1,9 @@
 #include "runner.h"
 #include "scaffolder.h"
-#include "vendor/fundamental/include/console/console.h"
 #include "vendor/fundamental/include/async/async.h"
+#include "vendor/fundamental/include/console/console.h"
 #include "vendor/fundamental/include/filesystem/filesystem.h"
+#include "vendor/fundamental/include/process/process.h"
 
 TestRunnerResult test_run_all(TestModuleArray *modules, int verbose)
 {
@@ -102,11 +103,16 @@ int test_build_module(TestModule *module, int verbose)
 						   "&&",
 						   "build-windows-amd64.bat",
 						   NULL };
-	AsyncResult spawn_result = fun_async_process_spawn("cmd.exe", args, NULL);
-	fun_async_await(&spawn_result);
+	char out_buf[4096], err_buf[4096];
+	ProcessResult proc = { .stdout_data = out_buf,
+		                   .stdout_capacity = sizeof(out_buf),
+		                   .stderr_data = err_buf,
+		                   .stderr_capacity = sizeof(err_buf) };
+	AsyncResult spawn_result = fun_process_spawn("cmd.exe", args, NULL, &proc);
+	fun_async_await(&spawn_result, -1);
 
-	int exit_code = fun_process_get_exit_code(&spawn_result);
-	fun_process_free(&spawn_result);
+	int exit_code = proc.exit_code;
+	fun_process_free(&proc);
 
 	if (exit_code != 0 && verbose) {
 		fun_console_write("Build failed with exit code: ");
@@ -146,11 +152,16 @@ int test_execute_module(TestModule *module, int verbose)
 	// Run from test directory
 	const char *args[] = { "cmd.exe",	 "/c", "cd",	   "/d",
 						   module->path, "&&", "test.exe", NULL };
-	AsyncResult spawn_result = fun_async_process_spawn("cmd.exe", args, NULL);
-	fun_async_await(&spawn_result);
+	char out_buf2[4096], err_buf2[4096];
+	ProcessResult proc2 = { .stdout_data = out_buf2,
+		                    .stdout_capacity = sizeof(out_buf2),
+		                    .stderr_data = err_buf2,
+		                    .stderr_capacity = sizeof(err_buf2) };
+	AsyncResult spawn_result = fun_process_spawn("cmd.exe", args, NULL, &proc2);
+	fun_async_await(&spawn_result, -1);
 
-	int exit_code = fun_process_get_exit_code(&spawn_result);
-	fun_process_free(&spawn_result);
+	int exit_code = proc2.exit_code;
+	fun_process_free(&proc2);
 
 	return exit_code;
 }

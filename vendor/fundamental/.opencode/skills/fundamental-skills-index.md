@@ -37,8 +37,10 @@ This is the central index for all Fundamental Library skills for AI coding agent
 
 | Skill | File | Description |
 |-------|------|-------------|
-| **Async** | [fundamental-async.md](fundamental-async.md) | Await results, poll status, spawn processes |
+| **Async** | [fundamental-async.md](fundamental-async.md) | Await results, poll status, timeout |
+| **Process** | [fundamental-process.md](fundamental-process.md) | Spawn processes, capture stdout/stderr, terminate |
 | **Config** | [fundamental-config.md](fundamental-config.md) | Load configuration, cascade sources, get values |
+| **Network** | [fundamental-network.md](fundamental-network.md) | TCP/UDP client, event loop, address parse, scatter/gather I/O |
 | **Platform** | [fundamental-platform.md](fundamental-platform.md) | Detect OS and architecture, convert to string |
 
 ---
@@ -132,10 +134,18 @@ fundamental-config.md
 
 fundamental-async.md
     └──→ fundamental-file-io.md (for async file ops)
+    └──→ fundamental-process.md (process spawn depends on async)
+
+fundamental-process.md
+    └──→ fundamental-async.md (AsyncResult returned by fun_process_spawn)
 
 fundamental-platform.md
     └──→ fundamental-console.md (for logging platform info)
     └──→ fundamental-async.md (for spawning platform-specific processes)
+
+fundamental-network.md
+    └──→ fundamental-async.md (for non-blocking I/O patterns)
+    └──→ fundamental-memory.md (for receive buffer allocation)
 ```
 
 ---
@@ -151,10 +161,11 @@ fundamental-platform.md
 | Store data | fundamental-collections.md |
 | Parse text | fundamental-string.md |
 | Load settings | fundamental-config.md |
-| Run a command | fundamental-async.md |
+| Run a command | fundamental-process.md |
 | Allocate memory | fundamental-memory.md |
 | List files | fundamental-directory.md |
 | Detect OS/arch | fundamental-platform.md |
+| Connect TCP/UDP | fundamental-network.md |
 
 ---
 

@@ -3,6 +3,7 @@
 #include "vendor/fundamental/include/async/async.h"
 #include "vendor/fundamental/include/console/console.h"
 #include "vendor/fundamental/include/filesystem/filesystem.h"
+#include "vendor/fundamental/include/process/process.h"
 
 /**
  * Execute Windows batch script
@@ -26,11 +27,16 @@ BuildExecutionResult build_execute_windows(String script_path, int verbose)
 	}
 
 	const char *args[] = { "cmd.exe", "/c", script_path, NULL };
-	AsyncResult spawn_result = fun_async_process_spawn("cmd.exe", args, NULL);
-	fun_async_await(&spawn_result);
+	char out_buf[4096], err_buf[4096];
+	ProcessResult proc = { .stdout_data = out_buf,
+		                   .stdout_capacity = sizeof(out_buf),
+		                   .stderr_data = err_buf,
+		                   .stderr_capacity = sizeof(err_buf) };
+	AsyncResult spawn_result = fun_process_spawn("cmd.exe", args, NULL, &proc);
+	fun_async_await(&spawn_result, -1);
 
-	int exit_code = fun_process_get_exit_code(&spawn_result);
-	fun_process_free(&spawn_result);
+	int exit_code = proc.exit_code;
+	fun_process_free(&proc);
 
 	if (exit_code == 0) {
 		result.status = BUILD_EXEC_SUCCESS;
@@ -67,11 +73,16 @@ BuildExecutionResult build_execute_linux(String script_path, int verbose)
 	}
 
 	const char *args[] = { "bash", script_path, NULL };
-	AsyncResult spawn_result = fun_async_process_spawn("bash", args, NULL);
-	fun_async_await(&spawn_result);
+	char out_buf[4096], err_buf[4096];
+	ProcessResult proc = { .stdout_data = out_buf,
+		                   .stdout_capacity = sizeof(out_buf),
+		                   .stderr_data = err_buf,
+		                   .stderr_capacity = sizeof(err_buf) };
+	AsyncResult spawn_result = fun_process_spawn("bash", args, NULL, &proc);
+	fun_async_await(&spawn_result, -1);
 
-	int exit_code = fun_process_get_exit_code(&spawn_result);
-	fun_process_free(&spawn_result);
+	int exit_code = proc.exit_code;
+	fun_process_free(&proc);
 
 	if (exit_code == 0) {
 		result.status = BUILD_EXEC_SUCCESS;

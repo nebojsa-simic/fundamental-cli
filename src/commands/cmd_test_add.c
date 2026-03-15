@@ -90,7 +90,7 @@ int cmd_test_add_execute(int argc, const char **argv)
 				 .input = mem_result.value,
 				 .bytes_to_write = (uint64_t)fun_string_length(test_content),
 				 .offset = 0 });
-	fun_async_await(&write_result);
+	fun_async_await(&write_result, -1);
 	fun_memory_free(&mem_result.value);
 
 	if (write_result.status == ASYNC_ERROR) {
