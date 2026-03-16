@@ -237,82 +237,145 @@
 - [ ] 6d.22 Write tests: verify implicit cast insertion (int→int64_t, etc.)
 - [ ] 6d.23 Write tests: verify type error detection (mismatched types, wrong arg count, etc.)
 
-## Phase 7: Code Generator — Expressions + Functions
+## Phase 7a: IR Generation (TypedAST → LLVM IR subset)
 
-- [ ] 7.1 Implement assembly output buffer (growable string for .s file content)
-- [ ] 7.2 Implement label generation (unique labels for jumps and data)
-- [ ] 7.3 Implement string literal emission (.rodata section)
-- [ ] 7.4 Implement global variable emission (.data and .bss sections)
-- [ ] 7.5 Implement function prologue (stack frame setup, callee-saved registers)
-- [ ] 7.6 Implement function epilogue (stack frame teardown, return)
-- [ ] 7.7 Implement Win64 ABI: register parameter passing (rcx, rdx, r8, r9 + shadow space)
-- [ ] 7.8 Implement System V ABI: register parameter passing (rdi, rsi, rdx, rcx, r8, r9)
-- [ ] 7.9 Implement local variable stack allocation (offsets from rbp)
-- [ ] 7.10 Implement integer arithmetic codegen (add, sub, imul, idiv)
-- [ ] 7.11 Implement comparison codegen (cmp + setcc)
-- [ ] 7.12 Implement logical operators codegen (short-circuit evaluation)
-- [ ] 7.13 Implement bitwise operators codegen (and, or, xor, shl, shr)
-- [ ] 7.14 Implement unary operators codegen (negate, bitwise not, logical not, address-of, dereference)
-- [ ] 7.15 Implement function call codegen (argument passing per ABI, call instruction, return value)
-- [ ] 7.16 Implement assignment codegen (simple and compound assignments)
-- [ ] 7.17 Implement pointer arithmetic codegen (scaled by pointee size)
-- [ ] 7.18 Implement array indexing codegen (base + index * element_size)
-- [ ] 7.19 Implement struct member access codegen (base + field offset)
-- [ ] 7.20 Implement cast codegen (integer widening/narrowing, pointer casts)
-- [ ] 7.21 Implement sizeof evaluation (compile-time constant)
-- [ ] 7.22 Write codegen test: compile main() returning 42, assemble, link, run, verify exit code
-- [ ] 7.23 Write codegen test: compile function with arithmetic, verify result
-- [ ] 7.24 Write codegen test: compile function with pointer operations, verify result
+- [ ] 7a.1 Define in-memory IR data structures: IRModule, IRFunction, IRBasicBlock, IRInstruction
+- [ ] 7a.2 Define IR type system: i8, i16, i32, i64, float, double, ptr, void, struct types, array types, function types
+- [ ] 7a.3 Define IR value representation: virtual register (%0, %1, ...), constants, global references
+- [ ] 7a.4 Implement IR text emitter (write LLVM IR subset to .ll text file)
+- [ ] 7a.5 Implement function translation: TypedAST FunctionDecl → IR define with entry block
+- [ ] 7a.6 Implement alloca generation: every local variable → alloca instruction at function entry
+- [ ] 7a.7 Implement parameter handling: function params → alloca + store at entry
+- [ ] 7a.8 Implement variable read: identifier → load from alloca
+- [ ] 7a.9 Implement variable write: assignment → store to alloca
+- [ ] 7a.10 Implement integer arithmetic: +, -, *, /, % → add, sub, mul, sdiv/udiv, srem/urem
+- [ ] 7a.11 Implement bitwise operators: &, |, ^, ~, <<, >> → and, or, xor, shl, lshr/ashr
+- [ ] 7a.12 Implement comparison operators: ==, !=, <, >, <=, >= → icmp with predicates
+- [ ] 7a.13 Implement logical operators: &&, || → short-circuit with br (conditional) + basic blocks
+- [ ] 7a.14 Implement unary operators: -, !, ~ → sub 0, icmp eq 0, xor -1
+- [ ] 7a.15 Implement address-of (&) and dereference (*) → alloca address / load through ptr
+- [ ] 7a.16 Implement function call: call instruction with arguments and return value
+- [ ] 7a.17 Implement if/else → conditional br + basic blocks (then, else, merge)
+- [ ] 7a.18 Implement for loop → basic blocks (init, cond, body, inc, exit) + br
+- [ ] 7a.19 Implement while loop → basic blocks (cond, body, exit) + br
+- [ ] 7a.20 Implement do-while loop → basic blocks (body, cond, exit) + br
+- [ ] 7a.21 Implement break/continue → unconditional br to loop exit/continue block
+- [ ] 7a.22 Implement switch/case → switch instruction with case labels + default
+- [ ] 7a.23 Implement return → ret instruction
+- [ ] 7a.24 Implement struct member access → getelementptr with struct field index
+- [ ] 7a.25 Implement array indexing → getelementptr with index
+- [ ] 7a.26 Implement pointer arithmetic → getelementptr scaled by pointee type
+- [ ] 7a.27 Implement type casts → zext, sext, trunc, bitcast, ptrtoint, inttoptr
+- [ ] 7a.28 Implement sizeof → compile-time constant (IR integer literal)
+- [ ] 7a.29 Implement float arithmetic → fadd, fsub, fmul, fdiv
+- [ ] 7a.30 Implement float comparisons → fcmp
+- [ ] 7a.31 Implement string literal → global constant in IR (.rodata)
+- [ ] 7a.32 Implement global variable → IR global definition (.data / .bss)
+- [ ] 7a.33 Implement static local variable → IR internal global with mangled name
+- [ ] 7a.34 Implement compound literal → alloca + getelementptr + store for each field
+- [ ] 7a.35 Implement designated initializer → field-indexed getelementptr + store
+- [ ] 7a.36 Implement compound assignment (+=, -=, etc.) → load + op + store sequence
+- [ ] 7a.37 Implement pre/post increment/decrement → load + add/sub + store (+ sequence point)
+- [ ] 7a.38 Implement ternary expression → conditional br + basic blocks + select pattern
+- [ ] 7a.39 Implement comma operator → evaluate left (discard), evaluate right (keep)
+- [ ] 7a.40 Write tests: translate minimal functions, verify .ll output matches expected IR
+- [ ] 7a.41 Write tests: validate .ll output with llc (if available) as correctness oracle
+- [ ] 7a.42 Write tests: translate functions with control flow, verify basic block structure
 
-## Phase 8: Code Generator — Control Flow + Structs
+## Phase 7b: ABI Lowering
 
-- [ ] 8.1 Implement if/else codegen (cmp + conditional jump + labels)
-- [ ] 8.2 Implement for loop codegen (init + condition + increment + body + jump)
-- [ ] 8.3 Implement while loop codegen (condition + body + jump)
-- [ ] 8.4 Implement do-while loop codegen (body + condition + jump)
-- [ ] 8.5 Implement break codegen (jump to loop/switch exit label)
-- [ ] 8.6 Implement continue codegen (jump to loop continue label)
-- [ ] 8.7 Implement switch/case codegen (comparison chain or jump table)
-- [ ] 8.8 Implement return statement codegen (move to return register + epilogue)
-- [ ] 8.9 Implement struct passing by value (copy to stack)
-- [ ] 8.10 Implement struct return by value (caller-allocated space or register)
-- [ ] 8.11 Implement compound literal codegen (allocate on stack, initialize fields)
-- [ ] 8.12 Implement designated initializer codegen (field offset calculation + store)
-- [ ] 8.13 Implement static local variable codegen (.data section with mangled name)
-- [ ] 8.14 Implement ternary expression codegen (conditional jump pattern)
-- [ ] 8.15 Implement increment/decrement codegen (pre and post)
-- [ ] 8.16 Write codegen tests: compile programs with control flow, verify behavior
-- [ ] 8.17 Write codegen tests: compile programs with structs, verify field access and layout
-- [ ] 8.18 Write codegen tests: compile programs with switch statements, verify all cases
+- [ ] 7b.1 Define ABI interface: struct with function pointers for arg passing, return, caller/callee-saved regs
+- [ ] 7b.2 Implement Win64 ABI module: arg regs (rcx, rdx, r8, r9), shadow space, caller-saved set
+- [ ] 7b.3 Implement System V ABI module: arg regs (rdi, rsi, rdx, rcx, r8, r9), red zone, caller-saved set
+- [ ] 7b.4 Implement ABI dispatch: select Win64 or System V based on target platform
+- [ ] 7b.5 Implement call lowering: rewrite call instructions → explicit arg register moves + call + result move
+- [ ] 7b.6 Implement return lowering: rewrite ret → move to rax + epilogue sequence
+- [ ] 7b.7 Implement stack argument passing: args beyond register count → push to stack per ABI
+- [ ] 7b.8 Implement struct passing by value: small structs in regs, large structs via pointer per ABI
+- [ ] 7b.9 Implement struct return by value: caller-allocated space or register per ABI
+- [ ] 7b.10 Implement caller-saved register annotation: mark which regs are clobbered across calls
+- [ ] 7b.11 Implement stack alignment enforcement: 16-byte alignment before call per ABI
+- [ ] 7b.12 Implement Win64 shadow space insertion: reserve 32 bytes before call arguments
+- [ ] 7b.13 Implement .abi.ll text output: write ABI-lowered IR to disk (still LLVM IR text form)
+- [ ] 7b.14 Write tests: verify Win64 call lowering (arg registers, shadow space, alignment)
+- [ ] 7b.15 Write tests: verify System V call lowering (arg registers, stack args, alignment)
+- [ ] 7b.16 Write tests: verify struct passing for both ABIs
+- [ ] 7b.17 Write tests: verify caller-saved register annotations
 
-## Phase 9: Integration with fun build
+## Phase 7c: Register Allocation (Linear Scan)
 
-- [ ] 9.1 Create cmd_compile.c / cmd_compile.h (fun compile command)
-- [ ] 9.2 Implement compile command flag parsing: --norm, --inc, --cond, -E, --tokens, --lex, --ast, --symbols, --types, --resolved, --typed, -S, -c, -I, -o
-- [ ] 9.3 Implement pipeline driver: each flag stops at the corresponding stage and writes output
-- [ ] 9.4 Wire full pipeline: normalize → include → conditional → expand → tokenizer → lexer → parser → symcollect → typeresolve → nameresolve → typecheck → codegen
-- [ ] 9.5 Register compile command in main.c
-- [ ] 9.6 Create cmd_inspect.c / cmd_inspect.h (fun inspect-tokens, inspect-lex, inspect-ast, inspect-sym, inspect-types)
-- [ ] 9.7 Implement inspect commands: deserialize binary format, print human-readable text
-- [ ] 9.8 Register inspect commands in main.c
-- [ ] 9.9 Implement fun build --compiler=funcc flag
-- [ ] 9.10 Modify build generator to use funcc pipeline instead of gcc when flag is set
-- [ ] 9.11 Implement multi-file compilation (compile each .c to .s, then assemble and link all)
-- [ ] 9.12 Implement include path (-I) forwarding for vendor/fundamental/include
-- [ ] 9.13 Implement assembler invocation (GNU as on the .s files)
-- [ ] 9.14 Implement linker invocation (ld/link with platform-appropriate flags)
-- [ ] 9.15 Write integration test: fun compile with each pipeline flag on a test file
-- [ ] 9.16 Write integration test: fun build --compiler=funcc on a minimal project
-- [ ] 9.17 Write integration test: fun build --compiler=funcc on fundamental-cli itself
+- [ ] 7c.1 Define physical register set: rax, rbx, rcx, rdx, rsi, rdi, r8-r15 (minus rsp, rbp)
+- [ ] 7c.2 Define live interval data structure: virtual register → [start, end] range
+- [ ] 7c.3 Implement live interval computation: walk instructions, track first/last use of each virtual reg
+- [ ] 7c.4 Implement interval sorting by start point
+- [ ] 7c.5 Implement linear scan core: walk sorted intervals, assign physical registers from available pool
+- [ ] 7c.6 Implement spill decision: when pool exhausted, spill interval ending furthest out
+- [ ] 7c.7 Implement spill slot allocation: assign stack offsets [rbp - N] for spilled registers
+- [ ] 7c.8 Implement spill code insertion: load before use, store after def for spilled intervals
+- [ ] 7c.9 Implement pre-colored register handling: ABI-required registers (rax for return, arg regs)
+- [ ] 7c.10 Implement callee-saved register tracking: record which callee-saved regs are used (for prologue/epilogue)
+- [ ] 7c.11 Implement frame size calculation: sum of spill slots + local allocas + alignment padding
+- [ ] 7c.12 Implement AllocatedIR data structure: all virtual regs replaced with physical regs or spill offsets
+- [ ] 7c.13 Implement .alloc binary serialization (write allocated IR to disk)
+- [ ] 7c.14 Implement .alloc binary deserialization
+- [ ] 7c.15 Write tests: allocate registers for simple functions, verify no conflicts
+- [ ] 7c.16 Write tests: verify spilling occurs when register pressure exceeds available pool
+- [ ] 7c.17 Write tests: verify callee-saved registers are tracked correctly
+- [ ] 7c.18 Write tests: verify frame size calculation matches expected layout
 
-## Phase 10: Validation
+## Phase 7d: Assembly Emission
 
-- [ ] 10.1 Compile fundamental-cli with funcc, compare binary behavior against gcc-compiled version
-- [ ] 10.2 Run fundamental-cli test suite against funcc-compiled binary
-- [ ] 10.3 Run fundamental-cli smoke test against funcc-compiled binary
-- [ ] 10.4 Compile fundamental library test suites with funcc
-- [ ] 10.5 Test on Windows (Win64 ABI)
-- [ ] 10.6 Test on Linux (System V ABI)
-- [ ] 10.7 Stress test: compile all source files, compare assembly output for correctness
-- [ ] 10.8 Document known limitations and unsupported C features
-- [ ] 10.9 Document funcc usage in CLAUDE.md and README
+- [ ] 7d.1 Implement assembly output buffer (growable string via DEFINE_ARRAY_TYPE(char))
+- [ ] 7d.2 Implement section management: .text, .rodata, .data, .bss switching
+- [ ] 7d.3 Implement label generation: unique labels for basic blocks, jumps, data
+- [ ] 7d.4 Implement function emission: .globl directive, label, prologue, body, epilogue
+- [ ] 7d.5 Implement prologue emission: pushq %rbp, movq %rsp %rbp, subq $frame_size %rsp, save callee-saved regs
+- [ ] 7d.6 Implement epilogue emission: restore callee-saved regs, movq %rbp %rsp, popq %rbp, ret
+- [ ] 7d.7 Implement instruction emission: translate each allocated IR instruction to AT&T syntax
+- [ ] 7d.8 Implement memory operand formatting: offset(%reg), scale*index+base patterns
+- [ ] 7d.9 Implement immediate operand formatting: $value
+- [ ] 7d.10 Implement string literal emission: .section .rodata, .string directive
+- [ ] 7d.11 Implement float constant emission: .section .rodata, .long/.quad for float/double bit patterns
+- [ ] 7d.12 Implement global variable emission: .data/.bss section, .long/.quad/.byte with initializers
+- [ ] 7d.13 Implement static variable emission: .local directive + data section
+- [ ] 7d.14 Implement extern symbol directives
+- [ ] 7d.15 Implement alignment directives: .align for functions, data, stack
+- [ ] 7d.16 Implement .s file output: write final assembly text to disk
+- [ ] 7d.17 Write tests: emit assembly for minimal function, assemble with GNU as, verify no errors
+- [ ] 7d.18 Write tests: emit + assemble + link + run main() returning 42, verify exit code
+- [ ] 7d.19 Write tests: emit + assemble + link + run function with arithmetic, verify result
+- [ ] 7d.20 Write tests: emit + assemble + link + run function with control flow, verify result
+- [ ] 7d.21 Write tests: emit + assemble + link + run function with struct access, verify result
+- [ ] 7d.22 Write tests: emit + assemble + link + run function with pointer ops, verify result
+
+## Phase 8: Integration with fun build
+
+- [ ] 8.1 Create cmd_compile.c / cmd_compile.h (fun compile command)
+- [ ] 8.2 Implement compile command flag parsing: --preprocessor-normalized, --preprocessor-includes, --preprocessor-conditionals, --preprocessor-macros, --tokens, --lexed, --ast-parsed, --ast-symbols, --ast-types, --ast-resolved, --ast-typed, --ir, --ir-abi, --ir-registers, --assembly, --object, -I, -o
+- [ ] 8.3 Implement pipeline driver: each flag stops at the corresponding stage and writes output
+- [ ] 8.4 Wire full pipeline: normalize → include → conditional → expand → tokenizer → lexer → parser → symcollect → typeresolve → nameresolve → typecheck → irgen → abi_lower → regalloc → asmemit
+- [ ] 8.5 Register compile command in main.c
+- [ ] 8.6 Create cmd_inspect.c / cmd_inspect.h (fun inspect-tokens, inspect-lex, inspect-ast, inspect-sym, inspect-types, inspect-alloc)
+- [ ] 8.7 Implement inspect commands: deserialize binary format, print human-readable text
+- [ ] 8.8 Register inspect commands in main.c
+- [ ] 8.9 Implement fun build --compiler=funcc flag
+- [ ] 8.10 Modify build generator to use funcc pipeline instead of gcc when flag is set
+- [ ] 8.11 Implement multi-file compilation (compile each .c to .s, then assemble and link all)
+- [ ] 8.12 Implement include path (-I) forwarding for vendor/fundamental/include
+- [ ] 8.13 Implement assembler invocation (GNU as on the .s files)
+- [ ] 8.14 Implement linker invocation (ld/link with platform-appropriate flags)
+- [ ] 8.15 Write integration test: fun compile with each pipeline flag on a test file
+- [ ] 8.16 Write integration test: fun build --compiler=funcc on a minimal project
+- [ ] 8.17 Write integration test: fun build --compiler=funcc on fundamental-cli itself
+
+## Phase 9: Validation
+
+- [ ] 9.1 Compile fundamental-cli with funcc, compare binary behavior against gcc-compiled version
+- [ ] 9.2 Run fundamental-cli test suite against funcc-compiled binary
+- [ ] 9.3 Run fundamental-cli smoke test against funcc-compiled binary
+- [ ] 9.4 Compile fundamental library test suites with funcc
+- [ ] 9.5 Test on Windows (Win64 ABI)
+- [ ] 9.6 Test on Linux (System V ABI)
+- [ ] 9.7 Stress test: compile all source files, compare assembly output for correctness
+- [ ] 9.8 Document known limitations and unsupported C features
+- [ ] 9.9 Document funcc usage in CLAUDE.md and README

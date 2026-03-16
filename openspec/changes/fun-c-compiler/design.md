@@ -32,54 +32,64 @@ fun compile <file.c>
 │  ┌──────────────────────────────────────────────────────────────────┐
 │  │                         PIPELINE                                │
 │  │                                                                  │
-│  │  Stage          Intermediate Result       Disk Format   Flag     │
-│  │  ─────          ───────────────────       ───────────   ────     │
-▼  │                                                                  │
-│  │                  ┄┄ PREPROCESSOR ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄     │
-│  │                                                                  │
-┌──┤  Normalize      NormalizedSource          .norm (text)  --norm   │
-│  │       │          + LineMap                                        │
-│  │       ▼                                                          │
-│  │  Include        TranslationUnit           .inc (text)   --inc   │
-│  │       │          (all includes inlined)                          │
-│  │       ▼                                                          │
-│  │  Conditional    ConditionalResult         .cond (text)  --cond  │
-│  │       │          + MacroTable                                    │
-│  │       ▼                                                          │
-│  │  Macro Expand   ExpandedSource            .i (text)     -E      │
-│  │       │                                                          │
-│  │                  ┄┄ FRONT-END ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄     │
-│  │       ▼                                                          │
-│  │  Tokenizer      Array<RawToken>           .tokens (bin) --tokens │
-│  │       │                                                          │
-│  │       ▼                                                          │
-│  │  Lexer          Array<LexToken>           .lex (bin)    --lex   │
-│  │       │           + StringTable                                  │
-│  │       ▼                                                          │
-│  │  Parser         AST                       .ast (bin)    --ast   │
-│  │       │                                                          │
-│  │                  ┄┄ SEMANTIC ANALYSIS ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄     │
-│  │       ▼                                                          │
-│  │  Sym Collect    AST + SymbolTable         .sym (bin)    --symbols│
-│  │       │                                                          │
-│  │       ▼                                                          │
-│  │  Type Resolve   AST + SymbolTable         .types (bin)  --types │
-│  │       │           + TypeGraph                                    │
-│  │       ▼                                                          │
-│  │  Name Resolve   ResolvedAST               .resolved     --resolved
-│  │       │           + SymbolTable             (bin)                │
-│  │       │           + TypeGraph                                    │
-│  │       ▼                                                          │
-│  │  Type Check     TypedAST                  .typed (bin)  --typed │
-│  │       │           + SymbolTable                                  │
-│  │       │           + TypeGraph                                    │
-│  │                                                                  │
-│  │                  ┄┄ BACK-END ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄     │
-│  │       ▼                                                          │
-│  │  Code Gen       Assembly                  .s (text)     -S      │
-│  │       │                                                          │
-│  │       ▼                                                          │
-│  │  Assemble       Object code               .o (bin)      -c      │
+│  │  Stage          Intermediate Result       Disk Format   Flag                      │
+│  │  ─────          ───────────────────       ───────────   ────                      │
+▼  │                                                                                   │
+│  │                  ┄┄ PREPROCESSOR ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄     │
+│  │                                                                                   │
+┌──┤  Normalize      NormalizedSource          .norm (text)  --preprocessor-normalized  │
+│  │       │          + LineMap                                                         │
+│  │       ▼                                                                           │
+│  │  Include        TranslationUnit           .inc (text)   --preprocessor-includes   │
+│  │       │          (all includes inlined)                                            │
+│  │       ▼                                                                           │
+│  │  Conditional    ConditionalResult         .cond (text)  --preprocessor-conditionals│
+│  │       │          + MacroTable                                                     │
+│  │       ▼                                                                           │
+│  │  Macro Expand   ExpandedSource            .i (text)     --preprocessor-macros     │
+│  │       │                                                                           │
+│  │                  ┄┄ FRONT-END ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄     │
+│  │       ▼                                                                           │
+│  │  Tokenizer      Array<RawToken>           .tokens (bin) --tokens                  │
+│  │       │                                                                           │
+│  │       ▼                                                                           │
+│  │  Lexer          Array<LexToken>           .lex (bin)    --lexed                   │
+│  │       │           + StringTable                                                   │
+│  │       ▼                                                                           │
+│  │  Parser         AST                       .ast (bin)    --ast-parsed              │
+│  │       │                                                                           │
+│  │                  ┄┄ SEMANTIC ANALYSIS ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄     │
+│  │       ▼                                                                           │
+│  │  Sym Collect    AST + SymbolTable         .sym (bin)    --ast-symbols             │
+│  │       │                                                                           │
+│  │       ▼                                                                           │
+│  │  Type Resolve   AST + SymbolTable         .types (bin)  --ast-types              │
+│  │       │           + TypeGraph                                                     │
+│  │       ▼                                                                           │
+│  │  Name Resolve   ResolvedAST               .resolved     --ast-resolved           │
+│  │       │           + SymbolTable             (bin)                                  │
+│  │       │           + TypeGraph                                                     │
+│  │       ▼                                                                           │
+│  │  Type Check     TypedAST                  .typed (bin)  --ast-typed               │
+│  │       │           + SymbolTable                                                   │
+│  │       │           + TypeGraph                                                     │
+│  │                                                                                   │
+│  │                  ┄┄ BACK-END ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄     │
+│  │       ▼                                                                           │
+│  │  IR Gen         LLVM IR (subset)          .ll (text)    --ir                      │
+│  │       │          (alloca form, no phi)                                             │
+│  │       ▼                                                                           │
+│  │  ABI Lowering   ABI-specific IR           .abi.ll (text) --ir-abi                │
+│  │       │          (call/ret lowered)                                                │
+│  │       ▼                                                                           │
+│  │  Reg Alloc      Allocated IR              .alloc (bin)  --ir-registers            │
+│  │       │          (linear scan)                                                     │
+│  │       ▼                                                                           │
+│  │  Asm Emit       Assembly                  .s (text)     --assembly                │
+│  │       │          (AT&T x86-64 +                                                    │
+│  │       │           data sections)                                                   │
+│  │       ▼                                                                           │
+│  │  Assemble       Object code               .o (bin)      --object                  │
 │  │  (external:     (via GNU as)                                     │
 │  │   GNU as)                                                        │
 │  │       │                                                          │
@@ -425,7 +435,155 @@ The ordering is load-bearing: each stage depends on the previous stage's output.
                                  │  The code generator can trust that all types
                                  │  are resolved and all names are bound.
                                  ▼
-                           (Code Generator)
+                           (Backend: IR Gen)
+```
+
+### Backend — Four-Stage Split (LLVM IR Subset)
+
+The backend uses a subset of LLVM IR as its intermediate representation,
+separating platform-independent logic from platform-specific concerns.
+
+```
+TypedAST (from type checker)
+  │
+  ▼
+┌───────────────────────────────────────┐
+│  7a: IR Generation                    │
+│                                       │
+│  TypedAST → LLVM IR subset            │
+│                                       │
+│  Uses "alloca form" (same as Clang):  │
+│  - Every local variable → alloca      │
+│  - Every read → load from alloca      │
+│  - Every write → store to alloca      │
+│  - Temporaries are SSA (%0, %1, ...)  │
+│  - No phi nodes needed                │
+│                                       │
+│  Platform-independent. No ABI         │
+│  knowledge. Virtual registers only.   │
+│                                       │
+│  Example output:                      │
+│                                       │
+│  define i32 @add(i32 %a, i32 %b) {   │
+│  entry:                               │
+│    %a.addr = alloca i32               │
+│    %b.addr = alloca i32               │
+│    store i32 %a, ptr %a.addr          │
+│    store i32 %b, ptr %b.addr          │
+│    %0 = load i32, ptr %a.addr         │
+│    %1 = load i32, ptr %b.addr         │
+│    %2 = add i32 %0, %1               │
+│    ret i32 %2                         │
+│  }                                    │
+└──────────────┬────────────────────────┘
+               │
+  IR: .ll file (text)    LLVM IR subset in text form.
+                          Validatable with llc.
+                          Platform-independent.
+               │
+               ▼
+┌───────────────────────────────────────┐
+│  7b: ABI Lowering                     │
+│                                       │
+│  Transforms call/ret instructions     │
+│  to match platform calling convention.│
+│                                       │
+│  Win64 ABI:                           │
+│  - Args 1-4 → rcx, rdx, r8, r9      │
+│  - 32-byte shadow space on stack      │
+│  - Caller-saved: rax,rcx,rdx,r8-r11  │
+│  - 16-byte stack alignment            │
+│                                       │
+│  System V ABI:                        │
+│  - Args 1-6 → rdi,rsi,rdx,rcx,r8,r9 │
+│  - 128-byte red zone                  │
+│  - Caller-saved: rax,rcx,rdx,rsi,    │
+│    rdi,r8-r11                         │
+│  - 16-byte stack alignment            │
+│                                       │
+│  Rewrites:                            │
+│  - call @func(%a, %b) →              │
+│      mov %a → arg_reg_1              │
+│      mov %b → arg_reg_2              │
+│      call @func                       │
+│      mov return_reg → %result         │
+│  - ret %val →                         │
+│      mov %val → rax                   │
+│      epilogue                         │
+└──────────────┬────────────────────────┘
+               │
+  IR: .abi.ll file       Still LLVM IR text, but with
+      (text)              call/ret expanded to explicit
+                          register moves per ABI.
+               │
+               ▼
+┌───────────────────────────────────────┐
+│  7c: Register Allocation              │
+│      (Linear Scan)                    │
+│                                       │
+│  Map virtual registers (%0, %1, ...) │
+│  to physical x86-64 registers or     │
+│  stack spill slots.                   │
+│                                       │
+│  Algorithm:                           │
+│  1. Compute live intervals for each   │
+│     virtual register                  │
+│  2. Sort intervals by start point     │
+│  3. Walk intervals, assign physical   │
+│     registers from available pool     │
+│  4. When pool exhausted, spill the    │
+│     interval ending furthest out      │
+│                                       │
+│  Physical register pool (general):    │
+│    rax, rbx, rcx, rdx, rsi, rdi,     │
+│    r8-r15 (minus reserved: rsp, rbp)  │
+│                                       │
+│  Spill slots: [rbp - offset]          │
+│  allocated in the stack frame.        │
+└──────────────┬────────────────────────┘
+               │
+  IR: AllocatedIR        All virtual registers replaced
+      (.alloc, binary)    with physical register names or
+                          stack offsets. Frame size finalized.
+               │
+               ▼
+┌───────────────────────────────────────┐
+│  7d: Assembly Emission                │
+│                                       │
+│  Translate allocated IR to AT&T       │
+│  syntax x86-64 assembly.             │
+│                                       │
+│  Sections:                            │
+│  .text    function bodies, labels     │
+│  .rodata  string literals, float      │
+│           constants                   │
+│  .data    initialized globals,        │
+│           initialized statics         │
+│  .bss     uninitialized globals,      │
+│           uninitialized statics       │
+│                                       │
+│  Function structure:                  │
+│    .globl func_name                   │
+│    func_name:                         │
+│      pushq %rbp                       │
+│      movq %rsp, %rbp                  │
+│      subq $frame_size, %rsp           │
+│      ... body ...                     │
+│      movq %rbp, %rsp                  │
+│      popq %rbp                        │
+│      ret                              │
+│                                       │
+│  Also emits:                          │
+│  - Global/extern symbol directives    │
+│  - Alignment directives               │
+│  - Section switching                  │
+└──────────────┬────────────────────────┘
+               │
+  IR: .s file (text)     Final AT&T syntax x86-64 assembly.
+                          Ready for GNU as.
+               │
+               ▼
+          (GNU as → .o → ld → executable)
 ```
 
 ### Grammar as Documentation (Option C)
@@ -475,10 +633,13 @@ src/
     type.c / .h              Type representation and operations
     symtab.c / .h            Symbol table (scoped name → type mapping)
 
-    # Back-end
-    codegen.c / .h           x86-64 assembly emission
-    codegen_win64.c / .h     Win64 ABI specifics
-    codegen_sysv.c / .h      System V ABI specifics
+    # Back-end (4 stages)
+    irgen.c / .h             Stage 7a: TypedAST → LLVM IR subset (alloca form)
+    abi_lower.c / .h         Stage 7b: lower call/ret to ABI (dispatches to platform)
+    abi_win64.c / .h         Win64 calling convention specifics
+    abi_sysv.c / .h          System V calling convention specifics
+    regalloc.c / .h          Stage 7c: linear scan register allocation
+    asmemit.c / .h           Stage 7d: IR → AT&T x86-64 assembly text + data sections
 
     # Infrastructure
     serialize.c / .h         Binary serialization for all intermediate formats
@@ -502,16 +663,57 @@ src/
 
 ### Decision 2: Emit AT&T syntax x86-64 assembly
 
-**Rationale:** AT&T syntax is the default for GNU `as` (available on both platforms via MinGW on Windows). Single assembly syntax simplifies the code generator.
+**Rationale:** AT&T syntax is the default for GNU `as` (available on both platforms via MinGW on Windows). Single assembly syntax simplifies the final emission stage.
 
 **Alternatives considered:**
 - Intel syntax (NASM): Would need NASM installed, less common in MinGW toolchains
 - Direct machine code emission: Vastly more complex, essentially building an assembler
-- LLVM IR: External dependency on LLVM, defeats self-contained goal
 
-### Decision 3: Separate ABI modules for Win64 and System V
+### Decision 3: LLVM IR subset as intermediate representation
 
-**Rationale:** Calling conventions differ significantly (register assignments, stack alignment, shadow space vs red zone). Isolating ABI details prevents the code generator from becoming a tangle of platform conditionals.
+**Rationale:** Instead of inventing a custom IR, use a subset of LLVM IR. This gives us:
+- A well-documented, well-understood format (no design work needed)
+- Human-readable text form (`.ll` files) — inspectable without special tooling
+- Free validation path: feed `.ll` to `llc` to verify correctness
+- Potential future path to LLVM backend if needed
+
+The IR uses the "alloca form" (same as Clang): every local variable is an `alloca` with `load`/`store`, temporaries are SSA-numbered (`%0`, `%1`, ...). No phi nodes, no SSA construction pass needed.
+
+**LLVM IR subset used:**
+```
+Types:        i8, i16, i32, i64, float, double, ptr, void
+              struct types, array types, function types
+
+Instructions:
+  Memory:     alloca, load, store
+  Arithmetic: add, sub, mul, sdiv, udiv, srem, urem
+  Bitwise:    and, or, xor, shl, lshr, ashr
+  Comparison: icmp (eq ne slt sgt sle sge ult ugt ule uge)
+  Float:      fadd, fsub, fmul, fdiv, fcmp
+  Control:    br (cond + uncond), switch, ret
+  Calls:      call
+  Conversion: zext, sext, trunc, bitcast, ptrtoint, inttoptr
+  Addressing: getelementptr (struct fields + array indexing)
+
+NOT used:     vectors, atomics, exceptions, invoke/resume,
+              phi nodes, metadata, debug info, intrinsics
+```
+
+**Alternatives considered:**
+- Custom three-address IR: Works but requires designing a format from scratch
+- No IR (AST straight to assembly): Couples too many concerns, makes ABI/regalloc changes risky
+
+### Decision 3a: Linear scan register allocation (skip trivial allocator)
+
+**Rationale:** Go directly to linear scan register allocation rather than starting with a "put everything on stack" approach. Linear scan is well-understood, produces reasonable output, and avoids implementing a trivial allocator that would be immediately replaced.
+
+**Alternatives considered:**
+- "Everything on stack" first: Simpler but produces terrible code, would be discarded
+- Graph coloring: More optimal but significantly more complex to implement
+
+### Decision 3b: Separate ABI modules for Win64 and System V
+
+**Rationale:** Calling conventions differ significantly (register assignments, stack alignment, shadow space vs red zone). Isolating ABI details into a dedicated lowering stage prevents platform conditionals from spreading across the entire backend.
 
 **Alternatives considered:**
 - Single codegen with #ifdef: Messy, error-prone for testing
@@ -844,7 +1046,20 @@ Type Check       TypedAST           AST (expression nodes tagged    .typed (bin)
 
                   ── BACK-END ──
 
-Code Gen         Assembly           AT&T syntax x86-64 asm          .s (text)
+IR Gen           LLVM_IR            LLVM IR subset (.ll text)       .ll (text)
+                                     alloca form, virtual regs,
+                                     no ABI, no physical regs
+
+ABI Lowering     ABI_IR             LLVM IR with call/ret lowered   .abi.ll (text)
+                                     to platform calling convention
+                                     (Win64 or System V)
+
+Reg Alloc        AllocatedIR        IR with virtual regs mapped     .alloc (bin)
+                                     to physical x86-64 regs or
+                                     stack spill slots (linear scan)
+
+Asm Emit         Assembly           AT&T syntax x86-64 asm          .s (text)
+                                     .text + .data + .rodata + .bss
 
 Assemble         ObjectCode         Machine code (via GNU as)       .o (bin)
 
@@ -931,16 +1146,26 @@ Phase 6c:  Name resolution
 Phase 6d:  Type checking
            → verify type compatibility, tag expressions with types
 
-Phase 7:   Code generator (expressions + functions)
-           → can compile minimal programs (main returning 42)
+Phase 7a:  IR generation (TypedAST → LLVM IR subset)
+           → alloca form, all C expressions/statements/types
+           → testable: output .ll, validate with llc
 
-Phase 8:   Code generator (control flow + structs)
-           → can compile non-trivial programs
+Phase 7b:  ABI lowering
+           → call/ret → platform calling convention
+           → Win64 and System V modules
 
-Phase 9:   Integration with fun build
+Phase 7c:  Register allocation (linear scan)
+           → virtual regs → physical x86-64 regs + spill slots
+
+Phase 7d:  Assembly emission
+           → allocated IR → AT&T x86-64 .s file
+           → data sections (.rodata, .data, .bss)
+           → can compile minimal programs end-to-end
+
+Phase 8:   Integration with fun build
            → fun build --compiler=funcc as alternative to gcc
 
-Phase 10:  Validation
+Phase 9:   Validation
            → compile fundamental-cli with funcc, compare output
 ```
 
@@ -957,19 +1182,22 @@ Phase 10:  Validation
 
 **Should every pipeline stage be writable to disk?**
 → Yes. This is a learning project — every stage produces inspectable output:
-- `fun compile --norm file.c` → `.norm` normalized source (text)
-- `fun compile --inc file.c` → `.inc` includes resolved (text)
-- `fun compile --cond file.c` → `.cond` conditionals resolved (text)
-- `fun compile -E file.c` → `.i` fully preprocessed source (text)
+- `fun compile --preprocessor-normalized file.c` → `.norm` normalized source (text)
+- `fun compile --preprocessor-includes file.c` → `.inc` includes resolved (text)
+- `fun compile --preprocessor-conditionals file.c` → `.cond` conditionals resolved (text)
+- `fun compile --preprocessor-macros file.c` → `.i` fully preprocessed source (text)
 - `fun compile --tokens file.c` → `.tokens` binary file
-- `fun compile --lex file.c` → `.lex` binary file
-- `fun compile --ast file.c` → `.ast` binary file
-- `fun compile --symbols file.c` → `.sym` binary file
-- `fun compile --types file.c` → `.types` binary file
-- `fun compile --resolved file.c` → `.resolved` binary file
-- `fun compile --typed file.c` → `.typed` binary file
-- `fun compile -S file.c` → `.s` assembly file (text)
-- `fun compile -c file.c` → `.o` object file (via GNU as)
+- `fun compile --lexed file.c` → `.lex` binary file
+- `fun compile --ast-parsed file.c` → `.ast` binary file
+- `fun compile --ast-symbols file.c` → `.sym` binary file
+- `fun compile --ast-types file.c` → `.types` binary file
+- `fun compile --ast-resolved file.c` → `.resolved` binary file
+- `fun compile --ast-typed file.c` → `.typed` binary file
+- `fun compile --ir file.c` → `.ll` LLVM IR subset (text, validatable with llc)
+- `fun compile --ir-abi file.c` → `.abi.ll` ABI-lowered IR (text)
+- `fun compile --ir-registers file.c` → `.alloc` register-allocated IR (binary)
+- `fun compile --assembly file.c` → `.s` assembly file (text)
+- `fun compile --object file.c` → `.o` object file (via GNU as)
 - `fun compile file.c` → full pipeline to executable
 
 **Should `.tokens` and `.lex` files use text or binary format?**
