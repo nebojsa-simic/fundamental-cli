@@ -35,4 +35,4 @@ Build scripts SHALL include proper paths to vendored fundamental library.
 
 #### Scenario: Link vendor sources
 - **WHEN** build script is generated
-- **THEN** it includes fundamental source and arch files
+- **THEN** it includes startup, platform, async, process, file, filesystem, console, string, and array fundamental source and arch files
