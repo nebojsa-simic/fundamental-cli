@@ -1,0 +1,178 @@
+# Tokenizer Grammar — Token Pattern Specification
+#
+# This file defines the patterns recognized by the tokenizer (Pass 1).
+# The tokenizer is hand-written for performance and error quality.
+# This grammar serves as:
+#   1. Documentation of exactly what patterns are recognized
+#   2. Test oracle — test harness verifies implementation matches these rules
+#
+# The tokenizer is language-agnostic: it recognizes structural patterns
+# (words, numbers, strings, symbols) without knowing C keywords or semantics.
+# C-specific classification happens in Pass 2 (lexer).
+#
+# Format:
+#   TOKEN_TYPE  :=  pattern
+#
+# Pattern notation:
+#   [abc]       character class
+#   [a-z]       character range
+#   'x'         literal character
+#   "xy"        literal string
+#   A B         sequence (A followed by B)
+#   A | B       alternation (A or B)
+#   A*          zero or more
+#   A+          one or more
+#   A?          zero or one
+#   (...)       grouping
+#   ~[abc]      any character NOT in class
+#   EOF         end of input
+
+# ─────────────────────────────────────────────────────────────
+# Whitespace (consumed, not emitted as tokens)
+# ─────────────────────────────────────────────────────────────
+
+WHITESPACE      :=  [ \t\r\n]+
+
+# ─────────────────────────────────────────────────────────────
+# Comments (consumed, not emitted as tokens)
+# ─────────────────────────────────────────────────────────────
+
+LINE_COMMENT    :=  "//" ~[\n]* ('\n' | EOF)
+BLOCK_COMMENT   :=  "/*" (~[*] | '*' ~[/])* "*/"
+
+# ─────────────────────────────────────────────────────────────
+# Words (identifiers, keywords — classification is Pass 2)
+# ─────────────────────────────────────────────────────────────
+
+RAW_WORD        :=  [a-zA-Z_] [a-zA-Z0-9_]*
+
+# ─────────────────────────────────────────────────────────────
+# Numbers (integer and float literals — value parsing is Pass 2)
+# ─────────────────────────────────────────────────────────────
+
+DECIMAL         :=  [1-9] [0-9]*
+HEX             :=  '0' [xX] [0-9a-fA-F]+
+OCTAL           :=  '0' [0-7]*
+FLOAT_DEC       :=  [0-9]+ '.' [0-9]* ([eE] [+-]? [0-9]+)?
+                  |  [0-9]* '.' [0-9]+ ([eE] [+-]? [0-9]+)?
+                  |  [0-9]+ [eE] [+-]? [0-9]+
+INT_SUFFIX      :=  ([uU]? ([lL] | "ll" | "LL")) | ([lL] | "ll" | "LL") [uU]?
+FLOAT_SUFFIX    :=  [fFlL]
+
+RAW_NUMBER      :=  (HEX | FLOAT_DEC | DECIMAL | OCTAL) (INT_SUFFIX | FLOAT_SUFFIX)?
+
+# ─────────────────────────────────────────────────────────────
+# String literals (raw bytes — escape resolution is Pass 2)
+# ─────────────────────────────────────────────────────────────
+
+ESCAPE_SEQ      :=  '\\' ( [abfnrtv\\'\"?]
+                         | [0-7] [0-7]? [0-7]?
+                         | 'x' [0-9a-fA-F]+
+                         )
+STRING_CHAR     :=  ESCAPE_SEQ | ~[\\\"\n]
+
+RAW_STRING      :=  '"' STRING_CHAR* '"'
+
+# ─────────────────────────────────────────────────────────────
+# Character literals (raw bytes — escape resolution is Pass 2)
+# ─────────────────────────────────────────────────────────────
+
+CHAR_CHAR       :=  ESCAPE_SEQ | ~[\\'\n]
+
+RAW_CHAR        :=  '\'' CHAR_CHAR+ '\''
+
+# ─────────────────────────────────────────────────────────────
+# Preprocessor directive marker
+# ─────────────────────────────────────────────────────────────
+
+RAW_HASH        :=  '#'
+RAW_HASH_HASH   :=  "##"
+
+# ─────────────────────────────────────────────────────────────
+# Multi-character symbols (matched before single-character)
+# Order matters: longest match first.
+# ─────────────────────────────────────────────────────────────
+
+RAW_ELLIPSIS        :=  "..."
+
+RAW_LSHIFT_ASSIGN   :=  "<<="
+RAW_RSHIFT_ASSIGN   :=  ">>="
+
+RAW_PLUS_ASSIGN     :=  "+="
+RAW_MINUS_ASSIGN    :=  "-="
+RAW_STAR_ASSIGN     :=  "*="
+RAW_SLASH_ASSIGN    :=  "/="
+RAW_PERCENT_ASSIGN  :=  "%="
+RAW_AMP_ASSIGN      :=  "&="
+RAW_PIPE_ASSIGN     :=  "|="
+RAW_CARET_ASSIGN    :=  "^="
+
+RAW_EQ_EQ           :=  "=="
+RAW_BANG_EQ         :=  "!="
+RAW_LT_EQ          :=  "<="
+RAW_GT_EQ          :=  ">="
+
+RAW_AMP_AMP         :=  "&&"
+RAW_PIPE_PIPE       :=  "||"
+
+RAW_LSHIFT          :=  "<<"
+RAW_RSHIFT          :=  ">>"
+
+RAW_PLUS_PLUS       :=  "++"
+RAW_MINUS_MINUS     :=  "--"
+
+RAW_ARROW           :=  "->"
+
+# ─────────────────────────────────────────────────────────────
+# Single-character symbols
+# ─────────────────────────────────────────────────────────────
+
+RAW_PLUS            :=  '+'
+RAW_MINUS           :=  '-'
+RAW_STAR            :=  '*'
+RAW_SLASH           :=  '/'
+RAW_PERCENT         :=  '%'
+RAW_AMPERSAND       :=  '&'
+RAW_PIPE            :=  '|'
+RAW_CARET           :=  '^'
+RAW_TILDE           :=  '~'
+RAW_BANG            :=  '!'
+RAW_ASSIGN          :=  '='
+RAW_LT              :=  '<'
+RAW_GT              :=  '>'
+RAW_DOT             :=  '.'
+RAW_QUESTION        :=  '?'
+RAW_COLON           :=  ':'
+RAW_SEMICOLON       :=  ';'
+RAW_COMMA           :=  ','
+RAW_LPAREN          :=  '('
+RAW_RPAREN          :=  ')'
+RAW_LBRACE          :=  '{'
+RAW_RBRACE          :=  '}'
+RAW_LBRACKET        :=  '['
+RAW_RBRACKET        :=  ']'
+
+# ─────────────────────────────────────────────────────────────
+# End of input
+# ─────────────────────────────────────────────────────────────
+
+RAW_EOF             :=  EOF
+
+# ─────────────────────────────────────────────────────────────
+# Tokenization rules
+# ─────────────────────────────────────────────────────────────
+#
+# 1. Skip WHITESPACE and comments (LINE_COMMENT, BLOCK_COMMENT)
+# 2. At each position, try patterns in this priority order:
+#    a. RAW_WORD         if current char is [a-zA-Z_]
+#    b. RAW_NUMBER       if current char is [0-9]
+#    c. RAW_STRING       if current char is '"'
+#    d. RAW_CHAR         if current char is '\''
+#    e. RAW_HASH_HASH    if current chars are "##"
+#    f. RAW_HASH         if current char is '#'
+#    g. Multi-char symbol (longest match from current position)
+#    h. Single-char symbol
+#    i. RAW_EOF          if at end of input
+#    j. ERROR            unexpected character
+# 3. Record token: type, byte offset, byte length, line, column
+# 4. Advance cursor past consumed characters

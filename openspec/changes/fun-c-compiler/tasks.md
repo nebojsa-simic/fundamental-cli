@@ -1,6 +1,6 @@
 ## Phase 1a: Tokenizer (Pass 1 — language-agnostic)
 
-- [ ] 1a.1 Write tokenizer.grammar: define all token patterns (WORD, NUMBER, STRING, CHAR, symbols)
+- [x] 1a.1 Write tokenizer.grammar: define all token patterns (WORD, NUMBER, STRING, CHAR, symbols)
 - [ ] 1a.2 Define RawTokenType enum (RAW_WORD, RAW_NUMBER, RAW_STRING, RAW_CHAR, all symbols, RAW_EOF)
 - [ ] 1a.3 Define RawToken struct (type, offset, length, line, col)
 - [ ] 1a.4 Implement tokenizer initialization (accept source buffer + length, init cursor state)
