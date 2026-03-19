@@ -1,5 +1,5 @@
 #include "cmd_init.h"
-#include "src/cli.h"
+#include "cli/cli.h"
 #include "vendor/fundamental/include/async/async.h"
 #include "vendor/fundamental/include/console/console.h"
 #include "vendor/fundamental/include/file/file.h"

@@ -1,5 +1,4 @@
-#include "executor.h"
-#include "../fun/platform.h"
+#include "build/build.h"
 #include "vendor/fundamental/include/async/async.h"
 #include "vendor/fundamental/include/console/console.h"
 #include "vendor/fundamental/include/filesystem/filesystem.h"
@@ -29,9 +28,9 @@ BuildExecutionResult build_execute_windows(String script_path, int verbose)
 	const char *args[] = { "cmd.exe", "/c", script_path, NULL };
 	char out_buf[4096], err_buf[4096];
 	ProcessResult proc = { .stdout_data = out_buf,
-		                   .stdout_capacity = sizeof(out_buf),
-		                   .stderr_data = err_buf,
-		                   .stderr_capacity = sizeof(err_buf) };
+						   .stdout_capacity = sizeof(out_buf),
+						   .stderr_data = err_buf,
+						   .stderr_capacity = sizeof(err_buf) };
 	AsyncResult spawn_result = fun_process_spawn("cmd.exe", args, NULL, &proc);
 	fun_async_await(&spawn_result, -1);
 
@@ -75,9 +74,9 @@ BuildExecutionResult build_execute_linux(String script_path, int verbose)
 	const char *args[] = { "bash", script_path, NULL };
 	char out_buf[4096], err_buf[4096];
 	ProcessResult proc = { .stdout_data = out_buf,
-		                   .stdout_capacity = sizeof(out_buf),
-		                   .stderr_data = err_buf,
-		                   .stderr_capacity = sizeof(err_buf) };
+						   .stdout_capacity = sizeof(out_buf),
+						   .stderr_data = err_buf,
+						   .stderr_capacity = sizeof(err_buf) };
 	AsyncResult spawn_result = fun_process_spawn("bash", args, NULL, &proc);
 	fun_async_await(&spawn_result, -1);
 
@@ -130,12 +129,12 @@ BuildExecutionResult build_execute_script(String script_path, int verbose)
  */
 BuildExecutionResult build_execute_current(int verbose)
 {
-	Platform platform = platform_get();
-	String script_path = platform_get_build_script();
+	Platform platform = build_platform_get();
+	String script_path = build_platform_get_script();
 
 	if (verbose) {
 		fun_console_write("Detected platform: ");
-		fun_console_write_line(platform_to_string(platform));
+		fun_console_write_line(build_platform_to_string(platform));
 	}
 
 	return build_execute_script(script_path, verbose);

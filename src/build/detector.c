@@ -1,5 +1,4 @@
-#include "detector.h"
-#include "../fun/platform.h"
+#include "build/build.h"
 #include "vendor/fundamental/include/filesystem/filesystem.h"
 #include "vendor/fundamental/include/console/console.h"
 
@@ -36,11 +35,11 @@ BuildDetectionResult build_detect_for_platform(String platform_str)
 	StringLength ext_len = fun_string_length(ext);
 	if (6 + platform_len + ext_len < sizeof(script_path_buffer)) {
 		fun_string_copy((String) "build-", script_path_buffer,
-		                sizeof(script_path_buffer));
+						sizeof(script_path_buffer));
 		fun_string_copy(platform_str, script_path_buffer + 6,
-		                sizeof(script_path_buffer) - 6);
+						sizeof(script_path_buffer) - 6);
 		fun_string_copy((String)ext, script_path_buffer + 6 + platform_len,
-		                sizeof(script_path_buffer) - 6 - platform_len);
+						sizeof(script_path_buffer) - 6 - platform_len);
 		script_path_buffer[6 + platform_len + ext_len] = '\0';
 	} else {
 		result.status = BUILD_DETECTED_ERROR;
@@ -68,7 +67,7 @@ BuildDetectionResult build_detect_for_platform(String platform_str)
  */
 BuildDetectionResult build_detect_current(void)
 {
-	Platform platform = platform_get();
-	String platform_str = platform_to_string(platform);
+	Platform platform = build_platform_get();
+	String platform_str = build_platform_to_string(platform);
 	return build_detect_for_platform(platform_str);
 }

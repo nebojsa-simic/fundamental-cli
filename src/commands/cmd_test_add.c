@@ -1,5 +1,5 @@
 #include "cmd_test_add.h"
-#include "../test/scaffolder.h"
+#include "test/test.h"
 #include "vendor/fundamental/include/console/console.h"
 #include "vendor/fundamental/include/string/string.h"
 #include "vendor/fundamental/include/filesystem/filesystem.h"
@@ -43,7 +43,7 @@ int cmd_test_add_execute(int argc, const char **argv)
 	fun_string_copy(test_dir, test_c_path, sizeof(test_c_path));
 	test_c_path[test_dir_len] = '/';
 	fun_string_copy((String) "test.c", test_c_path + test_dir_len + 1,
-	                sizeof(test_c_path) - test_dir_len - 1);
+					sizeof(test_c_path) - test_dir_len - 1);
 	test_c_path[test_dir_len + 1 + 6] = '\0';
 
 	// Build script paths
@@ -52,15 +52,15 @@ int cmd_test_add_execute(int argc, const char **argv)
 	fun_string_copy(test_dir, win_script_path, sizeof(win_script_path));
 	win_script_path[test_dir_len] = '/';
 	fun_string_copy((String) "build-windows-amd64.bat",
-	                win_script_path + test_dir_len + 1,
-	                sizeof(win_script_path) - test_dir_len - 1);
+					win_script_path + test_dir_len + 1,
+					sizeof(win_script_path) - test_dir_len - 1);
 	win_script_path[test_dir_len + 1 + 23] = '\0';
 
 	fun_string_copy(test_dir, lin_script_path, sizeof(lin_script_path));
 	lin_script_path[test_dir_len] = '/';
 	fun_string_copy((String) "build-linux-amd64.sh",
-	                lin_script_path + test_dir_len + 1,
-	                sizeof(lin_script_path) - test_dir_len - 1);
+					lin_script_path + test_dir_len + 1,
+					sizeof(lin_script_path) - test_dir_len - 1);
 	lin_script_path[test_dir_len + 1 + 20] = '\0';
 
 	// Write test.c file
@@ -80,7 +80,7 @@ int cmd_test_add_execute(int argc, const char **argv)
 		"	return 0;\n"
 		"}\n";
 	fun_string_template(test_template, params, 1, test_content,
-	                    sizeof(test_content));
+						sizeof(test_content));
 
 	MemoryResult mem_result = fun_memory_allocate(512);
 	if (fun_error_is_error(mem_result.error)) {

@@ -1,5 +1,4 @@
-#include "runner.h"
-#include "scaffolder.h"
+#include "test/test.h"
 #include "vendor/fundamental/include/async/async.h"
 #include "vendor/fundamental/include/console/console.h"
 #include "vendor/fundamental/include/filesystem/filesystem.h"
@@ -84,8 +83,8 @@ int test_build_module(TestModule *module, int verbose)
 	fun_string_copy(module->path, build_script, sizeof(build_script));
 	build_script[path_len] = '/';
 	fun_string_copy((String) "build-windows-amd64.bat",
-	                build_script + path_len + 1,
-	                sizeof(build_script) - path_len - 1);
+					build_script + path_len + 1,
+					sizeof(build_script) - path_len - 1);
 	build_script[path_len + 1 + 23] = '\0';
 
 	boolResult exists = fun_file_exists(build_script);
@@ -106,9 +105,9 @@ int test_build_module(TestModule *module, int verbose)
 						   NULL };
 	char out_buf[4096], err_buf[4096];
 	ProcessResult proc = { .stdout_data = out_buf,
-		                   .stdout_capacity = sizeof(out_buf),
-		                   .stderr_data = err_buf,
-		                   .stderr_capacity = sizeof(err_buf) };
+						   .stdout_capacity = sizeof(out_buf),
+						   .stderr_data = err_buf,
+						   .stderr_capacity = sizeof(err_buf) };
 	AsyncResult spawn_result = fun_process_spawn("cmd.exe", args, NULL, &proc);
 	fun_async_await(&spawn_result, -1);
 
@@ -141,7 +140,7 @@ int test_execute_module(TestModule *module, int verbose)
 	fun_string_copy(module->path, test_exe, sizeof(test_exe));
 	test_exe[path_len] = '/';
 	fun_string_copy((String) "test.exe", test_exe + path_len + 1,
-	                sizeof(test_exe) - path_len - 1);
+					sizeof(test_exe) - path_len - 1);
 	test_exe[path_len + 1 + 8] = '\0';
 
 	boolResult exists = fun_file_exists(test_exe);
@@ -156,9 +155,9 @@ int test_execute_module(TestModule *module, int verbose)
 						   module->path, "&&", "test.exe", NULL };
 	char out_buf2[4096], err_buf2[4096];
 	ProcessResult proc2 = { .stdout_data = out_buf2,
-		                    .stdout_capacity = sizeof(out_buf2),
-		                    .stderr_data = err_buf2,
-		                    .stderr_capacity = sizeof(err_buf2) };
+							.stdout_capacity = sizeof(out_buf2),
+							.stderr_data = err_buf2,
+							.stderr_capacity = sizeof(err_buf2) };
 	AsyncResult spawn_result = fun_process_spawn("cmd.exe", args, NULL, &proc2);
 	fun_async_await(&spawn_result, -1);
 

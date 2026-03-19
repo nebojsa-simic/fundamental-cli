@@ -1,5 +1,5 @@
 #include "cmd_clean.h"
-#include "../fun/platform.h"
+#include "build/build.h"
 #include "vendor/fundamental/include/async/async.h"
 #include "vendor/fundamental/include/console/console.h"
 #include "vendor/fundamental/include/process/process.h"
@@ -9,16 +9,17 @@
  */
 static void remove_build_directory(void)
 {
-	Platform platform = platform_get();
+	Platform platform = build_platform_get();
 	char out_buf[256], err_buf[256];
 	ProcessResult proc = { .stdout_data = out_buf,
-		                   .stdout_capacity = sizeof(out_buf),
-		                   .stderr_data = err_buf,
-		                   .stderr_capacity = sizeof(err_buf) };
+						   .stdout_capacity = sizeof(out_buf),
+						   .stderr_data = err_buf,
+						   .stderr_capacity = sizeof(err_buf) };
 	AsyncResult spawn_result;
 
 	if (platform.os == PLATFORM_OS_WINDOWS) {
-		const char *args[] = { "cmd.exe", "/c", "rmdir", "/s", "/q", "build", NULL };
+		const char *args[] = { "cmd.exe", "/c",	   "rmdir", "/s",
+							   "/q",	  "build", NULL };
 		spawn_result = fun_process_spawn("cmd.exe", args, NULL, &proc);
 	} else {
 		const char *args[] = { "rm", "-rf", "build", NULL };

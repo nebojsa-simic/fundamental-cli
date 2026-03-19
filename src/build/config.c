@@ -1,4 +1,4 @@
-#include "config.h"
+#include "build/build.h"
 #include "vendor/fundamental/include/file/file.h"
 #include "vendor/fundamental/include/filesystem/filesystem.h"
 #include "vendor/fundamental/include/async/async.h"
@@ -141,7 +141,7 @@ BuildConfig build_config_load(void)
 	config.use_nostdlib = 0;
 
 	// Try to read fun.ini
-	boolResult ini_exists = fun_file_exists((String)"fun.ini");
+	boolResult ini_exists = fun_file_exists((String) "fun.ini");
 	if (fun_error_is_error(ini_exists.error) || !ini_exists.value) {
 		return config;
 	}
@@ -152,10 +152,10 @@ BuildConfig build_config_load(void)
 	static const size_t try_sizes[] = { 256, 128, 64, 32, 0 };
 	int read_ok = 0;
 	for (int t = 0; try_sizes[t] != 0; t++) {
-		AsyncResult r = fun_read_file_in_memory(
-			(Read){ .file_path = (String)"fun.ini",
-				    .output = (Memory)ini_buf,
-				    .bytes_to_read = try_sizes[t] });
+		AsyncResult r =
+			fun_read_file_in_memory((Read){ .file_path = (String) "fun.ini",
+											.output = (Memory)ini_buf,
+											.bytes_to_read = try_sizes[t] });
 		fun_async_await(&r, -1);
 		if (r.status == ASYNC_COMPLETED) {
 			read_ok = 1;
@@ -178,7 +178,8 @@ BuildConfig build_config_load(void)
 
 	// Check for nostdlib in standard
 	if (fun_string_length(config.standard) > 0) {
-		if (fun_string_index_of(config.standard, (String)"-nostdlib", 0) >= 0) {
+		if (fun_string_index_of(config.standard, (String) "-nostdlib", 0) >=
+			0) {
 			config.use_nostdlib = 1;
 		}
 	}

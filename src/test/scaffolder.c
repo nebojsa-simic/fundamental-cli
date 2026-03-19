@@ -1,4 +1,4 @@
-#include "scaffolder.h"
+#include "test/test.h"
 #include "vendor/fundamental/include/console/console.h"
 #include "vendor/fundamental/include/file/file.h"
 #include "vendor/fundamental/include/filesystem/filesystem.h"
@@ -28,14 +28,14 @@ ScaffoldResult test_scaffold_build_scripts(String test_dir, String module_name,
 	fun_string_copy(test_dir, win_script_path, sizeof(win_script_path));
 	win_script_path[len] = '/';
 	fun_string_copy((String) "build-windows-amd64.bat",
-	                win_script_path + len + 1,
-	                sizeof(win_script_path) - len - 1);
+					win_script_path + len + 1,
+					sizeof(win_script_path) - len - 1);
 	win_script_path[len + 1 + 23] = '\0';
 
 	fun_string_copy(test_dir, lin_script_path, sizeof(lin_script_path));
 	lin_script_path[len] = '/';
 	fun_string_copy((String) "build-linux-amd64.sh", lin_script_path + len + 1,
-	                sizeof(lin_script_path) - len - 1);
+					sizeof(lin_script_path) - len - 1);
 	lin_script_path[len + 1 + 20] = '\0';
 
 	if (test_has_build_scripts(test_dir)) {
@@ -172,13 +172,13 @@ int test_has_build_scripts(String test_dir)
 	fun_string_copy(test_dir, windows_path, sizeof(windows_path));
 	windows_path[len] = '/';
 	fun_string_copy((String) "build-windows-amd64.bat", windows_path + len + 1,
-	                sizeof(windows_path) - len - 1);
+					sizeof(windows_path) - len - 1);
 	windows_path[len + 1 + 23] = '\0';
 
 	fun_string_copy(test_dir, linux_path, sizeof(linux_path));
 	linux_path[len] = '/';
 	fun_string_copy((String) "build-linux-amd64.sh", linux_path + len + 1,
-	                sizeof(linux_path) - len - 1);
+					sizeof(linux_path) - len - 1);
 	linux_path[len + 1 + 20] = '\0';
 
 	boolResult win_exists = fun_file_exists(windows_path);

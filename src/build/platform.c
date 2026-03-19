@@ -1,11 +1,11 @@
-#include "platform.h"
+#include "build/build.h"
 #include "vendor/fundamental/include/string/string.h"
 
 /**
  * Get the build script filename for the current platform.
  * e.g., "build-windows-amd64.bat" or "build-linux-amd64.sh"
  */
-String platform_get_build_script(void)
+String build_platform_get_script(void)
 {
 	Platform platform;
 	fun_platform_get(&platform);
@@ -28,9 +28,9 @@ String platform_get_build_script(void)
 		fun_string_copy((String)os_buf, buffer + 6, sizeof(buffer) - 6);
 		buffer[6 + os_len] = '-';
 		fun_string_copy((String)arch_buf, buffer + 6 + os_len + 1,
-		                sizeof(buffer) - 6 - os_len - 1);
+						sizeof(buffer) - 6 - os_len - 1);
 		fun_string_copy((String)ext, buffer + 6 + os_len + 1 + arch_len,
-		                sizeof(buffer) - 6 - os_len - 1 - arch_len);
+						sizeof(buffer) - 6 - os_len - 1 - arch_len);
 		buffer[6 + os_len + 1 + arch_len + ext_len] = '\0';
 		return (String)buffer;
 	}

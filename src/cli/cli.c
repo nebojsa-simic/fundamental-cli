@@ -1,4 +1,4 @@
-#include "cli.h"
+#include "cli/cli.h"
 
 #define MAX_COMMANDS 16
 #define BUFFER_SIZE 256

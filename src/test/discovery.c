@@ -1,5 +1,4 @@
-#include "discovery.h"
-#include "../fun/platform.h"
+#include "test/test.h"
 #include "vendor/fundamental/include/console/console.h"
 #include "vendor/fundamental/include/filesystem/filesystem.h"
 #include "vendor/fundamental/include/memory/memory.h"
@@ -105,7 +104,7 @@ TestDiscoveryResult test_discover(String tests_dir)
 		fun_string_copy(tests_dir, test_path, sizeof(test_path));
 		test_path[tests_len] = '/';
 		fun_string_copy(entry_name, test_path + tests_len + 1,
-		                sizeof(test_path) - tests_len - 1);
+						sizeof(test_path) - tests_len - 1);
 		test_path[tests_len + 1 + entry_len] = '\0';
 
 		if (!test_has_test_file(test_path)) {
@@ -198,7 +197,7 @@ int test_has_test_file(String dir_path)
 	fun_string_copy(dir_path, test_c_path, sizeof(test_c_path));
 	test_c_path[len] = '/';
 	fun_string_copy((String) "test.c", test_c_path + len + 1,
-	                sizeof(test_c_path) - len - 1);
+					sizeof(test_c_path) - len - 1);
 	test_c_path[len + 1 + 6] = '\0';
 	boolResult exists = fun_file_exists(test_c_path);
 	return fun_error_is_ok(exists.error) && exists.value;

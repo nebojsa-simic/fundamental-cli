@@ -1,5 +1,5 @@
 #include "cmd_help.h"
-#include "src/cli.h"
+#include "cli/cli.h"
 
 int cmd_help_execute(int argc, const char **argv)
 {

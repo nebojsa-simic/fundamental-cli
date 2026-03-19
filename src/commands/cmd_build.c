@@ -1,10 +1,7 @@
 #include "cmd_build.h"
 #include "cmd_clean.h"
-#include "../cli.h"
-#include "../fun/platform.h"
-#include "../build/detector.h"
-#include "../build/generator.h"
-#include "../build/executor.h"
+#include "cli/cli.h"
+#include "build/build.h"
 #include "vendor/fundamental/include/memory/memory.h"
 #include "vendor/fundamental/include/console/console.h"
 #include "vendor/fundamental/include/string/string.h"
@@ -61,8 +58,8 @@ int cmd_build_execute(int argc, const char **argv)
 	}
 
 	// Detect platform
-	Platform platform = platform_get();
-	String platform_str = platform_to_string(platform);
+	Platform platform = build_platform_get();
+	String platform_str = build_platform_to_string(platform);
 
 	if (verbose) {
 		fun_console_write("Detected platform: ");
@@ -123,7 +120,7 @@ int cmd_build_execute(int argc, const char **argv)
 		}
 		String exit_str = (String)exit_str_result.value;
 		fun_string_from_int(exec_result.exit_code, 10, (OutputString)exit_str,
-		                    16);
+							16);
 		fun_console_write_line(exit_str);
 		fun_memory_free((Memory *)exit_str);
 		return exec_result.exit_code;

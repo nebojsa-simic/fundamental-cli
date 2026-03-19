@@ -1,7 +1,5 @@
 #include "cmd_test.h"
-#include "../test/discovery.h"
-#include "../test/runner.h"
-#include "../test/reporter.h"
+#include "test/test.h"
 #include "vendor/fundamental/include/console/console.h"
 #include "vendor/fundamental/include/string/string.h"
 #include <stddef.h>

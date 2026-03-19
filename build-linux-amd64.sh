@@ -14,14 +14,18 @@ gcc \
     -fno-unwind-tables \
     -e main \
     -I . \
+    -I include \
+    -I src \
     -I vendor/fundamental/include \
     vendor/fundamental/src/startup/startup.c \
     vendor/fundamental/arch/startup/linux-amd64/linux.c \
     src/main.c \
-    src/cli.c \
+    src/cli/cli.c \
+    src/build/config.c \
     src/build/detector.c \
     src/build/generator.c \
     src/build/executor.c \
+    src/build/platform.c \
     src/commands/cmd_version.c \
     src/commands/cmd_help.c \
     src/commands/cmd_init.c \
@@ -29,7 +33,6 @@ gcc \
     src/commands/cmd_build.c \
     src/commands/cmd_test.c \
     src/commands/cmd_test_add.c \
-    src/fun/platform.c \
     src/test/discovery.c \
     src/test/scaffolder.c \
     src/test/module_map.c \

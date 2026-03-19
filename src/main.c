@@ -1,11 +1,11 @@
-#include "src/commands/cmd_help.h"
-#include "src/commands/cmd_init.h"
-#include "src/commands/cmd_version.h"
-#include "src/commands/cmd_build.h"
-#include "src/commands/cmd_clean.h"
-#include "src/commands/cmd_test.h"
-#include "src/commands/cmd_test_add.h"
-#include "src/cli.h"
+#include "commands/cmd_help.h"
+#include "commands/cmd_init.h"
+#include "commands/cmd_version.h"
+#include "commands/cmd_build.h"
+#include "commands/cmd_clean.h"
+#include "commands/cmd_test.h"
+#include "commands/cmd_test_add.h"
+#include "cli/cli.h"
 
 int cli_main(int argc, const char **argv)
 {

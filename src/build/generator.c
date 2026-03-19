@@ -1,5 +1,4 @@
-#include "generator.h"
-#include "../fun/platform.h"
+#include "build/build.h"
 #include "vendor/fundamental/include/file/file.h"
 #include "vendor/fundamental/include/filesystem/filesystem.h"
 #include "vendor/fundamental/include/async/async.h"
@@ -8,12 +7,12 @@
 #include "vendor/fundamental/include/string/string.h"
 #include "vendor/fundamental/include/process/process.h"
 
-#define MAX_DIR_LISTING  4096
+#define MAX_DIR_LISTING 4096
 #define MAX_PATH_STORAGE 16384
 
 /* Static storage for path strings discovered during source scanning.
  * Pointers in SourceScanResult.sources[] point into this buffer. */
-static char   path_storage[MAX_PATH_STORAGE];
+static char path_storage[MAX_PATH_STORAGE];
 static size_t path_storage_pos = 0;
 
 /* --------------------------------------------------------------------------
@@ -22,7 +21,7 @@ static size_t path_storage_pos = 0;
  * -------------------------------------------------------------------------- */
 static int fun_ini_read_name(char *output, size_t output_size)
 {
-	boolResult exists = fun_file_exists((String)"fun.ini");
+	boolResult exists = fun_file_exists((String) "fun.ini");
 	if (fun_error_is_error(exists.error) || !exists.value)
 		return 0;
 
@@ -38,10 +37,10 @@ static int fun_ini_read_name(char *output, size_t output_size)
 	int read_ok = 0;
 	for (int t = 0; try_sizes[t] != 0; t++) {
 		fun_memory_fill(mem.value, 512, 0);
-		AsyncResult r = fun_read_file_in_memory(
-			(Read){ .file_path = (String)"fun.ini",
-				    .output = mem.value,
-				    .bytes_to_read = try_sizes[t] });
+		AsyncResult r =
+			fun_read_file_in_memory((Read){ .file_path = (String) "fun.ini",
+											.output = mem.value,
+											.bytes_to_read = try_sizes[t] });
 		fun_async_await(&r, -1);
 		if (r.status == ASYNC_COMPLETED) {
 			read_ok = 1;
@@ -73,12 +72,11 @@ static int fun_ini_read_name(char *output, size_t output_size)
 					p++;
 				size_t i = 0;
 				while (*p != '\0' && *p != '\n' && *p != '\r' &&
-				       i < output_size - 1)
+					   i < output_size - 1)
 					output[i++] = *p++;
 				output[i] = '\0';
 				/* Trim trailing whitespace */
-				while (i > 0 &&
-				       (output[i - 1] == ' ' || output[i - 1] == '\t'))
+				while (i > 0 && (output[i - 1] == ' ' || output[i - 1] == '\t'))
 					output[--i] = '\0';
 				if (i > 0) {
 					found = 1;
@@ -104,7 +102,7 @@ static int fun_ini_read_name(char *output, size_t output_size)
  * Discovered .c paths are stored in path_storage[]; sources[] holds pointers.
  * -------------------------------------------------------------------------- */
 static void scan_directory_recursive(String dir_path, SourceScanResult *result,
-                                     int depth)
+									 int depth)
 {
 	if (depth > 8)
 		return;
@@ -164,12 +162,12 @@ static void scan_directory_recursive(String dir_path, SourceScanResult *result,
 
 		/* .c file? */
 		if (entry_len > 2 && entry[entry_len - 2] == '.' &&
-		    entry[entry_len - 1] == 'c') {
+			entry[entry_len - 1] == 'c') {
 			StringLength full_len = fun_string_length((String)full_path);
 			if (path_storage_pos + full_len + 1 <= MAX_PATH_STORAGE) {
 				fun_string_copy((String)full_path,
-				                path_storage + path_storage_pos,
-				                MAX_PATH_STORAGE - path_storage_pos);
+								path_storage + path_storage_pos,
+								MAX_PATH_STORAGE - path_storage_pos);
 				result->sources[result->count] =
 					(String)(path_storage + path_storage_pos);
 				result->count++;
@@ -179,8 +177,7 @@ static void scan_directory_recursive(String dir_path, SourceScanResult *result,
 			/* Recurse into subdirectories */
 			boolResult is_dir = fun_directory_exists((String)full_path);
 			if (fun_error_is_ok(is_dir.error) && is_dir.value) {
-				scan_directory_recursive((String)full_path, result,
-				                         depth + 1);
+				scan_directory_recursive((String)full_path, result, depth + 1);
 			}
 		}
 
@@ -197,12 +194,12 @@ SourceScanResult build_scan_sources(void)
 {
 	SourceScanResult result;
 	result.count = 0;
-	result.error_message = (String)"";
+	result.error_message = (String) "";
 
 	/* Reset path storage for this scan */
 	path_storage_pos = 0;
 
-	scan_directory_recursive((String)"src", &result, 0);
+	scan_directory_recursive((String) "src", &result, 0);
 
 	return result;
 }
@@ -211,7 +208,7 @@ SourceScanResult build_scan_sources(void)
  * Build space-separated source file list for GCC command
  * -------------------------------------------------------------------------- */
 static void build_sources_string(SourceScanResult scan_result, char *buffer,
-                                 size_t buffer_size)
+								 size_t buffer_size)
 {
 	buffer[0] = '\0';
 	size_t pos = 0;
@@ -220,7 +217,7 @@ static void build_sources_string(SourceScanResult scan_result, char *buffer,
 		StringLength src_len = fun_string_length(scan_result.sources[i]);
 		if (pos + src_len + 2 < buffer_size) {
 			fun_string_copy(scan_result.sources[i], buffer + pos,
-			                buffer_size - pos);
+							buffer_size - pos);
 			pos += src_len;
 			buffer[pos++] = ' ';
 			buffer[pos] = '\0';
@@ -249,11 +246,11 @@ static void delete_file_if_exists(const char *path)
 
 	char out_buf[64], err_buf[64];
 	ProcessResult proc = { .stdout_data = out_buf,
-		                   .stdout_capacity = sizeof(out_buf),
-		                   .stderr_data = err_buf,
-		                   .stderr_capacity = sizeof(err_buf) };
+						   .stdout_capacity = sizeof(out_buf),
+						   .stderr_data = err_buf,
+						   .stderr_capacity = sizeof(err_buf) };
 	AsyncResult r;
-	Platform platform = platform_get();
+	Platform platform = build_platform_get();
 	if (platform.os == PLATFORM_OS_WINDOWS) {
 		const char *args[] = { "cmd.exe", "/c", "del", "/f", "/q", path, NULL };
 		r = fun_process_spawn("cmd.exe", args, NULL, &proc);
@@ -269,7 +266,7 @@ static void delete_file_if_exists(const char *path)
  * Write script buffer to file
  * -------------------------------------------------------------------------- */
 static BuildGenerationResult write_script(const char *script_path,
-                                          const char *content)
+										  const char *content)
 {
 	BuildGenerationResult result;
 	result.script_path = (String)script_path;
@@ -280,15 +277,15 @@ static BuildGenerationResult write_script(const char *script_path,
 	MemoryResult mem_result = fun_memory_allocate(total_len + 1);
 	if (fun_error_is_error(mem_result.error)) {
 		result.status = BUILD_GENERATED_ERROR;
-		result.error_message = (String)"Failed to allocate memory";
+		result.error_message = (String) "Failed to allocate memory";
 		return result;
 	}
 	fun_string_copy((String)content, (char *)mem_result.value, total_len + 1);
 
-	AsyncResult write_result = fun_write_memory_to_file(
-		(Write){ .file_path = (String)script_path,
-			     .input = mem_result.value,
-			     .bytes_to_write = total_len });
+	AsyncResult write_result =
+		fun_write_memory_to_file((Write){ .file_path = (String)script_path,
+										  .input = mem_result.value,
+										  .bytes_to_write = total_len });
 	fun_async_await(&write_result, -1);
 
 	voidResult free_result = fun_memory_free(&mem_result.value);
@@ -296,10 +293,10 @@ static BuildGenerationResult write_script(const char *script_path,
 
 	if (write_result.status == ASYNC_COMPLETED) {
 		result.status = BUILD_GENERATED_SUCCESS;
-		result.error_message = (String)"";
+		result.error_message = (String) "";
 	} else {
 		result.status = BUILD_GENERATED_ERROR;
-		result.error_message = (String)"Failed to write file";
+		result.error_message = (String) "Failed to write file";
 	}
 
 	return result;
@@ -316,7 +313,7 @@ BuildGenerationResult build_generate_windows(SourceScanResult scan_result)
 
 	/* Read project name from fun.ini, fall back to "app" */
 	if (!fun_ini_read_name(name, sizeof(name))) {
-		fun_string_copy((String)"app", name, sizeof(name));
+		fun_string_copy((String) "app", name, sizeof(name));
 	}
 
 	build_sources_string(scan_result, sources_buffer, sizeof(sources_buffer));
@@ -325,53 +322,54 @@ BuildGenerationResult build_generate_windows(SourceScanResult scan_result)
 	char *buf_end = script_buffer + sizeof(script_buffer);
 
 	ptr = append(ptr,
-	    "@ECHO OFF\r\n"
-	    "REM Build script generated by fun build tool\r\n"
-	    "REM Platform: windows-amd64\r\n"
-	    "\r\n"
-	    "if not exist build mkdir build\r\n"
-	    "\r\n"
-	    "REM Compile with GCC\r\n"
-	    "gcc --std=c17 -Os -nostdlib -fno-builtin -fno-exceptions"
-	    " -fno-unwind-tables -mno-stack-arg-probe -e main -mconsole"
-	    " -I . -I vendor/fundamental/include"
-	    " vendor/fundamental/src/startup/startup.c"
-	    " vendor/fundamental/arch/startup/windows-amd64/windows.c ",
-	    buf_end);
+				 "@ECHO OFF\r\n"
+				 "REM Build script generated by fun build tool\r\n"
+				 "REM Platform: windows-amd64\r\n"
+				 "\r\n"
+				 "if not exist build mkdir build\r\n"
+				 "\r\n"
+				 "REM Compile with GCC\r\n"
+				 "gcc --std=c17 -Os -nostdlib -fno-builtin -fno-exceptions"
+				 " -fno-unwind-tables -mno-stack-arg-probe -e main -mconsole"
+				 " -I . -I include -I src -I vendor/fundamental/include"
+				 " vendor/fundamental/src/startup/startup.c"
+				 " vendor/fundamental/arch/startup/windows-amd64/windows.c ",
+				 buf_end);
 
 	/* Project source files */
 	ptr = append(ptr, sources_buffer, buf_end);
 
 	/* Comprehensive fundamental vendor modules */
-	ptr = append(ptr,
-	    "vendor/fundamental/src/platform/platform.c"
-	    " vendor/fundamental/arch/platform/windows-amd64/platform.c"
-	    " vendor/fundamental/src/async/async.c"
-	    " vendor/fundamental/arch/async/windows-amd64/async.c"
-	    " vendor/fundamental/src/process/process.c"
-	    " vendor/fundamental/arch/process/windows-amd64/process.c"
-	    " vendor/fundamental/arch/file/windows-amd64/fileRead.c"
-	    " vendor/fundamental/arch/file/windows-amd64/fileReadMmap.c"
-	    " vendor/fundamental/arch/file/windows-amd64/fileReadRing.c"
-	    " vendor/fundamental/arch/file/windows-amd64/fileWrite.c"
-	    " vendor/fundamental/arch/file/windows-amd64/fileWriteMmap.c"
-	    " vendor/fundamental/arch/file/windows-amd64/fileWriteRing.c"
-	    " vendor/fundamental/src/console/console.c"
-	    " vendor/fundamental/src/string/stringConversion.c"
-	    " vendor/fundamental/src/string/stringOperations.c"
-	    " vendor/fundamental/src/string/stringTemplate.c"
-	    " vendor/fundamental/src/string/stringValidation.c"
-	    " vendor/fundamental/src/array/array.c"
-	    " vendor/fundamental/arch/console/windows-amd64/console.c"
-	    " vendor/fundamental/arch/memory/windows-amd64/memory.c"
-	    " vendor/fundamental/src/filesystem/directory.c"
-	    " vendor/fundamental/src/filesystem/file_exists.c"
-	    " vendor/fundamental/src/filesystem/path.c"
-	    " vendor/fundamental/arch/filesystem/windows-amd64/directory.c"
-	    " vendor/fundamental/arch/filesystem/windows-amd64/file_exists.c"
-	    " vendor/fundamental/arch/filesystem/windows-amd64/path.c"
-	    " -lkernel32 -o build/",
-	    buf_end);
+	ptr =
+		append(ptr,
+			   "vendor/fundamental/src/platform/platform.c"
+			   " vendor/fundamental/arch/platform/windows-amd64/platform.c"
+			   " vendor/fundamental/src/async/async.c"
+			   " vendor/fundamental/arch/async/windows-amd64/async.c"
+			   " vendor/fundamental/src/process/process.c"
+			   " vendor/fundamental/arch/process/windows-amd64/process.c"
+			   " vendor/fundamental/arch/file/windows-amd64/fileRead.c"
+			   " vendor/fundamental/arch/file/windows-amd64/fileReadMmap.c"
+			   " vendor/fundamental/arch/file/windows-amd64/fileReadRing.c"
+			   " vendor/fundamental/arch/file/windows-amd64/fileWrite.c"
+			   " vendor/fundamental/arch/file/windows-amd64/fileWriteMmap.c"
+			   " vendor/fundamental/arch/file/windows-amd64/fileWriteRing.c"
+			   " vendor/fundamental/src/console/console.c"
+			   " vendor/fundamental/src/string/stringConversion.c"
+			   " vendor/fundamental/src/string/stringOperations.c"
+			   " vendor/fundamental/src/string/stringTemplate.c"
+			   " vendor/fundamental/src/string/stringValidation.c"
+			   " vendor/fundamental/src/array/array.c"
+			   " vendor/fundamental/arch/console/windows-amd64/console.c"
+			   " vendor/fundamental/arch/memory/windows-amd64/memory.c"
+			   " vendor/fundamental/src/filesystem/directory.c"
+			   " vendor/fundamental/src/filesystem/file_exists.c"
+			   " vendor/fundamental/src/filesystem/path.c"
+			   " vendor/fundamental/arch/filesystem/windows-amd64/directory.c"
+			   " vendor/fundamental/arch/filesystem/windows-amd64/file_exists.c"
+			   " vendor/fundamental/arch/filesystem/windows-amd64/path.c"
+			   " -lkernel32 -o build/",
+			   buf_end);
 
 	/* Binary name: build/<name>-windows-amd64.exe */
 	ptr = append(ptr, name, buf_end);
@@ -397,7 +395,7 @@ BuildGenerationResult build_generate_linux(SourceScanResult scan_result)
 	char name[64];
 
 	if (!fun_ini_read_name(name, sizeof(name))) {
-		fun_string_copy((String)"app", name, sizeof(name));
+		fun_string_copy((String) "app", name, sizeof(name));
 	}
 
 	build_sources_string(scan_result, sources_buffer, sizeof(sources_buffer));
@@ -406,51 +404,51 @@ BuildGenerationResult build_generate_linux(SourceScanResult scan_result)
 	char *buf_end = script_buffer + sizeof(script_buffer);
 
 	ptr = append(ptr,
-	    "#!/bin/bash\n"
-	    "# Build script generated by fun build tool\n"
-	    "# Platform: linux-amd64\n"
-	    "\n"
-	    "mkdir -p build\n"
-	    "\n"
-	    "# Compile with GCC\n"
-	    "gcc --std=c17 -Os -nostdlib -fno-builtin -fno-exceptions"
-	    " -fno-unwind-tables -e main"
-	    " -I . -I vendor/fundamental/include"
-	    " vendor/fundamental/src/startup/startup.c"
-	    " vendor/fundamental/arch/startup/linux-amd64/linux.c ",
-	    buf_end);
+				 "#!/bin/bash\n"
+				 "# Build script generated by fun build tool\n"
+				 "# Platform: linux-amd64\n"
+				 "\n"
+				 "mkdir -p build\n"
+				 "\n"
+				 "# Compile with GCC\n"
+				 "gcc --std=c17 -Os -nostdlib -fno-builtin -fno-exceptions"
+				 " -fno-unwind-tables -e main"
+				 " -I . -I include -I src -I vendor/fundamental/include"
+				 " vendor/fundamental/src/startup/startup.c"
+				 " vendor/fundamental/arch/startup/linux-amd64/linux.c ",
+				 buf_end);
 
 	ptr = append(ptr, sources_buffer, buf_end);
 
 	ptr = append(ptr,
-	    "vendor/fundamental/src/platform/platform.c"
-	    " vendor/fundamental/arch/platform/linux-amd64/platform.c"
-	    " vendor/fundamental/src/async/async.c"
-	    " vendor/fundamental/arch/async/linux-amd64/async.c"
-	    " vendor/fundamental/src/process/process.c"
-	    " vendor/fundamental/arch/process/linux-amd64/process.c"
-	    " vendor/fundamental/arch/file/linux-amd64/fileRead.c"
-	    " vendor/fundamental/arch/file/linux-amd64/fileReadMmap.c"
-	    " vendor/fundamental/arch/file/linux-amd64/fileReadRing.c"
-	    " vendor/fundamental/arch/file/linux-amd64/fileWrite.c"
-	    " vendor/fundamental/arch/file/linux-amd64/fileWriteMmap.c"
-	    " vendor/fundamental/arch/file/linux-amd64/fileWriteRing.c"
-	    " vendor/fundamental/src/console/console.c"
-	    " vendor/fundamental/src/string/stringConversion.c"
-	    " vendor/fundamental/src/string/stringOperations.c"
-	    " vendor/fundamental/src/string/stringTemplate.c"
-	    " vendor/fundamental/src/string/stringValidation.c"
-	    " vendor/fundamental/src/array/array.c"
-	    " vendor/fundamental/arch/console/linux-amd64/console.c"
-	    " vendor/fundamental/arch/memory/linux-amd64/memory.c"
-	    " vendor/fundamental/src/filesystem/directory.c"
-	    " vendor/fundamental/src/filesystem/file_exists.c"
-	    " vendor/fundamental/src/filesystem/path.c"
-	    " vendor/fundamental/arch/filesystem/linux-amd64/directory.c"
-	    " vendor/fundamental/arch/filesystem/linux-amd64/file_exists.c"
-	    " vendor/fundamental/arch/filesystem/linux-amd64/path.c"
-	    " -o build/",
-	    buf_end);
+				 "vendor/fundamental/src/platform/platform.c"
+				 " vendor/fundamental/arch/platform/linux-amd64/platform.c"
+				 " vendor/fundamental/src/async/async.c"
+				 " vendor/fundamental/arch/async/linux-amd64/async.c"
+				 " vendor/fundamental/src/process/process.c"
+				 " vendor/fundamental/arch/process/linux-amd64/process.c"
+				 " vendor/fundamental/arch/file/linux-amd64/fileRead.c"
+				 " vendor/fundamental/arch/file/linux-amd64/fileReadMmap.c"
+				 " vendor/fundamental/arch/file/linux-amd64/fileReadRing.c"
+				 " vendor/fundamental/arch/file/linux-amd64/fileWrite.c"
+				 " vendor/fundamental/arch/file/linux-amd64/fileWriteMmap.c"
+				 " vendor/fundamental/arch/file/linux-amd64/fileWriteRing.c"
+				 " vendor/fundamental/src/console/console.c"
+				 " vendor/fundamental/src/string/stringConversion.c"
+				 " vendor/fundamental/src/string/stringOperations.c"
+				 " vendor/fundamental/src/string/stringTemplate.c"
+				 " vendor/fundamental/src/string/stringValidation.c"
+				 " vendor/fundamental/src/array/array.c"
+				 " vendor/fundamental/arch/console/linux-amd64/console.c"
+				 " vendor/fundamental/arch/memory/linux-amd64/memory.c"
+				 " vendor/fundamental/src/filesystem/directory.c"
+				 " vendor/fundamental/src/filesystem/file_exists.c"
+				 " vendor/fundamental/src/filesystem/path.c"
+				 " vendor/fundamental/arch/filesystem/linux-amd64/directory.c"
+				 " vendor/fundamental/arch/filesystem/linux-amd64/file_exists.c"
+				 " vendor/fundamental/arch/filesystem/linux-amd64/path.c"
+				 " -o build/",
+				 buf_end);
 
 	ptr = append(ptr, name, buf_end);
 	ptr = append(ptr, "-linux-amd64\n\n", buf_end);
@@ -470,13 +468,13 @@ BuildGenerationResult build_generate_linux(SourceScanResult scan_result)
  * -------------------------------------------------------------------------- */
 BuildGenerationResult build_generate_current(void)
 {
-	Platform platform = platform_get();
+	Platform platform = build_platform_get();
 	SourceScanResult scan_result = build_scan_sources();
 
 	if (scan_result.count == 0) {
 		BuildGenerationResult error_result;
 		error_result.status = BUILD_GENERATED_ERROR;
-		error_result.error_message = (String)"No source files found";
+		error_result.error_message = (String) "No source files found";
 		return error_result;
 	}
 

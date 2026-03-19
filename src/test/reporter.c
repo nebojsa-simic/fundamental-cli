@@ -1,4 +1,4 @@
-#include "reporter.h"
+#include "test/test.h"
 #include "vendor/fundamental/include/console/console.h"
 
 int test_report(TestRunnerResult *result, int verbose)
@@ -29,7 +29,7 @@ void test_report_single(TestResult *test_result)
 		fun_console_write(" (exit code: ");
 		char code_str[16];
 		fun_string_from_int(test_result->exit_code, 10, code_str,
-		                    sizeof(code_str));
+							sizeof(code_str));
 		fun_console_write(code_str);
 		fun_console_write_line(")");
 	}
