@@ -7,7 +7,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-#define NULL ((void *)0)
+#include <stddef.h>
 
 #define SYS_read 0
 #define SYS_write 1

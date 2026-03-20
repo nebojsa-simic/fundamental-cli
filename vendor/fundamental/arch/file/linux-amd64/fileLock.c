@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#define NULL ((void *)0)
+#include <stddef.h>
 
 #define SYS_open 2
 #define SYS_close 3

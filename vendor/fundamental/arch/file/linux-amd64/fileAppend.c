@@ -7,7 +7,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-#define NULL ((void *)0)
+#include <stddef.h>
 
 typedef unsigned long size_t;
 typedef long off_t;

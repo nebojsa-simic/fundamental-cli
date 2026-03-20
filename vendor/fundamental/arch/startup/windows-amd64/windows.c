@@ -7,7 +7,7 @@ typedef void *HANDLE;
 typedef unsigned long DWORD;
 typedef unsigned int UINT;
 
-#define NULL ((void *)0)
+#include <stddef.h>
 
 // Windows API functions we need
 __declspec(dllimport) char *__stdcall GetCommandLineA(void);

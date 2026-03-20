@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#define NULL ((void *)0)
+#include <stddef.h>
 
 typedef long ssize_t;
 typedef unsigned long size_t;
