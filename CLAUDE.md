@@ -10,7 +10,7 @@ CLI application built with the [Fundamental Library](../fundamental/). Demonstra
 - **Linux**: `./build-linux-amd64.sh`
 - **Tests**: `test-windows-amd64.bat`
 - **Code Formatting**: `code-format.bat`
-- **Vendor Update**: `vendor-fundamental.bat` (copies latest fundamental library into `vendor/`)
+- **Vendor Update**: `vendor-fundamental.bat` / `./vendor-fundamental.sh` (copies latest fundamental library into `vendor/`)
 
 ## Smoke Tests
 
