@@ -167,7 +167,7 @@ int fun_platform_directory_remove(const char *path)
 int fun_platform_directory_list(const char *path, char *buffer,
 								size_t buffer_size)
 {
-	if (path == (void *)0 || buffer == (void *)0 || buffer_size == 0)
+	if (path == NULL || buffer == NULL || buffer_size == 0)
 		return -1;
 
 	int fd = (int)syscall2(SYS_open, (long)path, O_RDONLY | O_DIRECTORY);

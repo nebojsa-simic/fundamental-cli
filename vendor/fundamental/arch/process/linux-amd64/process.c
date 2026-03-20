@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "fundamental/process/process.h"
 #include "fundamental/string/string.h"
 
@@ -117,13 +119,13 @@ static LinuxProcHandle *alloc_handle(void)
 {
 	void *p = sys_mmap(sizeof(LinuxProcHandle));
 	if (p == MAP_FAILED)
-		return (void *)0;
+		return NULL;
 	return (LinuxProcHandle *)p;
 }
 
 static void free_handle(LinuxProcHandle *h)
 {
-	if (h != (void *)0)
+	if (h != NULL)
 		sys_munmap(h, sizeof(LinuxProcHandle));
 }
 
@@ -140,9 +142,9 @@ static int find_executable(const char *name, char *out, size_t out_size)
 	}
 
 	/* Search PATH */
-	const char *path_val = (void *)0;
-	if (fun_arch_envp != (void *)0) {
-		for (int i = 0; fun_arch_envp[i] != (void *)0; i++) {
+	const char *path_val = NULL;
+	if (fun_arch_envp != NULL) {
+		for (int i = 0; fun_arch_envp[i] != NULL; i++) {
 			const char *e = fun_arch_envp[i];
 			if (e[0] == 'P' && e[1] == 'A' && e[2] == 'T' &&
 				e[3] == 'H' && e[4] == '=') {
@@ -151,7 +153,7 @@ static int find_executable(const char *name, char *out, size_t out_size)
 			}
 		}
 	}
-	if (path_val == (void *)0)
+	if (path_val == NULL)
 		return 0;
 
 	StringLength name_len = fun_string_length(name);
@@ -183,7 +185,7 @@ static int find_executable(const char *name, char *out, size_t out_size)
 /* ---- drain_fd: non-blocking read from fd into buffer ---- */
 static void drain_fd(int fd, char *buf, size_t capacity, size_t *length)
 {
-	if (fd < 0 || buf == (void *)0 || capacity == 0)
+	if (fd < 0 || buf == NULL || capacity == 0)
 		return;
 
 	while (*length < capacity) {
@@ -206,7 +208,7 @@ static void drain_fd(int fd, char *buf, size_t capacity, size_t *length)
 static AsyncStatus linux_process_poll(AsyncResult *result)
 {
 	ProcessResult *out = (ProcessResult *)result->state;
-	if (out == (void *)0 || out->_handle == (void *)0)
+	if (out == NULL || out->_handle == NULL)
 		return ASYNC_ERROR;
 
 	LinuxProcHandle *h = (LinuxProcHandle *)out->_handle;
@@ -312,13 +314,13 @@ AsyncResult fun_process_arch_spawn(const char *executable, const char **args,
 		syscall1(SYS_close, (long)stdout_pipe[1]);
 		syscall1(SYS_close, (long)stderr_pipe[1]);
 
-		const char *empty_env[] = { (void *)0 };
+		const char *empty_env[] = { NULL };
 		const char **envp = fun_arch_envp ? fun_arch_envp : empty_env;
 
-		if (args != (void *)0) {
+		if (args != NULL) {
 			syscall3(SYS_execve, (long)exec_path, (long)args, (long)envp);
 		} else {
-			const char *argv[] = { exec_path, (void *)0 };
+			const char *argv[] = { exec_path, NULL };
 			syscall3(SYS_execve, (long)exec_path, (long)argv, (long)envp);
 		}
 		syscall1(SYS_exit, 127);
@@ -337,7 +339,7 @@ AsyncResult fun_process_arch_spawn(const char *executable, const char **args,
 	syscall3(SYS_fcntl, (long)stderr_pipe[0], F_SETFL, flags | O_NONBLOCK);
 
 	LinuxProcHandle *h = alloc_handle();
-	if (h == (void *)0) {
+	if (h == NULL) {
 		syscall2(SYS_kill, (long)pid, SIGKILL);
 		syscall4(SYS_wait4, pid, 0, 0, 0);
 		syscall1(SYS_close, (long)stdout_pipe[0]);
@@ -361,7 +363,7 @@ voidResult fun_process_arch_terminate(ProcessResult *out)
 	voidResult r;
 	r.error = ERROR_RESULT_NO_ERROR;
 
-	if (out->_handle == (void *)0)
+	if (out->_handle == NULL)
 		return r;
 
 	LinuxProcHandle *h = (LinuxProcHandle *)out->_handle;
@@ -380,7 +382,7 @@ voidResult fun_process_arch_free(ProcessResult *out)
 	voidResult r;
 	r.error = ERROR_RESULT_NO_ERROR;
 
-	if (out->_handle == (void *)0)
+	if (out->_handle == NULL)
 		return r;
 
 	LinuxProcHandle *h = (LinuxProcHandle *)out->_handle;
@@ -400,6 +402,6 @@ voidResult fun_process_arch_free(ProcessResult *out)
 	}
 
 	free_handle(h);
-	out->_handle = (void *)0;
+	out->_handle = NULL;
 	return r;
 }

@@ -7,7 +7,7 @@ char fun_platform_path_separator(void)
 
 int fun_platform_get_working_directory(char *output, size_t output_size)
 {
-	if (output == (void *)0 || output_size == 0)
+	if (output == NULL || output_size == 0)
 		return -1;
 
 	long ret;

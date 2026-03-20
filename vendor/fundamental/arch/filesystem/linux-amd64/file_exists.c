@@ -1,4 +1,5 @@
 #include <stdbool.h>
+#include <stddef.h>
 
 #define S_IFMT  0170000
 #define S_IFDIR 0040000
@@ -37,7 +38,7 @@ static inline long sys_stat(const char *path, struct stat_t *st)
 
 bool fun_platform_file_exists(const char *path)
 {
-	if (path == (void *)0)
+	if (path == NULL)
 		return false;
 	struct stat_t st;
 	if (sys_stat(path, &st) != 0)
@@ -47,7 +48,7 @@ bool fun_platform_file_exists(const char *path)
 
 bool fun_platform_path_exists(const char *path)
 {
-	if (path == (void *)0)
+	if (path == NULL)
 		return false;
 	struct stat_t st;
 	return sys_stat(path, &st) == 0;
