@@ -8,7 +8,7 @@ echo
 
 ORIG_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SMOKE_DIR="$ORIG_DIR/../fundamental-cli-smoke"
-FUNDAMENTAL_DIR="$ORIG_DIR/../fundamental"
+FUNDAMENTAL_DIR="$ORIG_DIR/vendor/fundamental"
 PASS=0
 FAIL=0
 
@@ -68,6 +68,7 @@ check_file "README.md"
 # -----------------------------------------------------------------------
 echo
 echo "[VENDOR] Copy fundamental into vendor/fundamental"
+mkdir -p vendor
 cp -r "$FUNDAMENTAL_DIR" vendor/fundamental || fail "cp fundamental failed"
 pass "fundamental vendored"
 
@@ -83,18 +84,18 @@ pass "fun build exited 0"
 # -----------------------------------------------------------------------
 echo
 echo "[CHECK] Build output"
-check_file "build/app-linux-amd64"
+check_file "build/my-project-linux-amd64"
 
-if [ ! -x "build/app-linux-amd64" ]; then
-    fail "build/app-linux-amd64 is not executable"
+if [ ! -x "build/my-project-linux-amd64" ]; then
+    fail "build/my-project-linux-amd64 is not executable"
 fi
-pass "build/app-linux-amd64 is executable"
+pass "build/my-project-linux-amd64 is executable"
 
 # -----------------------------------------------------------------------
 echo
-echo "[RUN] Execute build/app-linux-amd64"
-./build/app-linux-amd64 || fail "build/app-linux-amd64 exited non-zero"
-pass "build/app-linux-amd64 ran successfully"
+echo "[RUN] Execute build/my-project-linux-amd64"
+./build/my-project-linux-amd64 || fail "build/my-project-linux-amd64 exited non-zero"
+pass "build/my-project-linux-amd64 ran successfully"
 
 # -----------------------------------------------------------------------
 echo

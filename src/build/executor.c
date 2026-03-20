@@ -97,13 +97,13 @@ BuildExecutionResult build_execute_linux(String script_path, int verbose)
 		fun_console_write_line(script_path);
 	}
 
-	const char *args[] = { "bash", script_path, NULL };
+	const char *args[] = { "/bin/bash", script_path, NULL };
 	char out_buf[4096], err_buf[4096];
 	ProcessResult proc = { .stdout_data = out_buf,
 						   .stdout_capacity = sizeof(out_buf),
 						   .stderr_data = err_buf,
 						   .stderr_capacity = sizeof(err_buf) };
-	AsyncResult spawn_result = fun_process_spawn("bash", args, NULL, &proc);
+	AsyncResult spawn_result = fun_process_spawn("/bin/bash", args, NULL, &proc);
 	fun_async_await(&spawn_result, -1);
 
 	int exit_code = proc.exit_code;

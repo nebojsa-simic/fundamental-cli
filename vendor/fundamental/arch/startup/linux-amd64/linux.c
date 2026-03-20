@@ -1,52 +1,28 @@
 #include "fundamental/memory/memory.h"
 
-#include <stdint.h>
-#include <stddef.h>
+extern int cli_main(int argc, const char **argv);
 
-#define NULL ((void *)0)
+/* Saved environment pointer — used by process spawning */
+const char **fun_arch_envp;
 
-typedef long ssize_t;
-
-static int g_argc = 0;
-static char *g_argv[64];
-
-static inline long syscall1(long n, long a1)
+int _start_c(long *sp)
 {
-	long ret;
-	__asm__ __volatile__("syscall"
-						 : "=a"(ret)
-						 : "a"(n), "D"(a1)
-						 : "rcx", "r11", "memory");
-	return ret;
+	int argc = (int)*sp;
+	const char **argv = (const char **)(sp + 1);
+	fun_arch_envp = argv + argc + 1;
+	return cli_main(argc, argv);
 }
 
-static inline long syscall3(long n, long a1, long a2, long a3)
+__attribute__((naked)) void _start(void)
 {
-	long ret;
-	__asm__ __volatile__("syscall"
-						 : "=a"(ret)
-						 : "a"(n), "D"(a1), "S"(a2), "d"(a3)
-						 : "rcx", "r11", "memory");
-	return ret;
-}
-
-#define SYS_write 1
-#define SYS_exit 60
-
-static void write_str(const char *s, size_t len)
-{
-	syscall3(SYS_write, 1, (long)s, len);
-}
-
-static void exit_process(int code)
-{
-	syscall1(SYS_exit, code);
-	__builtin_unreachable();
-}
-
-void _start(void)
-{
-	extern int cli_main(int argc, const char **argv);
-	int result = cli_main(g_argc, (const char **)g_argv);
-	exit_process(result);
+	__asm__ __volatile__(
+		"xor %%rbp, %%rbp\n\t"
+		"mov %%rsp, %%rdi\n\t"
+		"and $~15, %%rsp\n\t"
+		"call _start_c\n\t"
+		"mov %%eax, %%edi\n\t"
+		"mov $60, %%eax\n\t"
+		"syscall\n\t"
+		::: "memory"
+	);
 }

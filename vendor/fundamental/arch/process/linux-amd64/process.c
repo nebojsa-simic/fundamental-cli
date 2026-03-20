@@ -1,88 +1,226 @@
-#define _POSIX_C_SOURCE 200809L
 #include "fundamental/process/process.h"
+#include "fundamental/string/string.h"
 
-#include <errno.h>
-#include <fcntl.h>
-#include <signal.h>
-#include <sys/ioctl.h>
-#include <sys/wait.h>
-#include <unistd.h>
+/* ---- Syscall numbers ---- */
+#define SYS_read    0
+#define SYS_close   3
+#define SYS_mmap    9
+#define SYS_munmap  11
+#define SYS_ioctl   16
+#define SYS_access  21
+#define SYS_pipe    22
+#define SYS_dup2    33
+#define SYS_fork    57
+#define SYS_execve  59
+#define SYS_exit    60
+#define SYS_wait4   61
+#define SYS_kill    62
+#define SYS_fcntl   72
 
-/* ------------------------------------------------------------------
- * Internal handle layout stored in ProcessResult->_handle.
- * Uses mmap/munmap-free approach: pack two ints (fds) + pid into a
- * pointer-sized value. On 64-bit Linux pid_t and int fit in 64 bits.
- *
- * Layout: _handle cast to LinuxProcHandle*
- * We use a small malloc-equivalent via a static inline using mmap.
- * ------------------------------------------------------------------ */
-#include <sys/mman.h>
+/* ---- Constants ---- */
+#define PROT_READ       0x1
+#define PROT_WRITE      0x2
+#define MAP_PRIVATE     0x2
+#define MAP_ANONYMOUS   0x20
+#define MAP_FAILED      ((void *)-1)
+#define X_OK            1
+#define SIGKILL         9
+#define WNOHANG         1
+#define O_NONBLOCK      2048
+#define F_GETFL         3
+#define F_SETFL         4
+#define FIONREAD        0x541BL
+#define WIFEXITED(s)    (((s) & 0x7f) == 0)
+#define WEXITSTATUS(s)  (((s) >> 8) & 0xff)
+#define ESRCH           3
 
+/* ---- Saved environment from startup ---- */
+extern const char **fun_arch_envp;
+
+/* ---- Syscall helpers ---- */
+static inline long syscall1(long n, long a1)
+{
+	long ret;
+	__asm__ __volatile__("syscall"
+						 : "=a"(ret)
+						 : "a"(n), "D"(a1)
+						 : "rcx", "r11", "memory");
+	return ret;
+}
+
+static inline long syscall2(long n, long a1, long a2)
+{
+	long ret;
+	__asm__ __volatile__("syscall"
+						 : "=a"(ret)
+						 : "a"(n), "D"(a1), "S"(a2)
+						 : "rcx", "r11", "memory");
+	return ret;
+}
+
+static inline long syscall3(long n, long a1, long a2, long a3)
+{
+	long ret;
+	__asm__ __volatile__("syscall"
+						 : "=a"(ret)
+						 : "a"(n), "D"(a1), "S"(a2), "d"(a3)
+						 : "rcx", "r11", "memory");
+	return ret;
+}
+
+static inline long syscall4(long n, long a1, long a2, long a3, long a4)
+{
+	long ret;
+	register long r10 __asm__("r10") = a4;
+	__asm__ __volatile__("syscall"
+						 : "=a"(ret)
+						 : "a"(n), "D"(a1), "S"(a2), "d"(a3), "r"(r10)
+						 : "rcx", "r11", "memory");
+	return ret;
+}
+
+static inline long syscall6(long n, long a1, long a2, long a3, long a4,
+							long a5, long a6)
+{
+	long ret;
+	register long r10 __asm__("r10") = a4;
+	register long r8  __asm__("r8")  = a5;
+	register long r9  __asm__("r9")  = a6;
+	__asm__ __volatile__("syscall"
+						 : "=a"(ret)
+						 : "a"(n), "D"(a1), "S"(a2), "d"(a3),
+						   "r"(r10), "r"(r8), "r"(r9)
+						 : "rcx", "r11", "memory");
+	return ret;
+}
+
+static inline void *sys_mmap(size_t size)
+{
+	return (void *)syscall6(SYS_mmap, 0, (long)size,
+							PROT_READ | PROT_WRITE,
+							MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+}
+
+static inline void sys_munmap(void *p, size_t size)
+{
+	syscall2(SYS_munmap, (long)p, (long)size);
+}
+
+/* ---- Process handle ---- */
 typedef struct {
-	pid_t pid;
+	int pid;
 	int stdout_fd;
 	int stderr_fd;
 } LinuxProcHandle;
 
 static LinuxProcHandle *alloc_handle(void)
 {
-	void *p = mmap(NULL, sizeof(LinuxProcHandle), PROT_READ | PROT_WRITE,
-				   MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	void *p = sys_mmap(sizeof(LinuxProcHandle));
 	if (p == MAP_FAILED)
-		return NULL;
+		return (void *)0;
 	return (LinuxProcHandle *)p;
 }
 
 static void free_handle(LinuxProcHandle *h)
 {
-	if (h != NULL)
-		munmap(h, sizeof(LinuxProcHandle));
+	if (h != (void *)0)
+		sys_munmap(h, sizeof(LinuxProcHandle));
 }
 
-static int executable_exists(const char *path)
+/* ---- Find executable path (searches PATH env for non-absolute names) ---- */
+static int find_executable(const char *name, char *out, size_t out_size)
 {
-	return access(path, X_OK) == 0;
+	/* Check if name contains '/' — use directly */
+	const char *p = name;
+	while (*p && *p != '/')
+		p++;
+	if (*p == '/') {
+		fun_string_copy((String)name, out, out_size);
+		return syscall2(SYS_access, (long)out, X_OK) == 0 ? 1 : 0;
+	}
+
+	/* Search PATH */
+	const char *path_val = (void *)0;
+	if (fun_arch_envp != (void *)0) {
+		for (int i = 0; fun_arch_envp[i] != (void *)0; i++) {
+			const char *e = fun_arch_envp[i];
+			if (e[0] == 'P' && e[1] == 'A' && e[2] == 'T' &&
+				e[3] == 'H' && e[4] == '=') {
+				path_val = e + 5;
+				break;
+			}
+		}
+	}
+	if (path_val == (void *)0)
+		return 0;
+
+	StringLength name_len = fun_string_length(name);
+	const char *pp = path_val;
+	while (*pp) {
+		const char *end = pp;
+		while (*end && *end != ':')
+			end++;
+		size_t dir_len = (size_t)(end - pp);
+
+		if (dir_len + 1 + name_len + 1 <= out_size) {
+			size_t i = 0;
+			for (size_t j = 0; j < dir_len; j++)
+				out[i++] = pp[j];
+			out[i++] = '/';
+			fun_string_copy(name, out + i, out_size - i);
+
+			if (syscall2(SYS_access, (long)out, X_OK) == 0)
+				return 1;
+		}
+
+		pp = (*end == ':') ? end + 1 : end;
+		if (*pp == '\0')
+			break;
+	}
+	return 0;
 }
 
+/* ---- drain_fd: non-blocking read from fd into buffer ---- */
 static void drain_fd(int fd, char *buf, size_t capacity, size_t *length)
 {
-	if (fd < 0 || buf == NULL || capacity == 0)
+	if (fd < 0 || buf == (void *)0 || capacity == 0)
 		return;
 
 	while (*length < capacity) {
 		int avail = 0;
-		if (ioctl(fd, FIONREAD, &avail) < 0 || avail == 0)
+		if (syscall3(SYS_ioctl, (long)fd, FIONREAD, (long)&avail) < 0 ||
+			avail == 0)
 			break;
 		size_t to_read = (size_t)avail;
 		if (to_read > capacity - *length)
 			to_read = capacity - *length;
-		ssize_t n = read(fd, buf + *length, to_read);
+		long n = syscall3(SYS_read, (long)fd, (long)(buf + *length),
+						  (long)to_read);
 		if (n <= 0)
 			break;
 		*length += (size_t)n;
 	}
 }
 
+/* ---- Poll callback ---- */
 static AsyncStatus linux_process_poll(AsyncResult *result)
 {
 	ProcessResult *out = (ProcessResult *)result->state;
-	if (out == NULL || out->_handle == NULL)
+	if (out == (void *)0 || out->_handle == (void *)0)
 		return ASYNC_ERROR;
 
 	LinuxProcHandle *h = (LinuxProcHandle *)out->_handle;
 
-	/* Drain pipes while process may still be running */
 	drain_fd(h->stdout_fd, out->stdout_data, out->stdout_capacity,
 			 &out->stdout_length);
 	drain_fd(h->stderr_fd, out->stderr_data, out->stderr_capacity,
 			 &out->stderr_length);
 
 	int status = 0;
-	pid_t ret = waitpid(h->pid, &status, WNOHANG);
+	long ret = syscall4(SYS_wait4, (long)h->pid, (long)&status, WNOHANG, 0);
 
 	if (ret < 0)
 		return ASYNC_ERROR;
-
 	if (ret == 0)
 		return ASYNC_PENDING;
 
@@ -98,11 +236,11 @@ static AsyncStatus linux_process_poll(AsyncResult *result)
 		out->exit_code = -1;
 
 	if (h->stdout_fd >= 0) {
-		close(h->stdout_fd);
+		syscall1(SYS_close, (long)h->stdout_fd);
 		h->stdout_fd = -1;
 	}
 	if (h->stderr_fd >= 0) {
-		close(h->stderr_fd);
+		syscall1(SYS_close, (long)h->stderr_fd);
 		h->stderr_fd = -1;
 	}
 
@@ -110,6 +248,7 @@ static AsyncStatus linux_process_poll(AsyncResult *result)
 	return ASYNC_COMPLETED;
 }
 
+/* ---- Spawn ---- */
 AsyncResult fun_process_arch_spawn(const char *executable, const char **args,
 								   const ProcessSpawnOptions *options,
 								   ProcessResult *out)
@@ -126,7 +265,8 @@ AsyncResult fun_process_arch_spawn(const char *executable, const char **args,
 	out->stderr_length = 0;
 	out->exit_code = 0;
 
-	if (!executable_exists(executable)) {
+	char exec_path[512];
+	if (!find_executable(executable, exec_path, sizeof(exec_path))) {
 		result.status = ASYNC_ERROR;
 		result.error = fun_error_result(ERROR_CODE_PROCESS_NOT_FOUND,
 										"Executable not found");
@@ -135,28 +275,28 @@ AsyncResult fun_process_arch_spawn(const char *executable, const char **args,
 
 	int stdout_pipe[2], stderr_pipe[2];
 
-	if (pipe(stdout_pipe) < 0) {
+	if (syscall1(SYS_pipe, (long)stdout_pipe) < 0) {
 		result.status = ASYNC_ERROR;
 		result.error = fun_error_result(ERROR_CODE_PROCESS_SPAWN_FAILED,
 										"Failed to create stdout pipe");
 		return result;
 	}
-	if (pipe(stderr_pipe) < 0) {
-		close(stdout_pipe[0]);
-		close(stdout_pipe[1]);
+	if (syscall1(SYS_pipe, (long)stderr_pipe) < 0) {
+		syscall1(SYS_close, (long)stdout_pipe[0]);
+		syscall1(SYS_close, (long)stdout_pipe[1]);
 		result.status = ASYNC_ERROR;
 		result.error = fun_error_result(ERROR_CODE_PROCESS_SPAWN_FAILED,
 										"Failed to create stderr pipe");
 		return result;
 	}
 
-	pid_t pid = fork();
+	long pid = syscall1(SYS_fork, 0);
 
 	if (pid < 0) {
-		close(stdout_pipe[0]);
-		close(stdout_pipe[1]);
-		close(stderr_pipe[0]);
-		close(stderr_pipe[1]);
+		syscall1(SYS_close, (long)stdout_pipe[0]);
+		syscall1(SYS_close, (long)stdout_pipe[1]);
+		syscall1(SYS_close, (long)stderr_pipe[0]);
+		syscall1(SYS_close, (long)stderr_pipe[1]);
 		result.status = ASYNC_ERROR;
 		result.error =
 			fun_error_result(ERROR_CODE_PROCESS_SPAWN_FAILED, "Fork failed");
@@ -165,44 +305,50 @@ AsyncResult fun_process_arch_spawn(const char *executable, const char **args,
 
 	if (pid == 0) {
 		/* Child */
-		close(stdout_pipe[0]);
-		close(stderr_pipe[0]);
-		dup2(stdout_pipe[1], STDOUT_FILENO);
-		dup2(stderr_pipe[1], STDERR_FILENO);
-		close(stdout_pipe[1]);
-		close(stderr_pipe[1]);
+		syscall1(SYS_close, (long)stdout_pipe[0]);
+		syscall1(SYS_close, (long)stderr_pipe[0]);
+		syscall2(SYS_dup2, (long)stdout_pipe[1], 1);
+		syscall2(SYS_dup2, (long)stderr_pipe[1], 2);
+		syscall1(SYS_close, (long)stdout_pipe[1]);
+		syscall1(SYS_close, (long)stderr_pipe[1]);
 
-		if (args != NULL) {
-			execvp(executable, (char *const *)args);
+		const char *empty_env[] = { (void *)0 };
+		const char **envp = fun_arch_envp ? fun_arch_envp : empty_env;
+
+		if (args != (void *)0) {
+			syscall3(SYS_execve, (long)exec_path, (long)args, (long)envp);
 		} else {
-			const char *argv[] = { executable, NULL };
-			execvp(executable, (char *const *)argv);
+			const char *argv[] = { exec_path, (void *)0 };
+			syscall3(SYS_execve, (long)exec_path, (long)argv, (long)envp);
 		}
-		_exit(127);
+		syscall1(SYS_exit, 127);
+		/* unreachable */
+		while (1) {}
 	}
 
 	/* Parent */
-	close(stdout_pipe[1]);
-	close(stderr_pipe[1]);
+	syscall1(SYS_close, (long)stdout_pipe[1]);
+	syscall1(SYS_close, (long)stderr_pipe[1]);
 
-	fcntl(stdout_pipe[0], F_SETFL,
-		  fcntl(stdout_pipe[0], F_GETFL, 0) | O_NONBLOCK);
-	fcntl(stderr_pipe[0], F_SETFL,
-		  fcntl(stderr_pipe[0], F_GETFL, 0) | O_NONBLOCK);
+	long flags;
+	flags = syscall3(SYS_fcntl, (long)stdout_pipe[0], F_GETFL, 0);
+	syscall3(SYS_fcntl, (long)stdout_pipe[0], F_SETFL, flags | O_NONBLOCK);
+	flags = syscall3(SYS_fcntl, (long)stderr_pipe[0], F_GETFL, 0);
+	syscall3(SYS_fcntl, (long)stderr_pipe[0], F_SETFL, flags | O_NONBLOCK);
 
 	LinuxProcHandle *h = alloc_handle();
-	if (h == NULL) {
-		kill(pid, SIGKILL);
-		waitpid(pid, NULL, 0);
-		close(stdout_pipe[0]);
-		close(stderr_pipe[0]);
+	if (h == (void *)0) {
+		syscall2(SYS_kill, (long)pid, SIGKILL);
+		syscall4(SYS_wait4, pid, 0, 0, 0);
+		syscall1(SYS_close, (long)stdout_pipe[0]);
+		syscall1(SYS_close, (long)stderr_pipe[0]);
 		result.status = ASYNC_ERROR;
 		result.error = fun_error_result(ERROR_CODE_PROCESS_SPAWN_FAILED,
 										"Failed to allocate process handle");
 		return result;
 	}
 
-	h->pid = pid;
+	h->pid = (int)pid;
 	h->stdout_fd = stdout_pipe[0];
 	h->stderr_fd = stderr_pipe[0];
 	out->_handle = h;
@@ -215,12 +361,13 @@ voidResult fun_process_arch_terminate(ProcessResult *out)
 	voidResult r;
 	r.error = ERROR_RESULT_NO_ERROR;
 
-	if (out->_handle == NULL)
+	if (out->_handle == (void *)0)
 		return r;
 
 	LinuxProcHandle *h = (LinuxProcHandle *)out->_handle;
 	if (h->pid > 0) {
-		if (kill(h->pid, SIGKILL) < 0 && errno != ESRCH) {
+		long ret = syscall2(SYS_kill, (long)h->pid, SIGKILL);
+		if (ret < 0 && -ret != ESRCH) {
 			r.error = fun_error_result(ERROR_CODE_PROCESS_TERMINATE_FAILED,
 									   "Failed to terminate process");
 		}
@@ -233,26 +380,26 @@ voidResult fun_process_arch_free(ProcessResult *out)
 	voidResult r;
 	r.error = ERROR_RESULT_NO_ERROR;
 
-	if (out->_handle == NULL)
+	if (out->_handle == (void *)0)
 		return r;
 
 	LinuxProcHandle *h = (LinuxProcHandle *)out->_handle;
 
 	if (h->stdout_fd >= 0) {
-		close(h->stdout_fd);
+		syscall1(SYS_close, (long)h->stdout_fd);
 		h->stdout_fd = -1;
 	}
 	if (h->stderr_fd >= 0) {
-		close(h->stderr_fd);
+		syscall1(SYS_close, (long)h->stderr_fd);
 		h->stderr_fd = -1;
 	}
 	if (h->pid > 0) {
 		int status;
-		waitpid(h->pid, &status, WNOHANG);
+		syscall4(SYS_wait4, (long)h->pid, (long)&status, WNOHANG, 0);
 		h->pid = 0;
 	}
 
 	free_handle(h);
-	out->_handle = NULL;
+	out->_handle = (void *)0;
 	return r;
 }

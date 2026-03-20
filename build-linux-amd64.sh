@@ -12,7 +12,6 @@ gcc \
     -fno-builtin \
     -fno-exceptions \
     -fno-unwind-tables \
-    -e main \
     -I . \
     -I include \
     -I src \
@@ -41,6 +40,7 @@ gcc \
     vendor/fundamental/src/platform/platform.c \
     vendor/fundamental/arch/platform/linux-amd64/platform.c \
     vendor/fundamental/src/async/async.c \
+    vendor/fundamental/arch/async/linux-amd64/async.c \
     vendor/fundamental/src/process/process.c \
     vendor/fundamental/arch/process/linux-amd64/process.c \
     vendor/fundamental/arch/file/linux-amd64/fileRead.c \

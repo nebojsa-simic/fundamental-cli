@@ -1,156 +1,223 @@
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <dirent.h>
-#include <unistd.h>
 #include <stdbool.h>
-#include <errno.h>
+#include <stddef.h>
 
 #include "fundamental/string/string.h"
 
-// Check if directory exists
-static bool directory_exists_posix(const char *path)
+/* ---- Syscall numbers ---- */
+#define SYS_open       2
+#define SYS_close      3
+#define SYS_stat       4
+#define SYS_mkdir      83
+#define SYS_rmdir      84
+#define SYS_getdents64 217
+
+/* ---- open flags ---- */
+#define O_RDONLY    0
+#define O_DIRECTORY 0200000
+
+/* ---- stat mode bits ---- */
+#define S_IFMT  0170000
+#define S_IFDIR 0040000
+#define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
+
+/* ---- errno equivalents ---- */
+#define EEXIST 17
+
+/* ---- stat struct ---- */
+struct stat_t {
+	unsigned long st_dev;
+	unsigned long st_ino;
+	unsigned long st_nlink;
+	unsigned int  st_mode;
+	unsigned int  st_uid;
+	unsigned int  st_gid;
+	unsigned long st_rdev;
+	long          st_size;
+	long          st_blksize;
+	long          st_blocks;
+	unsigned long st_atime;
+	unsigned long st_atime_nsec;
+	unsigned long st_mtime;
+	unsigned long st_mtime_nsec;
+	unsigned long st_ctime;
+	unsigned long st_ctime_nsec;
+	unsigned long __pad[3];
+};
+
+/* ---- linux_dirent64 ---- */
+struct linux_dirent64 {
+	unsigned long long d_ino;
+	long long          d_off;
+	unsigned short     d_reclen;
+	unsigned char      d_type;
+	char               d_name[1];
+};
+
+/* ---- inline syscall helpers ---- */
+static inline long syscall1(long n, long a1)
 {
-	struct stat st;
-	if (stat(path, &st) != 0) {
+	long ret;
+	__asm__ __volatile__("syscall"
+						 : "=a"(ret)
+						 : "a"(n), "D"(a1)
+						 : "rcx", "r11", "memory");
+	return ret;
+}
+
+static inline long syscall2(long n, long a1, long a2)
+{
+	long ret;
+	__asm__ __volatile__("syscall"
+						 : "=a"(ret)
+						 : "a"(n), "D"(a1), "S"(a2)
+						 : "rcx", "r11", "memory");
+	return ret;
+}
+
+static inline long syscall3(long n, long a1, long a2, long a3)
+{
+	long ret;
+	__asm__ __volatile__("syscall"
+						 : "=a"(ret)
+						 : "a"(n), "D"(a1), "S"(a2), "d"(a3)
+						 : "rcx", "r11", "memory");
+	return ret;
+}
+
+static inline long sys_stat(const char *path, struct stat_t *st)
+{
+	return syscall2(SYS_stat, (long)path, (long)st);
+}
+
+static inline bool directory_exists_raw(const char *path)
+{
+	struct stat_t st;
+	if (sys_stat(path, &st) != 0)
 		return false;
-	}
 	return S_ISDIR(st.st_mode);
 }
 
-// Check if directory is empty
-static bool directory_is_empty_posix(const char *path)
-{
-	DIR *dir = opendir(path);
-	if (dir == NULL) {
-		return true; // Can't open, treat as empty
-	}
-
-	struct dirent *entry;
-	bool empty = true;
-
-	while ((entry = readdir(dir)) != NULL) {
-		// Skip . and ..
-		if (fun_string_compare(entry->d_name, ".") == 0 ||
-			fun_string_compare(entry->d_name, "..") == 0) {
-			continue;
-		}
-		empty = false;
-		break;
-	}
-
-	closedir(dir);
-	return empty;
-}
-
-// Create directory (single level, no parents)
-static int create_directory_single_posix(const char *path)
-{
-	// Use 0755 permissions (rwxr-xr-x)
-	if (mkdir(path, 0755) == 0) {
-		return 0; // Success
-	}
-
-	if (errno == EEXIST) {
-		// Check if it's a directory
-		if (directory_exists_posix(path)) {
-			return 0; // Already exists as directory
-		}
-		return -1; // Exists as file
-	}
-
-	return -1; // Other error
-}
-
-// Remove directory
-static int remove_directory_posix(const char *path)
-{
-	if (!directory_exists_posix(path)) {
-		return -2; // Not found
-	}
-
-	struct stat st;
-	if (stat(path, &st) != 0 || !S_ISDIR(st.st_mode)) {
-		return -3; // Not a directory
-	}
-
-	if (!directory_is_empty_posix(path)) {
-		return -1; // Not empty
-	}
-
-	if (rmdir(path) == 0) {
-		return 0; // Success
-	}
-
-	return -4; // Remove failed
-}
-
-// List directory contents into buffer (newline-separated entries)
-int fun_platform_directory_list(const char *path, char *buffer,
-								size_t buffer_size)
-{
-	if (path == NULL || buffer == NULL || buffer_size == 0) {
-		return -1;
-	}
-
-	DIR *dir = opendir(path);
-	if (dir == NULL) {
-		return -3; // Can't open directory
-	}
-
-	size_t bytes_written = 0;
-	size_t max_bytes = buffer_size - 1;
-
-	struct dirent *entry;
-	while ((entry = readdir(dir)) != NULL) {
-		// Skip . and ..
-		if (fun_string_compare(entry->d_name, ".") == 0 ||
-			fun_string_compare(entry->d_name, "..") == 0) {
-			continue;
-		}
-
-		size_t entry_len = fun_string_length(entry->d_name);
-
-		// Check if we have space (entry + newline)
-		if (bytes_written + entry_len + 1 >= max_bytes) {
-			closedir(dir);
-			return -4; // Buffer too small
-		}
-
-		// Add entry to buffer
-		for (size_t i = 0; i < entry_len; i++) {
-			buffer[bytes_written++] = entry->d_name[i];
-		}
-		buffer[bytes_written++] = '\n';
-	}
-
-	closedir(dir);
-
-	// Null-terminate (replace last newline if present)
-	if (bytes_written > 0) {
-		bytes_written--; // Remove last newline
-	}
-	buffer[bytes_written] = '\0';
-
-	return (int)bytes_written;
-}
-
-// Public POSIX-specific functions
-int fun_platform_directory_create(const char *path)
-{
-	return create_directory_single_posix(path);
-}
-
-int fun_platform_directory_remove(const char *path)
-{
-	return remove_directory_posix(path);
-}
+/* ---- Public platform API ---- */
 
 bool fun_platform_directory_exists(const char *path)
 {
-	return directory_exists_posix(path);
+	return directory_exists_raw(path);
 }
 
 bool fun_platform_directory_is_empty(const char *path)
 {
-	return directory_is_empty_posix(path);
+	int fd = (int)syscall2(SYS_open, (long)path, O_RDONLY | O_DIRECTORY);
+	if (fd < 0)
+		return true;
+
+	char buf[1024];
+	bool empty = true;
+
+	while (1) {
+		int nread = (int)syscall3(SYS_getdents64, (long)fd, (long)buf,
+								  sizeof(buf));
+		if (nread <= 0)
+			break;
+		int pos = 0;
+		while (pos < nread) {
+			struct linux_dirent64 *d =
+				(struct linux_dirent64 *)(buf + pos);
+			const char *name = d->d_name;
+			/* skip . and .. */
+			if (!(name[0] == '.' &&
+				  (name[1] == '\0' ||
+				   (name[1] == '.' && name[2] == '\0')))) {
+				empty = false;
+				break;
+			}
+			pos += d->d_reclen;
+		}
+		if (!empty)
+			break;
+	}
+
+	syscall1(SYS_close, (long)fd);
+	return empty;
+}
+
+int fun_platform_directory_create(const char *path)
+{
+	long ret = syscall2(SYS_mkdir, (long)path, 0755);
+	if (ret == 0)
+		return 0;
+	long err = -ret;
+	if (err == EEXIST && directory_exists_raw(path))
+		return 0;
+	return -1;
+}
+
+int fun_platform_directory_remove(const char *path)
+{
+	if (!directory_exists_raw(path))
+		return -2;
+	long ret = syscall1(SYS_rmdir, (long)path);
+	if (ret == 0)
+		return 0;
+	long err = -ret;
+	if (err == 39) /* ENOTEMPTY */
+		return -1;
+	return -4;
+}
+
+int fun_platform_directory_list(const char *path, char *buffer,
+								size_t buffer_size)
+{
+	if (path == (void *)0 || buffer == (void *)0 || buffer_size == 0)
+		return -1;
+
+	int fd = (int)syscall2(SYS_open, (long)path, O_RDONLY | O_DIRECTORY);
+	if (fd < 0)
+		return -3;
+
+	size_t bytes_written = 0;
+	size_t max_bytes = buffer_size - 1;
+	char dents_buf[2048];
+
+	while (1) {
+		int nread = (int)syscall3(SYS_getdents64, (long)fd, (long)dents_buf,
+								  sizeof(dents_buf));
+		if (nread <= 0)
+			break;
+
+		int pos = 0;
+		while (pos < nread) {
+			struct linux_dirent64 *d =
+				(struct linux_dirent64 *)(dents_buf + pos);
+			const char *name = d->d_name;
+
+			/* skip . and .. */
+			if (name[0] == '.' &&
+				(name[1] == '\0' ||
+				 (name[1] == '.' && name[2] == '\0'))) {
+				pos += d->d_reclen;
+				continue;
+			}
+
+			StringLength entry_len = fun_string_length(name);
+
+			if (bytes_written + entry_len + 1 >= max_bytes) {
+				syscall1(SYS_close, (long)fd);
+				return -4;
+			}
+
+			for (StringLength i = 0; i < entry_len; i++)
+				buffer[bytes_written++] = name[i];
+			buffer[bytes_written++] = '\n';
+
+			pos += d->d_reclen;
+		}
+	}
+
+	syscall1(SYS_close, (long)fd);
+
+	if (bytes_written > 0)
+		bytes_written--;
+	buffer[bytes_written] = '\0';
+
+	return (int)bytes_written;
 }

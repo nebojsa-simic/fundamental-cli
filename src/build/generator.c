@@ -425,7 +425,7 @@ BuildGenerationResult build_generate_linux(SourceScanResult scan_result)
 				 "\n"
 				 "# Compile with GCC\n"
 				 "gcc --std=c17 -Os -nostdlib -fno-builtin -fno-exceptions"
-				 " -fno-unwind-tables -e main"
+				 " -fno-unwind-tables"
 				 " -I . -I include -I src -I vendor/fundamental/include"
 				 " vendor/fundamental/src/startup/startup.c"
 				 " vendor/fundamental/arch/startup/linux-amd64/linux.c ",
