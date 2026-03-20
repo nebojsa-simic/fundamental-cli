@@ -14,10 +14,10 @@
  *   (blank lines ignored)
  */
 
-#include "../../include/config/config.h"
-#include "../../include/error/error.h"
-#include "../../include/hashmap/hashmap.h"
-#include "../../include/string/string.h"
+#include "fundamental/config/config.h"
+#include "fundamental/error/error.h"
+#include "fundamental/hashmap/hashmap.h"
+#include "fundamental/string/string.h"
 
 /* Forward declaration: hash/equals for char** string keys (defined in config.c) */
 uint64_t config_map_hash_string(const void *key);

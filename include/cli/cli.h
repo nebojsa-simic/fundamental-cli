@@ -1,8 +1,8 @@
 #ifndef CLI_H
 #define CLI_H
 
-#include "vendor/fundamental/include/console/console.h"
-#include "vendor/fundamental/include/string/string.h"
+#include "fundamental/console/console.h"
+#include "fundamental/string/string.h"
 
 /**
  * Command structure for CLI subcommands

@@ -15,7 +15,20 @@ BuildExecutionResult build_execute_windows(String script_path, int verbose)
 	char full_path[1024];
 	ErrorResult cwd_result = fun_filesystem_get_working_directory(cwd);
 	if (fun_error_is_ok(cwd_result)) {
-		fun_path_join(cwd, script_path, full_path);
+		char cwd_buf[512];
+		const char *cwd_comps[16];
+		Path cwd_path = { cwd_comps, 0, false };
+		fun_path_from_cstr(cwd, cwd_buf, sizeof(cwd_buf), &cwd_path);
+
+		char sp_buf[256];
+		const char *sp_comps[8];
+		Path sp_path = { sp_comps, 0, false };
+		fun_path_from_cstr(script_path, sp_buf, sizeof(sp_buf), &sp_path);
+
+		const char *joined_comps[24];
+		Path joined = { joined_comps, 0, false };
+		fun_path_join(cwd_path, sp_path, &joined);
+		fun_path_to_string(joined, full_path, sizeof(full_path));
 		script_path = full_path;
 	}
 
@@ -61,7 +74,20 @@ BuildExecutionResult build_execute_linux(String script_path, int verbose)
 	char full_path[1024];
 	ErrorResult cwd_result = fun_filesystem_get_working_directory(cwd);
 	if (fun_error_is_ok(cwd_result)) {
-		fun_path_join(cwd, script_path, full_path);
+		char cwd_buf[512];
+		const char *cwd_comps[16];
+		Path cwd_path = { cwd_comps, 0, false };
+		fun_path_from_cstr(cwd, cwd_buf, sizeof(cwd_buf), &cwd_path);
+
+		char sp_buf[256];
+		const char *sp_comps[8];
+		Path sp_path = { sp_comps, 0, false };
+		fun_path_from_cstr(script_path, sp_buf, sizeof(sp_buf), &sp_path);
+
+		const char *joined_comps[24];
+		Path joined = { joined_comps, 0, false };
+		fun_path_join(cwd_path, sp_path, &joined);
+		fun_path_to_string(joined, full_path, sizeof(full_path));
 		script_path = full_path;
 	}
 

@@ -1,5 +1,5 @@
-#include "stream/stream.h"
-#include "memory/memory.h"
+#include "fundamental/stream/stream.h"
+#include "fundamental/memory/memory.h"
 
 /* Arch-layer declaration (implemented per platform in arch/stream/) */
 extern void arch_stream_close_handle(void *internal_state);

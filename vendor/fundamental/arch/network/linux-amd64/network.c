@@ -5,7 +5,7 @@
  * No event loop; all poll-based readiness is checked by the caller.
  */
 
-#include "../../../include/network/network.h"
+#include "fundamental/network/network.h"
 
 #include <errno.h>
 #include <fcntl.h>

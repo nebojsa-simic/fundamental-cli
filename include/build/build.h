@@ -1,10 +1,10 @@
 #ifndef BUILD_H
 #define BUILD_H
 
-#include "vendor/fundamental/include/string/string.h"
-#include "vendor/fundamental/include/error/error.h"
-#include "vendor/fundamental/include/array/array.h"
-#include "vendor/fundamental/include/platform/platform.h"
+#include "fundamental/string/string.h"
+#include "fundamental/error/error.h"
+#include "fundamental/array/array.h"
+#include "fundamental/platform/platform.h"
 
 /* ── Platform helpers ──────────────────────────────────────── */
 

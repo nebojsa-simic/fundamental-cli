@@ -21,7 +21,11 @@ static size_t path_storage_pos = 0;
  * -------------------------------------------------------------------------- */
 static int fun_ini_read_name(char *output, size_t output_size)
 {
-	boolResult exists = fun_file_exists((String) "fun.ini");
+	char _ini_buf[64];
+	const char *_ini_comps[4];
+	Path _ini_path = { _ini_comps, 0, false };
+	fun_path_from_cstr("fun.ini", _ini_buf, sizeof(_ini_buf), &_ini_path);
+	boolResult exists = fun_file_exists(_ini_path);
 	if (fun_error_is_error(exists.error) || !exists.value)
 		return 0;
 
@@ -101,7 +105,7 @@ static int fun_ini_read_name(char *output, size_t output_size)
  * Uses fun_filesystem_list_directory for actual OS traversal.
  * Discovered .c paths are stored in path_storage[]; sources[] holds pointers.
  * -------------------------------------------------------------------------- */
-static void scan_directory_recursive(String dir_path, SourceScanResult *result,
+static void scan_directory_recursive(Path dir_path, SourceScanResult *result,
 									 int depth)
 {
 	if (depth > 8)
@@ -151,33 +155,36 @@ static void scan_directory_recursive(String dir_path, SourceScanResult *result,
 			entry[i] = pos[i];
 		entry[entry_len] = '\0';
 
-		/* Build full path: dir_path + sep + entry */
-		char full_path[512];
-		ErrorResult join_err =
-			fun_path_join(dir_path, (String)entry, (OutputString)full_path);
-		if (fun_error_is_error(join_err)) {
-			pos = (*end != '\0') ? end + 1 : end;
-			continue;
-		}
+		/* Build child path using Path join */
+		const char *entry_comp[] = { entry };
+		Path entry_path = { entry_comp, 1, false };
+		const char *child_comps[32];
+		Path child_path = { child_comps, 0, false };
+		fun_path_join(dir_path, entry_path, &child_path);
 
 		/* .c file? */
 		if (entry_len > 2 && entry[entry_len - 2] == '.' &&
 			entry[entry_len - 1] == 'c') {
-			StringLength full_len = fun_string_length((String)full_path);
-			if (path_storage_pos + full_len + 1 <= MAX_PATH_STORAGE) {
-				fun_string_copy((String)full_path,
-								path_storage + path_storage_pos,
-								MAX_PATH_STORAGE - path_storage_pos);
-				result->sources[result->count] =
-					(String)(path_storage + path_storage_pos);
-				result->count++;
-				path_storage_pos += full_len + 1;
+			char full_str[512];
+			ErrorResult ts_err =
+				fun_path_to_string(child_path, full_str, sizeof(full_str));
+			if (fun_error_is_ok(ts_err)) {
+				StringLength full_len = fun_string_length((String)full_str);
+				if (path_storage_pos + full_len + 1 <= MAX_PATH_STORAGE) {
+					fun_string_copy((String)full_str,
+									path_storage + path_storage_pos,
+									MAX_PATH_STORAGE - path_storage_pos);
+					result->sources[result->count] =
+						(String)(path_storage + path_storage_pos);
+					result->count++;
+					path_storage_pos += full_len + 1;
+				}
 			}
 		} else {
 			/* Recurse into subdirectories */
-			boolResult is_dir = fun_directory_exists((String)full_path);
+			boolResult is_dir = fun_directory_exists(child_path);
 			if (fun_error_is_ok(is_dir.error) && is_dir.value) {
-				scan_directory_recursive((String)full_path, result, depth + 1);
+				scan_directory_recursive(child_path, result, depth + 1);
 			}
 		}
 
@@ -199,7 +206,9 @@ SourceScanResult build_scan_sources(void)
 	/* Reset path storage for this scan */
 	path_storage_pos = 0;
 
-	scan_directory_recursive((String) "src", &result, 0);
+	const char *src_comp[] = { "src" };
+	Path src_path = { src_comp, 1, false };
+	scan_directory_recursive(src_path, &result, 0);
 
 	return result;
 }
@@ -240,7 +249,11 @@ static char *append(char *ptr, const char *s, char *buf_end)
  * -------------------------------------------------------------------------- */
 static void delete_file_if_exists(const char *path)
 {
-	boolResult exists = fun_file_exists((String)path);
+	char _del_buf[512];
+	const char *_del_comps[16];
+	Path _del_path = { _del_comps, 0, false };
+	fun_path_from_cstr(path, _del_buf, sizeof(_del_buf), &_del_path);
+	boolResult exists = fun_file_exists(_del_path);
 	if (fun_error_is_error(exists.error) || !exists.value)
 		return;
 

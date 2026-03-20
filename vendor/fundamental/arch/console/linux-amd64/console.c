@@ -1,4 +1,4 @@
-#include "console/console.h"
+#include "fundamental/console/console.h"
 #include <unistd.h>
 
 ErrorResult platform_console_flush_stdout(const char *data, size_t length)

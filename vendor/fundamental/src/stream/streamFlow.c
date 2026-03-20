@@ -1,5 +1,5 @@
-#include "stream/stream.h"
-#include "memory/memory.h"
+#include "fundamental/stream/stream.h"
+#include "fundamental/memory/memory.h"
 
 bool fun_stream_can_read(FileStream *stream)
 {

@@ -7,12 +7,12 @@
  *   INI file  ({exe_dir}/{app}.ini) - lowest priority
  */
 
-#include "../../include/config/config.h"
-#include "../../include/error/error.h"
-#include "../../include/hashmap/hashmap.h"
-#include "../../include/memory/memory.h"
-#include "../../include/string/string.h"
-#include "../../include/filesystem/filesystem.h"
+#include "fundamental/config/config.h"
+#include "fundamental/error/error.h"
+#include "fundamental/hashmap/hashmap.h"
+#include "fundamental/memory/memory.h"
+#include "fundamental/string/string.h"
+#include "fundamental/filesystem/filesystem.h"
 
 /* ------------------------------------------------------------------
  * Platform functions (implemented in arch/config/{platform}/env.c)
@@ -400,22 +400,41 @@ ConfigResult fun_config_load(String app_name, int argc, const char **argv)
 	/* Load and parse INI file */
 	char exe_dir[CONFIG_PATH_MAX];
 	if (fun_platform_get_executable_dir(exe_dir, sizeof(exe_dir)) == 0) {
-		/* Build INI file path: {exe_dir}/{app_name}.ini */
-		char ini_path[CONFIG_PATH_MAX];
-		fun_path_join(exe_dir, app_name, ini_path);
-
-		/* Append ".ini" extension */
-		size_t path_len = cfg_strlen(ini_path);
-		if (path_len + 4 < CONFIG_PATH_MAX) {
-			ini_path[path_len] = '.';
-			ini_path[path_len + 1] = 'i';
-			ini_path[path_len + 2] = 'n';
-			ini_path[path_len + 3] = 'i';
-			ini_path[path_len + 4] = '\0';
+		/* Build INI filename: {app_name}.ini (single Path component) */
+		char ini_filename[CONFIG_PATH_MAX];
+		size_t app_len = cfg_strlen(app_name);
+		if (app_len + 4 < CONFIG_PATH_MAX) {
+			for (size_t i = 0; i < app_len; i++)
+				ini_filename[i] = app_name[i];
+			ini_filename[app_len] = '.';
+			ini_filename[app_len + 1] = 'i';
+			ini_filename[app_len + 2] = 'n';
+			ini_filename[app_len + 3] = 'i';
+			ini_filename[app_len + 4] = '\0';
+		} else {
+			ini_filename[0] = '\0';
 		}
 
+		/* Build exe_dir Path */
+		char exe_dir_buf[CONFIG_PATH_MAX];
+		const char *exe_dir_comps[16];
+		Path exe_dir_path = { exe_dir_comps, 0, false };
+		fun_path_from_cstr(exe_dir, exe_dir_buf, sizeof(exe_dir_buf),
+						   &exe_dir_path);
+
+		/* Join exe_dir + ini_filename → full ini Path */
+		const char *ini_comp[] = { ini_filename };
+		Path ini_file_path = { ini_comp, 1, false };
+		const char *joined_comps[20];
+		Path joined_path = { joined_comps, 0, false };
+		fun_path_join(exe_dir_path, ini_file_path, &joined_path);
+
+		/* Convert to string for platform read call */
+		char ini_path[CONFIG_PATH_MAX];
+		fun_path_to_string(joined_path, ini_path, sizeof(ini_path));
+
 		/* Check if INI file exists */
-		boolResult exists = fun_file_exists(ini_path);
+		boolResult exists = fun_file_exists(joined_path);
 		if (fun_error_is_ok(exists.error) && exists.value) {
 			/* Allocate INI buffer */
 			MemoryResult ini_buf =

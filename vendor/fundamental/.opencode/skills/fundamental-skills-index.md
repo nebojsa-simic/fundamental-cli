@@ -30,7 +30,7 @@ This is the central index for all Fundamental Library skills for AI coding agent
 
 | Skill | File | Description |
 |-------|------|-------------|
-| **String** | [fundamental-string.md](fundamental-string.md) | Copy, join, template, convert strings |
+| **String** | [fundamental-string.md](fundamental-string.md) | Copy, join, template, convert, substring, slice |
 | **Collections** | [fundamental-collections.md](fundamental-collections.md) | Arrays, hashmaps, sets, red-black trees |
 
 ### Advanced Operations
@@ -173,6 +173,7 @@ fundamental-network.md
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.1 | 2026-03-17 | Added substring/slice operations to string skill |
 | 1.0 | 2024 | Initial release with 8 core skills |
 
 ---

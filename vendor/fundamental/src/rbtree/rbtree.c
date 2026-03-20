@@ -1,4 +1,4 @@
-#include "../../include/rbtree/rbtree.h"
+#include "fundamental/rbtree/rbtree.h"
 
 // Internal: Create a new RB node
 static RBNode *rbtree_create_node(const RBTree *tree, const void *key,

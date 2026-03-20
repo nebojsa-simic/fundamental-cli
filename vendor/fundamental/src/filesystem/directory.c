@@ -1,5 +1,7 @@
-#include "filesystem/filesystem.h"
+#include "fundamental/filesystem/filesystem.h"
+#include "fundamental/filesystem/path.h"
 #include <stdbool.h>
+#include <stddef.h>
 
 // Platform-specific functions (implemented in arch/filesystem/*/directory.c)
 int fun_platform_directory_create(const char *path);
@@ -41,6 +43,59 @@ static void string_copy(const char *src, char *dest, size_t dest_size)
 static bool is_separator(char c)
 {
 	return c == '/' || c == '\\';
+}
+
+// Helper: Convert Path to string for platform calls
+static ErrorResult path_to_string_internal(Path path, char *buffer,
+										   size_t buffer_size)
+{
+	if (buffer == NULL || buffer_size == 0) {
+		return fun_error_result(ERROR_CODE_NULL_POINTER,
+								"Buffer is NULL or size is 0");
+	}
+
+	buffer[0] = '\0';
+
+	// Validate Path - components must be non-NULL
+	if (path.components == NULL) {
+		return fun_error_result(ERROR_CODE_NULL_POINTER,
+								"Path components is NULL");
+	}
+
+	if (path.count == 0) {
+		buffer[0] = '.';
+		buffer[1] = '\0';
+		return ERROR_RESULT_NO_ERROR;
+	}
+
+	char sep = fun_path_separator();
+	size_t out_pos = 0;
+	size_t max_len = buffer_size - 1;
+
+	if (path.is_absolute) {
+		if (max_len > 0) {
+			buffer[out_pos++] = sep;
+		}
+	}
+
+	for (size_t i = 0; i < path.count && out_pos < max_len; i++) {
+		const char *component = path.components[i];
+		if (component == NULL) {
+			continue;
+		}
+
+		size_t comp_len = string_length(component);
+		for (size_t j = 0; j < comp_len && out_pos < max_len; j++) {
+			buffer[out_pos++] = component[j];
+		}
+
+		if (i < path.count - 1 && out_pos < max_len) {
+			buffer[out_pos++] = sep;
+		}
+	}
+
+	buffer[out_pos] = '\0';
+	return ERROR_RESULT_NO_ERROR;
 }
 
 // Task 2.3: Directory existence check helper
@@ -111,30 +166,32 @@ static ErrorResult create_parent_directories(const char *path)
 }
 
 // Task 2.2: Implement fun_filesystem_create_directory with parent directory creation
-ErrorResult fun_filesystem_create_directory(const char *path)
+ErrorResult fun_filesystem_create_directory(Path path)
 {
-	// Task 2.9: NULL parameter validation
-	if (path == NULL) {
-		return fun_error_result(ERROR_CODE_NULL_POINTER, "Path is NULL");
+	if (path.components == NULL && path.count > 0) {
+		return fun_error_result(ERROR_CODE_NULL_POINTER,
+								"Path components is NULL");
 	}
 
-	// Task 2.10: Error handling with appropriate error codes
-	size_t len = string_length(path);
-	if (len == 0) {
-		return fun_error_result(ERROR_CODE_PATH_INVALID, "Path is empty");
+	// Convert Path to string for platform call
+	char path_string[512];
+	ErrorResult conv_result =
+		path_to_string_internal(path, path_string, sizeof(path_string));
+	if (fun_error_is_error(conv_result)) {
+		return conv_result;
 	}
 
 	// Create parent directories first
-	ErrorResult parent_result = create_parent_directories(path);
+	ErrorResult parent_result = create_parent_directories(path_string);
 	if (fun_error_is_error(parent_result)) {
 		return parent_result;
 	}
 
 	// Create the final directory
-	int result = fun_platform_directory_create(path);
+	int result = fun_platform_directory_create(path_string);
 	if (result < 0) {
 		// Check if it already exists
-		if (directory_exists(path)) {
+		if (directory_exists(path_string)) {
 			return ERROR_RESULT_NO_ERROR; // Idempotent success
 		}
 		return fun_error_result(ERROR_CODE_PERMISSION_DENIED,
@@ -145,32 +202,40 @@ ErrorResult fun_filesystem_create_directory(const char *path)
 }
 
 // Task 2.5: Implement fun_filesystem_remove_directory for empty directories only
-ErrorResult fun_filesystem_remove_directory(const char *path)
+ErrorResult fun_filesystem_remove_directory(Path path)
 {
-	// Task 2.9: NULL parameter validation
-	if (path == NULL) {
-		return fun_error_result(ERROR_CODE_NULL_POINTER, "Path is NULL");
+	if (path.components == NULL && path.count > 0) {
+		return fun_error_result(ERROR_CODE_NULL_POINTER,
+								"Path components is NULL");
 	}
 
-	size_t len = string_length(path);
+	// Convert Path to string for platform call
+	char path_string[512];
+	ErrorResult conv_result =
+		path_to_string_internal(path, path_string, sizeof(path_string));
+	if (fun_error_is_error(conv_result)) {
+		return conv_result;
+	}
+
+	size_t len = string_length(path_string);
 	if (len == 0) {
 		return fun_error_result(ERROR_CODE_PATH_INVALID, "Path is empty");
 	}
 
 	// Check if directory exists
-	if (!directory_exists(path)) {
+	if (!directory_exists(path_string)) {
 		return fun_error_result(ERROR_CODE_DIRECTORY_NOT_FOUND,
 								"Directory not found");
 	}
 
 	// Task 2.6: Check if directory is empty
-	if (!directory_is_empty(path)) {
+	if (!directory_is_empty(path_string)) {
 		return fun_error_result(ERROR_CODE_DIRECTORY_NOT_EMPTY,
 								"Directory is not empty");
 	}
 
 	// Remove the directory
-	int result = fun_platform_directory_remove(path);
+	int result = fun_platform_directory_remove(path_string);
 	if (result == -2) {
 		return fun_error_result(ERROR_CODE_DIRECTORY_NOT_FOUND,
 								"Directory not found");
@@ -194,11 +259,11 @@ typedef struct {
 } DirectoryListContext;
 
 // Task 2.7: Implement fun_filesystem_list_directory with buffer filling
-ErrorResult fun_filesystem_list_directory(const char *path, void *output)
+ErrorResult fun_filesystem_list_directory(Path path, Memory output)
 {
-	// Task 2.9: NULL parameter validation
-	if (path == NULL) {
-		return fun_error_result(ERROR_CODE_NULL_POINTER, "Path is NULL");
+	if (path.components == NULL && path.count > 0) {
+		return fun_error_result(ERROR_CODE_NULL_POINTER,
+								"Path components is NULL");
 	}
 
 	if (output == NULL) {
@@ -206,25 +271,31 @@ ErrorResult fun_filesystem_list_directory(const char *path, void *output)
 								"Output buffer is NULL");
 	}
 
-	size_t len = string_length(path);
+	// Convert Path to string for platform call
+	char path_string[512];
+	ErrorResult conv_result =
+		path_to_string_internal(path, path_string, sizeof(path_string));
+	if (fun_error_is_error(conv_result)) {
+		return conv_result;
+	}
+
+	size_t len = string_length(path_string);
 	if (len == 0) {
 		return fun_error_result(ERROR_CODE_PATH_INVALID, "Path is empty");
 	}
 
 	// Check if path exists
-	if (!directory_exists(path)) {
+	if (!directory_exists(path_string)) {
 		return fun_error_result(ERROR_CODE_DIRECTORY_NOT_FOUND,
 								"Directory not found");
 	}
 
 	// Get memory size for buffer
-	size_t buffer_size = 0;
-	// Memory size would be obtained from memory module
-	// For now, assume a reasonable default
-	buffer_size = 4096;
+	size_t buffer_size = 4096;
 
 	// Call platform-specific listing
-	int result = fun_platform_directory_list(path, (char *)output, buffer_size);
+	int result =
+		fun_platform_directory_list(path_string, (char *)output, buffer_size);
 	if (result < 0) {
 		if (result == -4) {
 			return fun_error_result(ERROR_CODE_BUFFER_TOO_SMALL,

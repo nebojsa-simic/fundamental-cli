@@ -1,5 +1,5 @@
-#include "memory/memory.h"
-#include "string/string.h"
+#include "fundamental/memory/memory.h"
+#include "fundamental/string/string.h"
 
 voidResult fun_string_from_pointer(void *ptr, OutputString output,
 								   size_t output_size)

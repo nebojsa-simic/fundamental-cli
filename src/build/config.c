@@ -141,7 +141,11 @@ BuildConfig build_config_load(void)
 	config.use_nostdlib = 0;
 
 	// Try to read fun.ini
-	boolResult ini_exists = fun_file_exists((String) "fun.ini");
+	char _ini_buf[64];
+	const char *_ini_comps[4];
+	Path _ini_path = { _ini_comps, 0, false };
+	fun_path_from_cstr("fun.ini", _ini_buf, sizeof(_ini_buf), &_ini_path);
+	boolResult ini_exists = fun_file_exists(_ini_path);
 	if (fun_error_is_error(ini_exists.error) || !ini_exists.value) {
 		return config;
 	}

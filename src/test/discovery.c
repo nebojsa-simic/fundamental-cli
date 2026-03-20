@@ -12,7 +12,11 @@ TestDiscoveryResult test_discover(String tests_dir)
 	result.status = TEST_DISCOVERY_SUCCESS;
 	result.error_message = (String) "";
 
-	boolResult dir_exists = fun_path_exists(tests_dir);
+	char _td_buf[512];
+	const char *_td_comps[16];
+	Path _td_path = { _td_comps, 0, false };
+	fun_path_from_cstr(tests_dir, _td_buf, sizeof(_td_buf), &_td_path);
+	boolResult dir_exists = fun_path_exists(_td_path);
 	if (fun_error_is_error(dir_exists.error)) {
 		result.status = TEST_DISCOVERY_ERROR;
 		result.error_message = (String) "exists_err";
@@ -45,8 +49,12 @@ TestDiscoveryResult test_discover(String tests_dir)
 		return result;
 	}
 
+	char _tl_buf[512];
+	const char *_tl_comps[16];
+	Path _tl_path = { _tl_comps, 0, false };
+	fun_path_from_cstr(tests_dir, _tl_buf, sizeof(_tl_buf), &_tl_path);
 	ErrorResult list_result =
-		fun_filesystem_list_directory(tests_dir, list_mem.value);
+		fun_filesystem_list_directory(_tl_path, list_mem.value);
 	if (fun_error_is_error(list_result)) {
 		fun_memory_free(&list_mem.value);
 		result.status = TEST_DISCOVERY_ERROR;
@@ -199,7 +207,10 @@ int test_has_test_file(String dir_path)
 	fun_string_copy((String) "test.c", test_c_path + len + 1,
 					sizeof(test_c_path) - len - 1);
 	test_c_path[len + 1 + 6] = '\0';
-	boolResult exists = fun_file_exists(test_c_path);
+	const char *_tc_comps[8];
+	Path _tc_path = { _tc_comps, 0, false };
+	fun_path_from_string(test_c_path, &_tc_path);
+	boolResult exists = fun_file_exists(_tc_path);
 	return fun_error_is_ok(exists.error) && exists.value;
 }
 

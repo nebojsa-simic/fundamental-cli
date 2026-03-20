@@ -10,9 +10,9 @@
  * No OS-specific code lives here.  Platform logic is in arch/network/.
  */
 
-#include "../../include/network/network.h"
-#include "../../include/memory/memory.h"
-#include "../../include/string/string.h"
+#include "fundamental/network/network.h"
+#include "fundamental/memory/memory.h"
+#include "fundamental/string/string.h"
 
 /* ------------------------------------------------------------------
  * Arch-layer declarations (implemented per platform in arch/network/)

@@ -1,5 +1,5 @@
-#include "async/async.h"
-#include "error/error.h"
+#include "fundamental/async/async.h"
+#include "fundamental/error/error.h"
 
 /* Arch-layer declaration (implemented per platform in arch/async/) */
 extern unsigned long long arch_async_now_ms(void);

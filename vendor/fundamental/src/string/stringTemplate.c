@@ -1,5 +1,5 @@
-#include "memory/memory.h"
-#include "string/string.h"
+#include "fundamental/memory/memory.h"
+#include "fundamental/string/string.h"
 
 voidResult fun_string_template(String template, StringTemplateParam *params,
 							   size_t paramCount, OutputString output,

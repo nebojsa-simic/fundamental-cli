@@ -7,7 +7,11 @@
  */
 int build_script_exists(String script_path)
 {
-	boolResult result = fun_file_exists(script_path);
+	char _sp_buf[256];
+	const char *_sp_comps[8];
+	Path _sp_path = { _sp_comps, 0, false };
+	fun_path_from_cstr(script_path, _sp_buf, sizeof(_sp_buf), &_sp_path);
+	boolResult result = fun_file_exists(_sp_path);
 	return fun_error_is_ok(result.error) && result.value;
 }
 

@@ -1,4 +1,4 @@
-#include "../../include/array/array.h"
+#include "fundamental/array/array.h"
 
 // Implementation of the core type-agnostic Array functions
 

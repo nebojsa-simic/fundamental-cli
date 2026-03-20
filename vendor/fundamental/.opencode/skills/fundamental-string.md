@@ -28,6 +28,8 @@ I provide copy-paste examples for string operations using the Fundamental Librar
 | Compare | `fun_string_compare()` | See below |
 | Length | `fun_string_length()` | See below |
 | Trim | `fun_string_trim_in_place()` | See below |
+| **Substring** | `fun_string_substring()` | See below |
+| **Slice** | `fun_string_slice()` | See below |
 
 **See Also:** [fundamental-memory](fundamental-memory.md) for buffer allocation
 
@@ -315,6 +317,116 @@ void string_trim_example(void)
 - Modifies string in-place
 - Removes spaces, tabs, newlines from both ends
 - String must be mutable (not a string literal)
+
+---
+
+## Task: Extract Substring
+
+Extract a portion of a string by start index and length.
+
+```c
+#include "string/string.h"
+#include "memory/memory.h"
+
+void string_substring_example(void)
+{
+    // Allocate buffer for result
+    MemoryResult mem_result = fun_memory_allocate(64);
+    if (fun_error_is_error(mem_result.error)) {
+        return;
+    }
+    char *output = (char *)mem_result.value;
+    
+    // Extract 5 characters starting at index 7
+    voidResult r = fun_string_substring("Hello, World!", 7, 5, output, 64);
+    
+    if (fun_error_is_ok(r.error)) {
+        // output = "World"
+    }
+    
+    fun_memory_free(&mem_result.value);
+}
+```
+
+**Parameters:**
+- `source` - Source string to extract from
+- `start` - Starting index (0-based)
+- `length` - Number of characters to extract
+- `output` - Buffer to store result
+- `output_size` - Size of output buffer in bytes
+
+**Error Codes:**
+- `ERROR_CODE_NO_ERROR` - Success
+- `ERROR_CODE_NULL_POINTER` - source or output is NULL
+- `ERROR_CODE_INDEX_OUT_OF_BOUNDS` - start >= source length or start+length > source length
+- `ERROR_CODE_BUFFER_TOO_SMALL` - output_size < length + 1
+
+**Key Points:**
+- Output buffer must be at least `length + 1` bytes (for null terminator)
+- Returns error if bounds are exceeded (no auto-clamping)
+- Zero length returns empty string
+
+---
+
+## Task: String Slice (Python-Style)
+
+Extract a portion of a string by start and end indices, with negative index support.
+
+```c
+#include "string/string.h"
+#include "memory/memory.h"
+
+void string_slice_example(void)
+{
+    MemoryResult mem_result = fun_memory_allocate(64);
+    if (fun_error_is_error(mem_result.error)) {
+        return;
+    }
+    char *output = (char *)mem_result.value;
+    
+    // Basic slice: characters 0-5 (exclusive)
+    voidResult r = fun_string_slice("Hello, World!", 0, 5, output, 64);
+    // output = "Hello"
+    
+    // Negative indices: last 6 characters
+    r = fun_string_slice("Hello, World!", -6, 13, output, 64);
+    // output = "World!"
+    
+    // Both negative: from 6th-from-end to 2nd-from-end
+    r = fun_string_slice("Hello, World!", -6, -2, output, 64);
+    // output = "Worl"
+    
+    fun_memory_free(&mem_result.value);
+}
+```
+
+**Parameters:**
+- `source` - Source string to extract from
+- `start` - Starting index (negative = offset from end)
+- `end` - Ending index (exclusive, negative = offset from end)
+- `output` - Buffer to store result
+- `output_size` - Size of output buffer in bytes
+
+**Negative Index Resolution:**
+- `-1` = last character
+- `-2` = second to last character
+- `-N` = Nth character from end
+
+**Special Cases:**
+- If `start >= end` after resolving negatives, returns empty string
+- Negative indices are resolved as `source_length + index`
+
+**Error Codes:**
+- `ERROR_CODE_NO_ERROR` - Success
+- `ERROR_CODE_NULL_POINTER` - source or output is NULL
+- `ERROR_CODE_INDEX_OUT_OF_BOUNDS` - start or end out of valid range
+- `ERROR_CODE_BUFFER_TOO_SMALL` - output_size < (end-start) + 1
+
+**Key Points:**
+- End index is **exclusive** (Python-style)
+- Negative indices enable counting from end
+- Output buffer must be at least `(end - start) + 1` bytes
+- Returns empty string if start >= end (not an error)
 
 ---
 

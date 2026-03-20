@@ -66,7 +66,41 @@ DEFINE_RESULT_TYPE(Path);
  * path.components = components;
  * ErrorResult result = fun_path_from_string("/home/user/docs", &path);
  */
-ErrorResult fun_path_from_string(String path, OutputPath output);
+ErrorResult fun_path_from_string(char *path, OutputPath output);
+
+/**
+ * Convert a const char* string to a Path, copying into caller-provided scratch
+ * buffer first (since fun_path_from_string requires a mutable string).
+ *
+ * @param path       REQUIRED - Const string to parse
+ * @param buf        REQUIRED - Caller-provided mutable scratch buffer (will be
+ *                              modified by fun_path_from_string)
+ * @param buf_size   REQUIRED - Size of scratch buffer
+ * @param output     REQUIRED - Pre-allocated Path structure to populate
+ *
+ * @return ErrorResult with operation status
+ *
+ * Example:
+ * char buf[512];
+ * const char *comps[16];
+ * Path path = { comps, 0, false };
+ * ErrorResult r = fun_path_from_cstr("tests/foo/test.c", buf, sizeof(buf), &path);
+ */
+static inline ErrorResult fun_path_from_cstr(const char *path, char *buf,
+											 size_t buf_size, OutputPath output)
+{
+	if (path == NULL || buf == NULL) {
+		return (ErrorResult){ .code = ERROR_CODE_NULL_POINTER,
+							  .message = "NULL pointer" };
+	}
+	size_t len = 0;
+	while (path[len] && len < buf_size - 1) {
+		buf[len] = path[len];
+		len++;
+	}
+	buf[len] = '\0';
+	return fun_path_from_string(buf, output);
+}
 
 /**
  * Convert a Path structure to a null-terminated string.

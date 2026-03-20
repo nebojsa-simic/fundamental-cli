@@ -1,6 +1,6 @@
-#include "file/file.h"
-#include "memory/memory.h"
-#include "error/error.h"
+#include "fundamental/file/file.h"
+#include "fundamental/memory/memory.h"
+#include "fundamental/error/error.h"
 
 #include <stdint.h>
 #include <stddef.h>

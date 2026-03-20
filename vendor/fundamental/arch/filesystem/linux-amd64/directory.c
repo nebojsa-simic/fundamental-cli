@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include <errno.h>
 
-#include "string/string.h"
+#include "fundamental/string/string.h"
 
 // Check if directory exists
 static bool directory_exists_posix(const char *path)

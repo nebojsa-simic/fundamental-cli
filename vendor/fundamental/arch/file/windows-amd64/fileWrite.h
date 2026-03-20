@@ -1,5 +1,5 @@
-#include "file/file.h"
-#include "memory/memory.h"
+#include "fundamental/file/file.h"
+#include "fundamental/memory/memory.h"
 
 #include <windows.h>
 #include <memoryapi.h>

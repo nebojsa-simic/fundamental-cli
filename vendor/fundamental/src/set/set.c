@@ -1,5 +1,5 @@
-#include "../../include/set/set.h"
-#include "../../include/memory/memory.h"
+#include "fundamental/set/set.h"
+#include "fundamental/memory/memory.h"
 
 HashSetResult fun_set_create(size_t value_size, size_t initial_bucket_count,
 							 HashFunction hash_fn, KeyEqualFunction equals_fn)

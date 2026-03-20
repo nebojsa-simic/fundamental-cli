@@ -1,4 +1,4 @@
-#include "string/string.h" // contains our declarations and result type definitions
+#include "fundamental/string/string.h" // contains our declarations and result type definitions
 
 StringDifference fun_string_compare(String source, String target)
 {
@@ -156,6 +156,121 @@ voidResult fun_string_copy(String source, OutputString output,
 	while (*source)
 		*output++ = *source++;
 	*output = '\0';
+
+	out.error = ERROR_RESULT_NO_ERROR;
+	return out;
+}
+
+// Substring and slice operations
+
+voidResult fun_string_substring(String source, size_t start, size_t length,
+								OutputString output, size_t output_size)
+{
+	voidResult out;
+
+	// Task 2.2, 3.1: NULL parameter validation
+	if (source == NULL || output == NULL) {
+		out.error = fun_error_result(ERROR_CODE_NULL_POINTER,
+									 "source or output is NULL");
+		return out;
+	}
+
+	// Task 2.3, 3.2: Bounds checking
+	size_t source_len = fun_string_length(source);
+	if (start >= source_len) {
+		out.error = fun_error_result(ERROR_CODE_INDEX_OUT_OF_BOUNDS,
+									 "start index out of bounds");
+		return out;
+	}
+
+	if (start + length > source_len) {
+		out.error = fun_error_result(ERROR_CODE_INDEX_OUT_OF_BOUNDS,
+									 "start + length exceeds source length");
+		return out;
+	}
+
+	// Task 2.7, 3.3: Buffer size validation
+	if (output_size < length + 1) {
+		out.error = fun_error_result(ERROR_CODE_BUFFER_TOO_SMALL,
+									 "output buffer too small");
+		return out;
+	}
+
+	// Extract substring
+	source += start;
+	for (size_t i = 0; i < length; i++) {
+		output[i] = source[i];
+	}
+
+	// Task 3.4: Null termination
+	output[length] = '\0';
+
+	out.error = ERROR_RESULT_NO_ERROR;
+	return out;
+}
+
+voidResult fun_string_slice(String source, int64_t start, int64_t end,
+							OutputString output, size_t output_size)
+{
+	voidResult out;
+
+	// Task 3.1: NULL parameter validation
+	if (source == NULL || output == NULL) {
+		out.error = fun_error_result(ERROR_CODE_NULL_POINTER,
+									 "source or output is NULL");
+		return out;
+	}
+
+	size_t source_len = fun_string_length(source);
+
+	// Task 2.5: Negative index resolution
+	int64_t resolved_start = start;
+	int64_t resolved_end = end;
+
+	if (start < 0) {
+		resolved_start = (int64_t)source_len + start;
+	}
+
+	if (end < 0) {
+		resolved_end = (int64_t)source_len + end;
+	}
+
+	// Task 3.2: Bounds checking
+	if (resolved_start < 0 || resolved_start > (int64_t)source_len) {
+		out.error = fun_error_result(ERROR_CODE_INDEX_OUT_OF_BOUNDS,
+									 "start index out of bounds");
+		return out;
+	}
+
+	if (resolved_end < 0 || resolved_end > (int64_t)source_len) {
+		out.error = fun_error_result(ERROR_CODE_INDEX_OUT_OF_BOUNDS,
+									 "end index out of bounds");
+		return out;
+	}
+
+	// Task 2.6: Handle start >= end (return empty string)
+	if (resolved_start >= resolved_end) {
+		output[0] = '\0';
+		out.error = ERROR_RESULT_NO_ERROR;
+		return out;
+	}
+
+	// Task 2.7, 3.3: Buffer size validation
+	size_t slice_length = (size_t)(resolved_end - resolved_start);
+	if (output_size < slice_length + 1) {
+		out.error = fun_error_result(ERROR_CODE_BUFFER_TOO_SMALL,
+									 "output buffer too small");
+		return out;
+	}
+
+	// Extract slice
+	source += resolved_start;
+	for (size_t i = 0; i < slice_length; i++) {
+		output[i] = source[i];
+	}
+
+	// Task 3.4: Null termination
+	output[slice_length] = '\0';
 
 	out.error = ERROR_RESULT_NO_ERROR;
 	return out;

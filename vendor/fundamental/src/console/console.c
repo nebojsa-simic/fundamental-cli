@@ -1,4 +1,4 @@
-#include "console/console.h"
+#include "fundamental/console/console.h"
 
 #define CONSOLE_BUFFER_SIZE 512
 

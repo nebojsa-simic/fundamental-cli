@@ -175,7 +175,7 @@ ErrorResult fun_path_get_filename(Path path, OutputPath output);
  * path.components = components;
  * fun_path_from_string("/home/user/docs", &path);
  */
-ErrorResult fun_path_from_string(String path, OutputPath output);
+ErrorResult fun_path_from_string(char *path, OutputPath output);
 
 /**
  * Convert a Path structure to a null-terminated string

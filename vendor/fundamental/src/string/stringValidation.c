@@ -1,5 +1,5 @@
-#include "string/string.h"
-#include "error/error.h"
+#include "fundamental/string/string.h"
+#include "fundamental/error/error.h"
 
 CanReturnError(void) fun_string_is_valid(String source, StringLength maxLength)
 {

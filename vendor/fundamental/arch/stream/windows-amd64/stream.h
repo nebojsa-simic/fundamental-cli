@@ -1,4 +1,4 @@
-#include "stream/stream.h"
+#include "fundamental/stream/stream.h"
 
 #include <windows.h>
 

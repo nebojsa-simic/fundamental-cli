@@ -1,5 +1,5 @@
-#include "process/process.h"
-#include "string/string.h"
+#include "fundamental/process/process.h"
+#include "fundamental/string/string.h"
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN

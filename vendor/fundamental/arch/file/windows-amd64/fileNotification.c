@@ -1,8 +1,8 @@
 #include <windows.h>
-#include "file/file.h"
-#include "memory/memory.h"
-#include "error/error.h"
-#include "async/async.h"
+#include "fundamental/file/file.h"
+#include "fundamental/memory/memory.h"
+#include "fundamental/error/error.h"
+#include "fundamental/async/async.h"
 
 // Structure to hold state for file change monitoring
 typedef struct {

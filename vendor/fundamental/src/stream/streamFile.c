@@ -1,5 +1,5 @@
-#include "stream/stream.h"
-#include "file/file.h"
+#include "fundamental/stream/stream.h"
+#include "fundamental/file/file.h"
 
 AsyncResult fun_stream_create_file_read(String file_path, Memory buffer,
 										uint64_t buffer_size, FileMode mode)

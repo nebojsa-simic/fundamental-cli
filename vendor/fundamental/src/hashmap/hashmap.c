@@ -1,5 +1,5 @@
-#include "../../include/hashmap/hashmap.h"
-#include "../../include/memory/memory.h"
+#include "fundamental/hashmap/hashmap.h"
+#include "fundamental/memory/memory.h"
 
 // Internal helper: Calculate bucket index from hash
 static inline size_t hashmap_bucket_index(const HashMap *map, uint64_t hash)

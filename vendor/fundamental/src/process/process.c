@@ -1,5 +1,5 @@
-#include "process/process.h"
-#include "error/error.h"
+#include "fundamental/process/process.h"
+#include "fundamental/error/error.h"
 
 /* Forward declarations for arch-layer functions */
 AsyncResult fun_process_arch_spawn(const char *executable, const char **args,

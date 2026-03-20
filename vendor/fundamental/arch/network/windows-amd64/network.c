@@ -12,7 +12,7 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
-#include "../../../include/network/network.h"
+#include "fundamental/network/network.h"
 
 #include <stdint.h>
 #include <string.h>

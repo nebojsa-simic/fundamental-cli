@@ -1,5 +1,5 @@
-#include "platform/platform.h"
-#include "string/string.h"
+#include "fundamental/platform/platform.h"
+#include "fundamental/string/string.h"
 
 // Arch-layer functions - implemented per platform in arch/platform/<platform>/
 PlatformOS fun_platform_os(void);

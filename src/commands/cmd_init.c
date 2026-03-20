@@ -125,6 +125,15 @@ static const char *T_SKILL =
 	"allocate for caller\n- **Explicit errors**: All functions return Result "
 	"types\n- **Cross-platform**: No OS logic outside arch/\n";
 
+static void mkdir_str(const char *dir)
+{
+	char buf[256];
+	const char *comps[16];
+	Path p = { comps, 0, false };
+	fun_path_from_cstr(dir, buf, sizeof(buf), &p);
+	fun_filesystem_create_directory(p);
+}
+
 static ErrorResult write_file(const char *path, const char *content)
 {
 	StringLength len = fun_string_length(content);
@@ -151,12 +160,11 @@ int cmd_init_execute(int argc, const char **argv)
 	fun_console_write_line("Initializing fundamental project...\n");
 
 	fun_console_write_line("Creating directories...\n");
-	fun_filesystem_create_directory((String) "src");
-	fun_filesystem_create_directory((String) "src/commands");
-	fun_filesystem_create_directory(
-		(String) ".opencode/skills/fundamental-expert");
-	fun_filesystem_create_directory((String) "arch/startup/windows-amd64");
-	fun_filesystem_create_directory((String) "arch/startup/linux-amd64");
+	mkdir_str("src");
+	mkdir_str("src/commands");
+	mkdir_str(".opencode/skills/fundamental-expert");
+	mkdir_str("arch/startup/windows-amd64");
+	mkdir_str("arch/startup/linux-amd64");
 	fun_console_write_line("✓ Created directories\n");
 
 	fun_console_write_line("Writing source files...\n");
