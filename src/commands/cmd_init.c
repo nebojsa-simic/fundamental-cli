@@ -1,11 +1,11 @@
 #include "cmd_init.h"
 #include "cli/cli.h"
-#include "vendor/fundamental/include/async/async.h"
-#include "vendor/fundamental/include/console/console.h"
-#include "vendor/fundamental/include/file/file.h"
-#include "vendor/fundamental/include/filesystem/filesystem.h"
-#include "vendor/fundamental/include/memory/memory.h"
-#include "vendor/fundamental/include/string/string.h"
+#include "fundamental/async/async.h"
+#include "fundamental/console/console.h"
+#include "fundamental/file/file.h"
+#include "fundamental/filesystem/filesystem.h"
+#include "fundamental/memory/memory.h"
+#include "fundamental/string/string.h"
 
 static const char *T_MAIN =
 	"#include \"src/commands/cmd_version.h\"\n#include "
@@ -17,17 +17,17 @@ static const char *T_MAIN =
 	"cmd_help_execute});\n  return cli_run(argc, argv);\n}\n";
 static const char *T_CLI_H =
 	"#ifndef CLI_H\n#define CLI_H\n#include "
-	"\"vendor/fundamental/include/console/console.h\"\n#include "
-	"\"vendor/fundamental/include/string/string.h\"\ntypedef struct Command { "
+	"\"fundamental/console/console.h\"\n#include "
+	"\"fundamental/string/string.h\"\ntypedef struct Command { "
 	"const char* name; const char* description; int (*execute)(int argc, const "
 	"char **argv); } Command;\nErrorResult cli_init(void); ErrorResult "
 	"cli_register(Command cmd); int cli_run(int argc, const char **argv); int "
 	"cli_show_help(void);\n#endif\n";
 static const char *T_CLI_C =
 	"#include \"cli.h\"\n#include "
-	"\"vendor/fundamental/include/console/console.h\"\n#include "
-	"\"vendor/fundamental/include/string/string.h\"\n#include "
-	"\"vendor/fundamental/include/error/error.h\"\n#define MAX_COMMANDS "
+	"\"fundamental/console/console.h\"\n#include "
+	"\"fundamental/string/string.h\"\n#include "
+	"\"fundamental/error/error.h\"\n#define MAX_COMMANDS "
 	"16\nstatic Command commands[MAX_COMMANDS]; static size_t command_count = "
 	"0;\nErrorResult cli_init(void) { command_count = 0; for (size_t i = 0; i "
 	"< MAX_COMMANDS; i++) { commands[i].name = NULL; commands[i].description = "

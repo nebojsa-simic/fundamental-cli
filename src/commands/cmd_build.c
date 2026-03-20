@@ -2,9 +2,9 @@
 #include "cmd_clean.h"
 #include "cli/cli.h"
 #include "build/build.h"
-#include "vendor/fundamental/include/memory/memory.h"
-#include "vendor/fundamental/include/console/console.h"
-#include "vendor/fundamental/include/string/string.h"
+#include "fundamental/memory/memory.h"
+#include "fundamental/console/console.h"
+#include "fundamental/string/string.h"
 
 /**
  * Check if a flag is present in arguments

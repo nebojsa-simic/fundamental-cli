@@ -1,8 +1,8 @@
 #include "test/test.h"
-#include "vendor/fundamental/include/console/console.h"
-#include "vendor/fundamental/include/filesystem/filesystem.h"
-#include "vendor/fundamental/include/memory/memory.h"
-#include "vendor/fundamental/include/async/async.h"
+#include "fundamental/console/console.h"
+#include "fundamental/filesystem/filesystem.h"
+#include "fundamental/memory/memory.h"
+#include "fundamental/async/async.h"
 #include <stddef.h>
 #include <stdint.h>
 

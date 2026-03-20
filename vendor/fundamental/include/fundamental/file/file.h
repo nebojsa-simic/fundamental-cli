@@ -1,9 +1,9 @@
 #pragma once
 #include <stdint.h>
-#include "memory/memory.h"
-#include "string/string.h"
-#include "error/error.h"
-#include "async/async.h"
+#include "../memory/memory.h"
+#include "../string/string.h"
+#include "../error/error.h"
+#include "../async/async.h"
 
 // ------------------------------------------------------------------
 // File I/O Core Types

@@ -1,5 +1,5 @@
 #include "test/test.h"
-#include "vendor/fundamental/include/console/console.h"
+#include "fundamental/console/console.h"
 
 int test_report(TestRunnerResult *result, int verbose)
 {

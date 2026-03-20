@@ -1,11 +1,11 @@
 #include "cmd_test_add.h"
 #include "test/test.h"
-#include "vendor/fundamental/include/console/console.h"
-#include "vendor/fundamental/include/string/string.h"
-#include "vendor/fundamental/include/filesystem/filesystem.h"
-#include "vendor/fundamental/include/file/file.h"
-#include "vendor/fundamental/include/memory/memory.h"
-#include "vendor/fundamental/include/async/async.h"
+#include "fundamental/console/console.h"
+#include "fundamental/string/string.h"
+#include "fundamental/filesystem/filesystem.h"
+#include "fundamental/file/file.h"
+#include "fundamental/memory/memory.h"
+#include "fundamental/async/async.h"
 
 int cmd_test_add_execute(int argc, const char **argv)
 {
@@ -68,7 +68,7 @@ int cmd_test_add_execute(int argc, const char **argv)
 	StringTemplateParam params[] = { { "module",
 									   { .stringValue = module_name } } };
 	const char *test_template =
-		"#include \"../../vendor/fundamental/include/console/console.h\"\n"
+		"#include \"fundamental/console/console.h\"\n"
 		"\n"
 		"int main(void)\n"
 		"{\n"

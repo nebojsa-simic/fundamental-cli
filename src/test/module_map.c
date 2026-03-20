@@ -1,6 +1,6 @@
 #include "test/test.h"
-#include "vendor/fundamental/include/console/console.h"
-#include "vendor/fundamental/include/memory/memory.h"
+#include "fundamental/console/console.h"
+#include "fundamental/memory/memory.h"
 
 ModuleMappingArrayResult test_module_map_init(void)
 {

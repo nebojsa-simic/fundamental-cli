@@ -1,10 +1,10 @@
 #include "build/build.h"
-#include "vendor/fundamental/include/file/file.h"
-#include "vendor/fundamental/include/filesystem/filesystem.h"
-#include "vendor/fundamental/include/async/async.h"
-#include "vendor/fundamental/include/memory/memory.h"
-#include "vendor/fundamental/include/console/console.h"
-#include "vendor/fundamental/include/string/string.h"
+#include "fundamental/file/file.h"
+#include "fundamental/filesystem/filesystem.h"
+#include "fundamental/async/async.h"
+#include "fundamental/memory/memory.h"
+#include "fundamental/console/console.h"
+#include "fundamental/string/string.h"
 
 /**
  * Find a value for a key in INI content

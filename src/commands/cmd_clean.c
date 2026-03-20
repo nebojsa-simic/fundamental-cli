@@ -1,8 +1,8 @@
 #include "cmd_clean.h"
 #include "build/build.h"
-#include "vendor/fundamental/include/async/async.h"
-#include "vendor/fundamental/include/console/console.h"
-#include "vendor/fundamental/include/process/process.h"
+#include "fundamental/async/async.h"
+#include "fundamental/console/console.h"
+#include "fundamental/process/process.h"
 
 /**
  * Remove the build/ directory and all its contents

@@ -1,7 +1,7 @@
 #include "cmd_test.h"
 #include "test/test.h"
-#include "vendor/fundamental/include/console/console.h"
-#include "vendor/fundamental/include/string/string.h"
+#include "fundamental/console/console.h"
+#include "fundamental/string/string.h"
 #include <stddef.h>
 
 /**

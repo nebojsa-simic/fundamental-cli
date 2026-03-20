@@ -1,8 +1,8 @@
 #include "test/test.h"
-#include "vendor/fundamental/include/async/async.h"
-#include "vendor/fundamental/include/console/console.h"
-#include "vendor/fundamental/include/filesystem/filesystem.h"
-#include "vendor/fundamental/include/process/process.h"
+#include "fundamental/async/async.h"
+#include "fundamental/console/console.h"
+#include "fundamental/filesystem/filesystem.h"
+#include "fundamental/process/process.h"
 
 TestRunnerResult test_run_all(TestModuleArray *modules, int verbose)
 {

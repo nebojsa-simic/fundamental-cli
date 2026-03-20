@@ -1,11 +1,11 @@
 #include "build/build.h"
-#include "vendor/fundamental/include/file/file.h"
-#include "vendor/fundamental/include/filesystem/filesystem.h"
-#include "vendor/fundamental/include/async/async.h"
-#include "vendor/fundamental/include/console/console.h"
-#include "vendor/fundamental/include/memory/memory.h"
-#include "vendor/fundamental/include/string/string.h"
-#include "vendor/fundamental/include/process/process.h"
+#include "fundamental/file/file.h"
+#include "fundamental/filesystem/filesystem.h"
+#include "fundamental/async/async.h"
+#include "fundamental/console/console.h"
+#include "fundamental/memory/memory.h"
+#include "fundamental/string/string.h"
+#include "fundamental/process/process.h"
 
 #define MAX_DIR_LISTING 4096
 #define MAX_PATH_STORAGE 16384

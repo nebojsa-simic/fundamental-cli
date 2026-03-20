@@ -1,6 +1,6 @@
 #include "build/build.h"
-#include "vendor/fundamental/include/filesystem/filesystem.h"
-#include "vendor/fundamental/include/console/console.h"
+#include "fundamental/filesystem/filesystem.h"
+#include "fundamental/console/console.h"
 
 /**
  * Check if a specific build script file exists

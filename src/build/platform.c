@@ -1,5 +1,5 @@
 #include "build/build.h"
-#include "vendor/fundamental/include/string/string.h"
+#include "fundamental/string/string.h"
 
 /**
  * Get the build script filename for the current platform.
