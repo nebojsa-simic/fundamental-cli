@@ -71,7 +71,7 @@ echo "[VENDOR] Copy fundamental into vendor/fundamental"
 cp -r "$FUNDAMENTAL_DIR" vendor/fundamental || fail "cp fundamental failed"
 pass "fundamental vendored"
 
-check_file "vendor/fundamental/include/string/string.h"
+check_file "vendor/fundamental/include/fundamental/string/string.h"
 pass "vendor sanity check passed"
 
 # -----------------------------------------------------------------------

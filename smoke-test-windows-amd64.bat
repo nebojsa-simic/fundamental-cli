@@ -93,8 +93,8 @@ if %ERRORLEVEL% neq 0 (
 echo [PASS] fundamental vendored
 set /a PASS+=1
 
-if not exist "vendor\fundamental\include\string\string.h" (
-    echo [FAIL] vendor\fundamental\include\string\string.h missing
+if not exist "vendor\fundamental\include\fundamental\string\string.h" (
+    echo [FAIL] vendor\fundamental\include\fundamental\string\string.h missing
     exit /b 1
 )
 echo [PASS] vendor sanity check passed
