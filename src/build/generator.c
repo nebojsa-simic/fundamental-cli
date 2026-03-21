@@ -35,29 +35,26 @@ static int fun_ini_read_name(char *output, size_t output_size)
 
 	fun_memory_fill(mem.value, 512, 0);
 
-	/* Try decreasing read sizes — fun_read_file_in_memory requires exact
-	 * byte count, so we probe from large to small until one succeeds. */
-	static const size_t try_sizes[] = { 256, 128, 64, 32, 0 };
-	int read_ok = 0;
-	for (int t = 0; try_sizes[t] != 0; t++) {
-		fun_memory_fill(mem.value, 512, 0);
-		AsyncResult r =
-			fun_read_file_in_memory((Read){ .file_path = (String) "fun.ini",
-											.output = mem.value,
-											.bytes_to_read = try_sizes[t] });
-		fun_async_await(&r, -1);
-		if (r.status == ASYNC_COMPLETED) {
-			read_ok = 1;
-			break;
-		}
+	uint64_t ini_file_size;
+	voidResult sz = fun_file_size(_ini_path, &ini_file_size);
+	if (fun_error_is_error(sz.error)) {
+		fun_memory_free(&mem.value);
+		return 0;
+	}
+	size_t bytes_to_read = (ini_file_size < 511) ? (size_t)ini_file_size : 511;
+	fun_memory_fill(mem.value, 512, 0);
+	AsyncResult r =
+		fun_read_file_in_memory((Read){ .file_path = (String) "fun.ini",
+										.output = mem.value,
+										.bytes_to_read = bytes_to_read });
+	fun_async_await(&r, -1);
+	if (r.status != ASYNC_COMPLETED) {
+		fun_memory_free(&mem.value);
+		return 0;
 	}
 
 	int found = 0;
 	char *buf = (char *)mem.value;
-	if (!read_ok) {
-		fun_memory_free(&mem.value);
-		return 0;
-	}
 	char *pos = buf;
 
 	while (*pos != '\0') {
@@ -137,8 +134,8 @@ static void scan_directory_recursive(Path dir_path, SourceScanResult *result,
 
 		size_t entry_len = (size_t)(end - pos);
 
-		/* Skip empty or oversized entries */
-		if (entry_len == 0 || entry_len >= 256) {
+		/* Skip empty entries */
+		if (entry_len == 0) {
 			pos = (*end != '\0') ? end + 1 : end;
 			continue;
 		}
@@ -151,9 +148,13 @@ static void scan_directory_recursive(Path dir_path, SourceScanResult *result,
 
 		/* Copy entry name to null-terminated buffer */
 		char entry[256];
-		for (size_t i = 0; i < entry_len; i++)
-			entry[i] = pos[i];
-		entry[entry_len] = '\0';
+		voidResult sub = fun_string_substring((String)listing,
+											  (size_t)(pos - listing),
+											  entry_len, entry, sizeof(entry));
+		if (fun_error_is_error(sub.error)) {
+			pos = (*end != '\0') ? end + 1 : end;
+			continue;
+		}
 
 		/* Build child path using Path join */
 		const char *entry_comp[] = { entry };

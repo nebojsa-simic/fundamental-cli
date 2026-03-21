@@ -153,22 +153,20 @@ BuildConfig build_config_load(void)
 	static char ini_buf[512];
 	fun_memory_fill((Memory)ini_buf, sizeof(ini_buf), 0);
 
-	static const size_t try_sizes[] = { 256, 128, 64, 32, 0 };
-	int read_ok = 0;
-	for (int t = 0; try_sizes[t] != 0; t++) {
-		AsyncResult r =
-			fun_read_file_in_memory((Read){ .file_path = (String) "fun.ini",
-											.output = (Memory)ini_buf,
-											.bytes_to_read = try_sizes[t] });
-		fun_async_await(&r, -1);
-		if (r.status == ASYNC_COMPLETED) {
-			read_ok = 1;
-			break;
-		}
-		fun_memory_fill((Memory)ini_buf, sizeof(ini_buf), 0);
+	uint64_t ini_file_size;
+	voidResult sz = fun_file_size(_ini_path, &ini_file_size);
+	if (fun_error_is_error(sz.error)) {
+		return config;
 	}
-
-	if (!read_ok) {
+	size_t bytes_to_read = (ini_file_size < sizeof(ini_buf) - 1)
+							   ? (size_t)ini_file_size
+							   : sizeof(ini_buf) - 1;
+	AsyncResult r =
+		fun_read_file_in_memory((Read){ .file_path = (String) "fun.ini",
+										.output = (Memory)ini_buf,
+										.bytes_to_read = bytes_to_read });
+	fun_async_await(&r, -1);
+	if (r.status != ASYNC_COMPLETED) {
 		return config;
 	}
 

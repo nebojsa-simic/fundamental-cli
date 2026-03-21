@@ -17,7 +17,8 @@ boolResult fun_file_exists(Path path)
 	boolResult result;
 
 	char path_string[512];
-	ErrorResult conv = fun_path_to_string(path, path_string, sizeof(path_string));
+	ErrorResult conv =
+		fun_path_to_string(path, path_string, sizeof(path_string));
 	if (fun_error_is_error(conv)) {
 		result.error = conv;
 		result.value = false;
@@ -38,7 +39,8 @@ boolResult fun_directory_exists(Path path)
 	boolResult result;
 
 	char path_string[512];
-	ErrorResult conv = fun_path_to_string(path, path_string, sizeof(path_string));
+	ErrorResult conv =
+		fun_path_to_string(path, path_string, sizeof(path_string));
 	if (fun_error_is_error(conv)) {
 		result.error = conv;
 		result.value = false;
@@ -59,7 +61,8 @@ boolResult fun_path_exists(Path path)
 	boolResult result;
 
 	char path_string[512];
-	ErrorResult conv = fun_path_to_string(path, path_string, sizeof(path_string));
+	ErrorResult conv =
+		fun_path_to_string(path, path_string, sizeof(path_string));
 	if (fun_error_is_error(conv)) {
 		result.error = conv;
 		result.value = false;

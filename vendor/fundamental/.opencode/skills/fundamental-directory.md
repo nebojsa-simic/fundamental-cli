@@ -24,6 +24,7 @@ I provide copy-paste examples for directory operations using the Fundamental Lib
 | List contents | `fun_filesystem_list_directory()` | See below |
 | Remove directory | `fun_filesystem_remove_directory()` | See below |
 | Check exists | `fun_directory_exists()` | See below |
+| Get file size | `fun_file_size()` | See below |
 | Iterate files | List + parse | See below |
 
 **See Also:** [fundamental-file-io](fundamental-file-io.md) for file operations
@@ -268,6 +269,48 @@ int check_directory_exists_example(void)
 ```
 
 **Note:** `fun_directory_exists()` is part of the path-type-refactor and add-file-exists-method changes. Until implemented, check by attempting to list and handling the error.
+
+---
+
+## Task: Get File Size
+
+Get the size of a file in bytes.
+
+```c
+#include "filesystem/filesystem.h"
+#include "console/console.h"
+
+int file_size_example(void)
+{
+    Path path;
+    const char *components[] = {"tmp", "data.bin"};
+    path.components = components;
+    path.count = 2;
+    path.is_absolute = true;
+
+    uint64_t size;
+    voidResult result = fun_file_size(path, &size);
+
+    if (fun_error_is_error(result.error)) {
+        if (result.error.code == ERROR_CODE_PATH_INVALID) {
+            fun_console_write_line("File not found");
+        } else if (result.error.code == ERROR_CODE_PERMISSION_DENIED) {
+            fun_console_write_line("Permission denied");
+        } else {
+            fun_console_write_line("Failed to get file size");
+        }
+        return 1;
+    }
+
+    // size now contains file size in bytes
+    return 0;
+}
+```
+
+**Key Points:**
+- Returns size via output parameter `uint64_t *size`
+- Fails with `ERROR_CODE_PATH_INVALID` if file not found or path is a directory
+- Fails with `ERROR_CODE_NULL_POINTER` if `size` is NULL
 
 ---
 

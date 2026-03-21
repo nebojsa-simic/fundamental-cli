@@ -164,6 +164,7 @@ fundamental-network.md
 | Run a command | fundamental-process.md |
 | Allocate memory | fundamental-memory.md |
 | List files | fundamental-directory.md |
+| Get file size | fundamental-directory.md |
 | Detect OS/arch | fundamental-platform.md |
 | Connect TCP/UDP | fundamental-network.md |
 
@@ -173,6 +174,7 @@ fundamental-network.md
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.2 | 2026-03-21 | Added fun_file_size to directory skill |
 | 1.1 | 2026-03-17 | Added substring/slice operations to string skill |
 | 1.0 | 2024 | Initial release with 8 core skills |
 

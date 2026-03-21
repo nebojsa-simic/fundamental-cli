@@ -1,6 +1,7 @@
 #include "build/build.h"
 #include "fundamental/filesystem/filesystem.h"
 #include "fundamental/console/console.h"
+#include "fundamental/string/string.h"
 
 /**
  * Check if a specific build script file exists
@@ -22,10 +23,6 @@ BuildDetectionResult build_detect_for_platform(String platform_str)
 {
 	BuildDetectionResult result;
 	static char script_path_buffer[128];
-	static char error_buffer[128];
-
-	// Build the script path based on platform
-	StringLength platform_len = fun_string_length(platform_str);
 
 	// Determine file extension based on platform
 	const char *ext;
@@ -36,16 +33,14 @@ BuildDetectionResult build_detect_for_platform(String platform_str)
 	}
 
 	// Build script path: build-{platform}.{ext}
-	StringLength ext_len = fun_string_length(ext);
-	if (6 + platform_len + ext_len < sizeof(script_path_buffer)) {
-		fun_string_copy((String) "build-", script_path_buffer,
-						sizeof(script_path_buffer));
-		fun_string_copy(platform_str, script_path_buffer + 6,
-						sizeof(script_path_buffer) - 6);
-		fun_string_copy((String)ext, script_path_buffer + 6 + platform_len,
-						sizeof(script_path_buffer) - 6 - platform_len);
-		script_path_buffer[6 + platform_len + ext_len] = '\0';
-	} else {
+	StringTemplateParam params[] = {
+		{ .key = (String) "platform", .value = { .stringValue = platform_str } },
+		{ .key = (String) "ext", .value = { .stringValue = (String)ext } },
+	};
+	voidResult tmpl = fun_string_template((String) "build-{platform}{ext}",
+										  params, 2, script_path_buffer,
+										  sizeof(script_path_buffer));
+	if (fun_error_is_error(tmpl.error)) {
 		result.status = BUILD_DETECTED_ERROR;
 		result.script_path = (String) "";
 		result.error_message = (String) "Platform string too long";

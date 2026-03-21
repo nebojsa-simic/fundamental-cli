@@ -3,6 +3,7 @@
 #include "fundamental/console/console.h"
 #include "fundamental/filesystem/filesystem.h"
 #include "fundamental/process/process.h"
+#include "fundamental/string/string.h"
 
 /**
  * Execute Windows batch script
@@ -131,19 +132,17 @@ BuildExecutionResult build_execute_script(String script_path, int verbose)
 	StringLength len = fun_string_length(script_path);
 
 	// Check if it's a Windows batch file
-	if (len > 4) {
-		const char *ext = (const char *)(script_path + len - 4);
-		if (ext[0] == '.' && ext[1] == 'b' && ext[2] == 'a' && ext[3] == 't') {
-			return build_execute_windows(script_path, verbose);
-		}
+	if (len > 4 &&
+		fun_string_index_of(script_path, (String) ".bat", 0) ==
+			(StringPosition)(len - 4)) {
+		return build_execute_windows(script_path, verbose);
 	}
 
 	// Check if it's a shell script
-	if (len > 3) {
-		const char *ext = (const char *)(script_path + len - 3);
-		if (ext[0] == '.' && ext[1] == 's' && ext[2] == 'h') {
-			return build_execute_linux(script_path, verbose);
-		}
+	if (len > 3 &&
+		fun_string_index_of(script_path, (String) ".sh", 0) ==
+			(StringPosition)(len - 3)) {
+		return build_execute_linux(script_path, verbose);
 	}
 
 	// Unknown script type, try Linux execution as default

@@ -207,6 +207,35 @@ ErrorResult fun_path_to_string(Path path, OutputString output,
 char fun_path_separator(void);
 
 // ------------------------------------------------------------------
+// File Metadata
+// ------------------------------------------------------------------
+
+/**
+ * Get the size of a file in bytes
+ *
+ * @param path REQUIRED - Path to the file
+ *
+ * @param size REQUIRED - Output pointer to store file size in bytes
+ *
+ * @return ErrorResult with operation status.
+ *         Error codes: ERROR_CODE_NO_ERROR, ERROR_CODE_NULL_POINTER,
+ *         ERROR_CODE_PATH_INVALID, ERROR_CODE_PERMISSION_DENIED
+ *
+ * Example:
+ * Path path;
+ * const char *components[] = {"home", "user", "file.txt"};
+ * path.components = components;
+ * path.count = 3;
+ * path.is_absolute = true;
+ * uint64_t size;
+ * voidResult result = fun_file_size(path, &size);
+ * if (fun_error_is_ok(result.error)) {
+ *     // size contains the file size in bytes
+ * }
+ */
+CanReturnError(void) fun_file_size(Path path, uint64_t *size);
+
+// ------------------------------------------------------------------
 // Path Existence Checks
 // ------------------------------------------------------------------
 

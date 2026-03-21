@@ -3,8 +3,7 @@
 #include "fundamental/filesystem/filesystem.h"
 #include "fundamental/memory/memory.h"
 #include "fundamental/async/async.h"
-#include <stddef.h>
-#include <stdint.h>
+#include "fundamental/string/string.h"
 
 TestDiscoveryResult test_discover(String tests_dir)
 {
@@ -49,12 +48,8 @@ TestDiscoveryResult test_discover(String tests_dir)
 		return result;
 	}
 
-	char _tl_buf[512];
-	const char *_tl_comps[16];
-	Path _tl_path = { _tl_comps, 0, false };
-	fun_path_from_cstr(tests_dir, _tl_buf, sizeof(_tl_buf), &_tl_path);
 	ErrorResult list_result =
-		fun_filesystem_list_directory(_tl_path, list_mem.value);
+		fun_filesystem_list_directory(_td_path, list_mem.value);
 	if (fun_error_is_error(list_result)) {
 		fun_memory_free(&list_mem.value);
 		result.status = TEST_DISCOVERY_ERROR;
@@ -88,17 +83,16 @@ TestDiscoveryResult test_discover(String tests_dir)
 		}
 
 		char entry_name[256];
-		if (entry_len >= sizeof(entry_name)) {
+		voidResult sub = fun_string_substring(listing, (size_t)(ptr - listing),
+											  entry_len, entry_name,
+											  sizeof(entry_name));
+		if (fun_error_is_error(sub.error)) {
 			if (*newline == '\n') {
 				ptr = newline + 1;
 				continue;
 			}
 			break;
 		}
-		for (StringLength i = 0; i < entry_len; i++) {
-			entry_name[i] = ptr[i];
-		}
-		entry_name[entry_len] = '\0';
 
 		char test_path[520];
 		StringLength tests_len = fun_string_length(tests_dir);
@@ -161,11 +155,7 @@ TestDiscoveryResult test_discover(String tests_dir)
 		fun_string_copy(test_path, file_mem.value, path_len + 8);
 		char *file_ptr = (char *)file_mem.value;
 		file_ptr[path_len] = '/';
-		String test_c = (String) "test.c";
-		for (int i = 0; i < 6; i++) {
-			file_ptr[path_len + 1 + i] = test_c[i];
-		}
-		file_ptr[path_len + 1 + 6] = '\0';
+		fun_string_copy((String) "test.c", file_ptr + path_len + 1, 7);
 		module.test_file = file_mem.value;
 
 		ErrorResult push_result =
@@ -206,7 +196,6 @@ int test_has_test_file(String dir_path)
 	test_c_path[len] = '/';
 	fun_string_copy((String) "test.c", test_c_path + len + 1,
 					sizeof(test_c_path) - len - 1);
-	test_c_path[len + 1 + 6] = '\0';
 	const char *_tc_comps[8];
 	Path _tc_path = { _tc_comps, 0, false };
 	fun_path_from_string(test_c_path, &_tc_path);
