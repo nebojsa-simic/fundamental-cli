@@ -145,14 +145,8 @@ BuildConfig build_config_load(void)
 	const char *_ini_comps[4];
 	Path _ini_path = { _ini_comps, 0, false };
 	fun_path_from_cstr("fun.ini", _ini_buf, sizeof(_ini_buf), &_ini_path);
-	boolResult ini_exists = fun_file_exists(_ini_path);
-	if (fun_error_is_error(ini_exists.error) || !ini_exists.value) {
-		return config;
-	}
 
 	static char ini_buf[512];
-	fun_memory_fill((Memory)ini_buf, sizeof(ini_buf), 0);
-
 	uint64_t ini_file_size;
 	voidResult sz = fun_file_size(_ini_path, &ini_file_size);
 	if (fun_error_is_error(sz.error)) {

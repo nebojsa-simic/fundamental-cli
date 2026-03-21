@@ -25,24 +25,17 @@ static int fun_ini_read_name(char *output, size_t output_size)
 	const char *_ini_comps[4];
 	Path _ini_path = { _ini_comps, 0, false };
 	fun_path_from_cstr("fun.ini", _ini_buf, sizeof(_ini_buf), &_ini_path);
-	boolResult exists = fun_file_exists(_ini_path);
-	if (fun_error_is_error(exists.error) || !exists.value)
+
+	uint64_t ini_file_size;
+	voidResult sz = fun_file_size(_ini_path, &ini_file_size);
+	if (fun_error_is_error(sz.error))
 		return 0;
 
 	MemoryResult mem = fun_memory_allocate(512);
 	if (fun_error_is_error(mem.error))
 		return 0;
 
-	fun_memory_fill(mem.value, 512, 0);
-
-	uint64_t ini_file_size;
-	voidResult sz = fun_file_size(_ini_path, &ini_file_size);
-	if (fun_error_is_error(sz.error)) {
-		fun_memory_free(&mem.value);
-		return 0;
-	}
 	size_t bytes_to_read = (ini_file_size < 511) ? (size_t)ini_file_size : 511;
-	fun_memory_fill(mem.value, 512, 0);
 	AsyncResult r =
 		fun_read_file_in_memory((Read){ .file_path = (String) "fun.ini",
 										.output = mem.value,
