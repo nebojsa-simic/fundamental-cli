@@ -24,14 +24,17 @@ void test_report_single(TestResult *test_result)
 		fun_console_write_line(test_result->name);
 	} else {
 		// Red X
-		fun_console_write("\x1b[31m✗\x1b[0m ");
-		fun_console_write(test_result->name);
-		fun_console_write(" (exit code: ");
-		char code_str[16];
-		fun_string_from_int(test_result->exit_code, 10, code_str,
-							sizeof(code_str));
-		fun_console_write(code_str);
-		fun_console_write_line(")");
+		char msg[256];
+		StringTemplateParam p[] = {
+			{ .key = (String) "name",
+			  .value = { .stringValue = test_result->name } },
+			{ .key = (String) "code",
+			  .value = { .intValue = test_result->exit_code } },
+		};
+		fun_string_template(
+			(String) "\x1b[31m✗\x1b[0m {name} (exit code: {code})", p, 2,
+			msg, sizeof(msg));
+		fun_console_write_line(msg);
 	}
 }
 
@@ -40,12 +43,14 @@ void test_report_summary(int passed, int failed, int total)
 	fun_console_write_line("");
 	fun_console_write("Summary: ");
 
+	char buf[32];
+	StringTemplateParam p[] = { { .key = (String) "n" } };
+
 	if (passed > 0) {
-		fun_console_write("\x1b[32m");
-		char passed_str[16];
-		fun_string_from_int(passed, 10, passed_str, sizeof(passed_str));
-		fun_console_write(passed_str);
-		fun_console_write(" passed\x1b[0m");
+		p[0].value.intValue = passed;
+		fun_string_template((String) "\x1b[32m{n} passed\x1b[0m", p, 1, buf,
+							sizeof(buf));
+		fun_console_write(buf);
 	}
 
 	if (failed > 0 && passed > 0) {
@@ -53,16 +58,13 @@ void test_report_summary(int passed, int failed, int total)
 	}
 
 	if (failed > 0) {
-		fun_console_write("\x1b[31m");
-		char failed_str[16];
-		fun_string_from_int(failed, 10, failed_str, sizeof(failed_str));
-		fun_console_write(failed_str);
-		fun_console_write(" failed\x1b[0m");
+		p[0].value.intValue = failed;
+		fun_string_template((String) "\x1b[31m{n} failed\x1b[0m", p, 1, buf,
+							sizeof(buf));
+		fun_console_write(buf);
 	}
 
-	fun_console_write(" / ");
-	char total_str[16];
-	fun_string_from_int(total, 10, total_str, sizeof(total_str));
-	fun_console_write(total_str);
-	fun_console_write_line(" total");
+	p[0].value.intValue = total;
+	fun_string_template((String) " / {n} total", p, 1, buf, sizeof(buf));
+	fun_console_write_line(buf);
 }

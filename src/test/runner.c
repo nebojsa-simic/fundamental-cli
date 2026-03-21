@@ -117,10 +117,12 @@ int test_build_module(TestModule *module, int verbose)
 	fun_process_free(&proc);
 
 	if (exit_code != 0 && verbose) {
-		fun_console_write("Build failed with exit code: ");
-		char code_str[16];
-		fun_string_from_int(exit_code, 10, code_str, sizeof(code_str));
-		fun_console_write_line(code_str);
+		char msg[64];
+		StringTemplateParam p[] = { { .key = (String) "code",
+									  .value = { .intValue = exit_code } } };
+		fun_string_template((String) "Build failed with exit code: {code}", p,
+							1, msg, sizeof(msg));
+		fun_console_write_line(msg);
 	}
 
 	return exit_code;

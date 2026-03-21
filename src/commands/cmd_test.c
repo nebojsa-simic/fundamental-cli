@@ -75,13 +75,15 @@ int cmd_test_execute(int argc, const char **argv)
 	}
 
 	if (verbose) {
-		fun_console_write("DEBUG: Found ");
-		char buf[16];
-		fun_string_from_int(
-			(int64_t)fun_array_TestModule_size(&discover_result.modules), 10,
-			buf, sizeof(buf));
-		fun_console_write(buf);
-		fun_console_write_line(" test modules");
+		char msg[64];
+		StringTemplateParam p[] = {
+			{ .key = (String) "n",
+			  .value = { .intValue = (int64_t)fun_array_TestModule_size(
+							 &discover_result.modules) } },
+		};
+		fun_string_template((String) "DEBUG: Found {n} test modules", p, 1,
+							msg, sizeof(msg));
+		fun_console_write_line(msg);
 	}
 
 	// List mode - just show tests without running

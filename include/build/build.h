@@ -88,7 +88,7 @@ typedef struct {
 } BuildDetectionResult;
 
 /**
- * Check for build script existence for the given platform
+ * Check for build script existence for the given platform (arch-specific implementation)
  */
 BuildDetectionResult build_detect_for_platform(String platform_str);
 
@@ -123,6 +123,11 @@ typedef struct {
 } BuildExecutionResult;
 
 /**
+ * Execute build script for the given platform (arch-specific implementation)
+ */
+BuildExecutionResult build_execute_for_platform(String script_path, int verbose);
+
+/**
  * Execute build script for the given platform
  */
 BuildExecutionResult build_execute_script(String script_path, int verbose);
@@ -131,16 +136,6 @@ BuildExecutionResult build_execute_script(String script_path, int verbose);
  * Execute build script for current platform
  */
 BuildExecutionResult build_execute_current(int verbose);
-
-/**
- * Execute Windows batch script
- */
-BuildExecutionResult build_execute_windows(String script_path, int verbose);
-
-/**
- * Execute Linux shell script
- */
-BuildExecutionResult build_execute_linux(String script_path, int verbose);
 
 /* ── Build generation ─────────────────────────────────────── */
 
@@ -179,14 +174,9 @@ typedef struct {
 SourceScanResult build_scan_sources(void);
 
 /**
- * Generate Windows build script
+ * Generate build script for current platform (arch-specific implementation)
  */
-BuildGenerationResult build_generate_windows(SourceScanResult scan_result);
-
-/**
- * Generate Linux build script
- */
-BuildGenerationResult build_generate_linux(SourceScanResult scan_result);
+BuildGenerationResult build_generate_for_platform(SourceScanResult scan_result);
 
 /**
  * Generate build script for current platform
