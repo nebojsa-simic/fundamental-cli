@@ -27,7 +27,7 @@ gcc \
     src/build/arch/linux_amd64/executor.c \
     src/build/generator.c \
     src/build/arch/linux_amd64/generator.c \
-    src/build/platform.c \
+    src/build/arch/linux_amd64/platform.c \
     src/commands/cmd_version.c \
     src/commands/cmd_help.c \
     src/commands/cmd_init.c \
