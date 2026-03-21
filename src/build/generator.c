@@ -22,8 +22,7 @@ static size_t path_storage_pos = 0;
 static int fun_ini_read_name(char *output, size_t output_size)
 {
 	char _ini_buf[64];
-	const char *_ini_comps[4];
-	Path _ini_path = { _ini_comps, 0, false };
+	Path _ini_path = { (const char *[4]){0}, 0, false };
 	fun_path_from_cstr("fun.ini", _ini_buf, sizeof(_ini_buf), &_ini_path);
 
 	uint64_t ini_file_size;
@@ -244,8 +243,7 @@ static char *append(char *ptr, const char *s, char *buf_end)
 static void delete_file_if_exists(const char *path)
 {
 	char _del_buf[512];
-	const char *_del_comps[16];
-	Path _del_path = { _del_comps, 0, false };
+	Path _del_path = { (const char *[16]){0}, 0, false };
 	fun_path_from_cstr(path, _del_buf, sizeof(_del_buf), &_del_path);
 	boolResult exists = fun_file_exists(_del_path);
 	if (fun_error_is_error(exists.error) || !exists.value)

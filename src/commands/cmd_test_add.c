@@ -30,8 +30,7 @@ int cmd_test_add_execute(int argc, const char **argv)
 	fun_string_copy(module_name, test_dir + 6, sizeof(test_dir) - 6);
 	test_dir[6 + module_len] = '\0';
 
-	const char *_td_comps[8];
-	Path _td_path = { _td_comps, 0, false };
+	Path _td_path = { (const char *[8]){0}, 0, false };
 	fun_path_from_string(test_dir, &_td_path);
 	ErrorResult mkdir_result = fun_filesystem_create_directory(_td_path);
 	if (fun_error_is_error(mkdir_result)) {

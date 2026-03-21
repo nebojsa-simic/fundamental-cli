@@ -142,8 +142,7 @@ BuildConfig build_config_load(void)
 
 	// Try to read fun.ini
 	char _ini_buf[64];
-	const char *_ini_comps[4];
-	Path _ini_path = { _ini_comps, 0, false };
+	Path _ini_path = { (const char *[4]){0}, 0, false };
 	fun_path_from_cstr("fun.ini", _ini_buf, sizeof(_ini_buf), &_ini_path);
 
 	static char ini_buf[512];

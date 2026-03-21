@@ -12,8 +12,7 @@ TestDiscoveryResult test_discover(String tests_dir)
 	result.error_message = (String) "";
 
 	char _td_buf[512];
-	const char *_td_comps[16];
-	Path _td_path = { _td_comps, 0, false };
+	Path _td_path = { (const char *[16]){0}, 0, false };
 	fun_path_from_cstr(tests_dir, _td_buf, sizeof(_td_buf), &_td_path);
 	boolResult dir_exists = fun_path_exists(_td_path);
 	if (fun_error_is_error(dir_exists.error)) {
@@ -196,8 +195,7 @@ int test_has_test_file(String dir_path)
 	test_c_path[len] = '/';
 	fun_string_copy((String) "test.c", test_c_path + len + 1,
 					sizeof(test_c_path) - len - 1);
-	const char *_tc_comps[8];
-	Path _tc_path = { _tc_comps, 0, false };
+	Path _tc_path = { (const char *[8]){0}, 0, false };
 	fun_path_from_string(test_c_path, &_tc_path);
 	boolResult exists = fun_file_exists(_tc_path);
 	return fun_error_is_ok(exists.error) && exists.value;
