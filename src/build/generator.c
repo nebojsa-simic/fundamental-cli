@@ -1,4 +1,5 @@
 #include "build/build.h"
+#include "fundamental/config/config.h"
 #include "fundamental/file/file.h"
 #include "fundamental/filesystem/filesystem.h"
 #include "fundamental/async/async.h"
@@ -21,65 +22,19 @@ static size_t path_storage_pos = 0;
  * -------------------------------------------------------------------------- */
 static int fun_ini_read_name(char *output, size_t output_size)
 {
-	Path _ini_path = { (const char *[]){"fun.ini"}, 1, false };
-
-	uint64_t ini_file_size;
-	voidResult sz = fun_file_size(_ini_path, &ini_file_size);
-	if (fun_error_is_error(sz.error))
+	ConfigResult cfg = fun_config_load((String) "fun", 0, NULL);
+	if (fun_error_is_error(cfg.error))
 		return 0;
 
-	static char buf[512];
-	size_t bytes_to_read =
-		(ini_file_size < sizeof(buf) - 1) ? (size_t)ini_file_size
-										  : sizeof(buf) - 1;
-	AsyncResult r =
-		fun_read_file_in_memory((Read){ .file_path = (String) "fun.ini",
-										.output = (Memory)buf,
-										.bytes_to_read = bytes_to_read });
-	fun_async_await(&r, -1);
-	if (r.status != ASYNC_COMPLETED)
-		return 0;
-	buf[bytes_to_read] = '\0';
-
+	StringResult name =
+		fun_config_get_string(&cfg.value, (String) "name");
 	int found = 0;
-	char *pos = buf;
-
-	while (*pos != '\0') {
-		/* Skip leading whitespace on this line */
-		while (*pos == ' ' || *pos == '\t')
-			pos++;
-
-		/* Look for "name" keyword */
-		if (pos[0] == 'n' && pos[1] == 'a' && pos[2] == 'm' && pos[3] == 'e') {
-			char *p = pos + 4;
-			while (*p == ' ' || *p == '\t')
-				p++;
-			if (*p == '=') {
-				p++;
-				while (*p == ' ' || *p == '\t')
-					p++;
-				size_t i = 0;
-				while (*p != '\0' && *p != '\n' && *p != '\r' &&
-					   i < output_size - 1)
-					output[i++] = *p++;
-				output[i] = '\0';
-				/* Trim trailing whitespace */
-				while (i > 0 && (output[i - 1] == ' ' || output[i - 1] == '\t'))
-					output[--i] = '\0';
-				if (i > 0) {
-					found = 1;
-					break;
-				}
-			}
-		}
-
-		/* Advance to next line */
-		while (*pos != '\0' && *pos != '\n')
-			pos++;
-		if (*pos == '\n')
-			pos++;
+	if (fun_error_is_ok(name.error) && fun_string_length(name.value) > 0) {
+		fun_string_copy(name.value, output, output_size);
+		found = 1;
 	}
 
+	fun_config_destroy(&cfg.value);
 	return found;
 }
 

@@ -55,6 +55,11 @@ gcc \
     vendor/fundamental/src/string/stringTemplate.c \
     vendor/fundamental/src/string/stringValidation.c \
     vendor/fundamental/src/array/array.c \
+    vendor/fundamental/src/hashmap/hashmap.c \
+    vendor/fundamental/src/config/config.c \
+    vendor/fundamental/src/config/iniParser.c \
+    vendor/fundamental/src/config/cliParser.c \
+    vendor/fundamental/arch/config/linux-amd64/env.c \
     vendor/fundamental/arch/console/linux-amd64/console.c \
     vendor/fundamental/arch/memory/linux-amd64/memory.c \
     vendor/fundamental/src/filesystem/directory.c \
