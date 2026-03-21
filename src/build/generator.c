@@ -191,9 +191,7 @@ static char *append(char *ptr, const char *s, char *buf_end)
  * -------------------------------------------------------------------------- */
 static void delete_file_if_exists(const char *path)
 {
-	char _del_buf[512];
-	Path _del_path = { (const char *[16]){0}, 0, false };
-	fun_path_from_cstr(path, _del_buf, sizeof(_del_buf), &_del_path);
+	Path _del_path = { (const char *[]){ path }, 1, false };
 	boolResult exists = fun_file_exists(_del_path);
 	if (fun_error_is_error(exists.error) || !exists.value)
 		return;
