@@ -22,12 +22,12 @@ gcc \
     src/cli/cli.c \
     src/build/config.c \
     src/build/detector.c \
-    src/build/arch/linux_amd64/detector.c \
+    arch/build/linux-amd64/detector.c \
     src/build/executor.c \
-    src/build/arch/linux_amd64/executor.c \
+    arch/build/linux-amd64/executor.c \
     src/build/generator.c \
-    src/build/arch/linux_amd64/generator.c \
-    src/build/arch/linux_amd64/platform.c \
+    arch/build/linux-amd64/generator.c \
+    arch/build/linux-amd64/platform.c \
     src/commands/cmd_version.c \
     src/commands/cmd_help.c \
     src/commands/cmd_init.c \
