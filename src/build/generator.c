@@ -28,23 +28,20 @@ static int fun_ini_read_name(char *output, size_t output_size)
 	if (fun_error_is_error(sz.error))
 		return 0;
 
-	MemoryResult mem = fun_memory_allocate(512);
-	if (fun_error_is_error(mem.error))
-		return 0;
-
-	size_t bytes_to_read = (ini_file_size < 511) ? (size_t)ini_file_size : 511;
+	static char buf[512];
+	size_t bytes_to_read =
+		(ini_file_size < sizeof(buf) - 1) ? (size_t)ini_file_size
+										  : sizeof(buf) - 1;
 	AsyncResult r =
 		fun_read_file_in_memory((Read){ .file_path = (String) "fun.ini",
-										.output = mem.value,
+										.output = (Memory)buf,
 										.bytes_to_read = bytes_to_read });
 	fun_async_await(&r, -1);
-	if (r.status != ASYNC_COMPLETED) {
-		fun_memory_free(&mem.value);
+	if (r.status != ASYNC_COMPLETED)
 		return 0;
-	}
+	buf[bytes_to_read] = '\0';
 
 	int found = 0;
-	char *buf = (char *)mem.value;
 	char *pos = buf;
 
 	while (*pos != '\0') {
@@ -83,7 +80,6 @@ static int fun_ini_read_name(char *output, size_t output_size)
 			pos++;
 	}
 
-	fun_memory_free(&mem.value);
 	return found;
 }
 
