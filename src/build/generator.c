@@ -21,9 +21,7 @@ static size_t path_storage_pos = 0;
  * -------------------------------------------------------------------------- */
 static int fun_ini_read_name(char *output, size_t output_size)
 {
-	char _ini_buf[64];
-	Path _ini_path = { (const char *[4]){0}, 0, false };
-	fun_path_from_cstr("fun.ini", _ini_buf, sizeof(_ini_buf), &_ini_path);
+	Path _ini_path = { (const char *[]){"fun.ini"}, 1, false };
 
 	uint64_t ini_file_size;
 	voidResult sz = fun_file_size(_ini_path, &ini_file_size);

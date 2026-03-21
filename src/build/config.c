@@ -141,9 +141,7 @@ BuildConfig build_config_load(void)
 	config.use_nostdlib = 0;
 
 	// Try to read fun.ini
-	char _ini_buf[64];
-	Path _ini_path = { (const char *[4]){0}, 0, false };
-	fun_path_from_cstr("fun.ini", _ini_buf, sizeof(_ini_buf), &_ini_path);
+	Path _ini_path = { (const char *[]){"fun.ini"}, 1, false };
 
 	static char ini_buf[512];
 	uint64_t ini_file_size;
