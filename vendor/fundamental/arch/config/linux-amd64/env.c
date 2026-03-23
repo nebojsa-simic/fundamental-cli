@@ -5,9 +5,9 @@
 extern const char **fun_arch_envp;
 
 /* ---- Syscall numbers ---- */
-#define SYS_read     0
-#define SYS_open     2
-#define SYS_close    3
+#define SYS_read 0
+#define SYS_open 2
+#define SYS_close 3
 #define SYS_readlink 89
 
 #define O_RDONLY 0
@@ -88,8 +88,8 @@ int fun_platform_get_executable_dir(char *out_dir, size_t buf_size)
 	if (!out_dir || buf_size < 2)
 		return -1;
 
-	long len = syscall3(SYS_readlink, (long)"/proc/self/exe",
-						(long)out_dir, (long)(buf_size - 1));
+	long len = syscall3(SYS_readlink, (long)"/proc/self/exe", (long)out_dir,
+						(long)(buf_size - 1));
 	if (len < 0)
 		return -1;
 

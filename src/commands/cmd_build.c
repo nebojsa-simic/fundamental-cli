@@ -110,9 +110,10 @@ int cmd_build_execute(int argc, const char **argv)
 		return 0;
 	} else if (exec_result.status == BUILD_EXEC_FAILED) {
 		char msg[64];
-		StringTemplateParam params[] = { { .key = (String) "code",
-										   .value = { .intValue =
-													  exec_result.exit_code } } };
+		StringTemplateParam params[] = {
+			{ .key = (String) "code",
+			  .value = { .intValue = exec_result.exit_code } }
+		};
 		fun_string_template((String) "Build failed with exit code: {code}",
 							params, 1, msg, sizeof(msg));
 		fun_console_write_line(msg);

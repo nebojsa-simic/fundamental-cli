@@ -87,7 +87,7 @@ int test_build_module(TestModule *module, int verbose)
 					sizeof(build_script) - path_len - 1);
 	build_script[path_len + 1 + 23] = '\0';
 
-	Path _bs_path = { (const char *[8]){0}, 0, false };
+	Path _bs_path = { (const char *[8]){ 0 }, 0, false };
 	fun_path_from_string(build_script, &_bs_path);
 	boolResult exists = fun_file_exists(_bs_path);
 	if (!fun_error_is_ok(exists.error) || !exists.value) {
@@ -147,7 +147,7 @@ int test_execute_module(TestModule *module, int verbose)
 					sizeof(test_exe) - path_len - 1);
 	test_exe[path_len + 1 + 8] = '\0';
 
-	Path _te_path = { (const char *[8]){0}, 0, false };
+	Path _te_path = { (const char *[8]){ 0 }, 0, false };
 	fun_path_from_string(test_exe, &_te_path);
 	boolResult exists = fun_file_exists(_te_path);
 	if (!fun_error_is_ok(exists.error) || !exists.value) {

@@ -125,7 +125,8 @@ typedef struct {
 /**
  * Execute build script for the given platform (arch-specific implementation)
  */
-BuildExecutionResult build_execute_for_platform(String script_path, int verbose);
+BuildExecutionResult build_execute_for_platform(String script_path,
+												int verbose);
 
 /**
  * Execute build script for the given platform

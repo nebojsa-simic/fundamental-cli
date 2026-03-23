@@ -4,37 +4,37 @@
 #include "fundamental/string/string.h"
 
 /* ---- Syscall numbers ---- */
-#define SYS_read    0
-#define SYS_close   3
-#define SYS_mmap    9
-#define SYS_munmap  11
-#define SYS_ioctl   16
-#define SYS_access  21
-#define SYS_pipe    22
-#define SYS_dup2    33
-#define SYS_fork    57
-#define SYS_execve  59
-#define SYS_exit    60
-#define SYS_wait4   61
-#define SYS_kill    62
-#define SYS_fcntl   72
+#define SYS_read 0
+#define SYS_close 3
+#define SYS_mmap 9
+#define SYS_munmap 11
+#define SYS_ioctl 16
+#define SYS_access 21
+#define SYS_pipe 22
+#define SYS_dup2 33
+#define SYS_fork 57
+#define SYS_execve 59
+#define SYS_exit 60
+#define SYS_wait4 61
+#define SYS_kill 62
+#define SYS_fcntl 72
 
 /* ---- Constants ---- */
-#define PROT_READ       0x1
-#define PROT_WRITE      0x2
-#define MAP_PRIVATE     0x2
-#define MAP_ANONYMOUS   0x20
-#define MAP_FAILED      ((void *)-1)
-#define X_OK            1
-#define SIGKILL         9
-#define WNOHANG         1
-#define O_NONBLOCK      2048
-#define F_GETFL         3
-#define F_SETFL         4
-#define FIONREAD        0x541BL
-#define WIFEXITED(s)    (((s) & 0x7f) == 0)
-#define WEXITSTATUS(s)  (((s) >> 8) & 0xff)
-#define ESRCH           3
+#define PROT_READ 0x1
+#define PROT_WRITE 0x2
+#define MAP_PRIVATE 0x2
+#define MAP_ANONYMOUS 0x20
+#define MAP_FAILED ((void *)-1)
+#define X_OK 1
+#define SIGKILL 9
+#define WNOHANG 1
+#define O_NONBLOCK 2048
+#define F_GETFL 3
+#define F_SETFL 4
+#define FIONREAD 0x541BL
+#define WIFEXITED(s) (((s) & 0x7f) == 0)
+#define WEXITSTATUS(s) (((s) >> 8) & 0xff)
+#define ESRCH 3
 
 /* ---- Saved environment from startup ---- */
 extern const char **fun_arch_envp;
@@ -81,25 +81,24 @@ static inline long syscall4(long n, long a1, long a2, long a3, long a4)
 	return ret;
 }
 
-static inline long syscall6(long n, long a1, long a2, long a3, long a4,
-							long a5, long a6)
+static inline long syscall6(long n, long a1, long a2, long a3, long a4, long a5,
+							long a6)
 {
 	long ret;
 	register long r10 __asm__("r10") = a4;
-	register long r8  __asm__("r8")  = a5;
-	register long r9  __asm__("r9")  = a6;
+	register long r8 __asm__("r8") = a5;
+	register long r9 __asm__("r9") = a6;
 	__asm__ __volatile__("syscall"
 						 : "=a"(ret)
-						 : "a"(n), "D"(a1), "S"(a2), "d"(a3),
-						   "r"(r10), "r"(r8), "r"(r9)
+						 : "a"(n), "D"(a1), "S"(a2), "d"(a3), "r"(r10), "r"(r8),
+						   "r"(r9)
 						 : "rcx", "r11", "memory");
 	return ret;
 }
 
 static inline void *sys_mmap(size_t size)
 {
-	return (void *)syscall6(SYS_mmap, 0, (long)size,
-							PROT_READ | PROT_WRITE,
+	return (void *)syscall6(SYS_mmap, 0, (long)size, PROT_READ | PROT_WRITE,
 							MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 }
 
@@ -146,8 +145,8 @@ static int find_executable(const char *name, char *out, size_t out_size)
 	if (fun_arch_envp != NULL) {
 		for (int i = 0; fun_arch_envp[i] != NULL; i++) {
 			const char *e = fun_arch_envp[i];
-			if (e[0] == 'P' && e[1] == 'A' && e[2] == 'T' &&
-				e[3] == 'H' && e[4] == '=') {
+			if (e[0] == 'P' && e[1] == 'A' && e[2] == 'T' && e[3] == 'H' &&
+				e[4] == '=') {
 				path_val = e + 5;
 				break;
 			}
@@ -196,8 +195,8 @@ static void drain_fd(int fd, char *buf, size_t capacity, size_t *length)
 		size_t to_read = (size_t)avail;
 		if (to_read > capacity - *length)
 			to_read = capacity - *length;
-		long n = syscall3(SYS_read, (long)fd, (long)(buf + *length),
-						  (long)to_read);
+		long n =
+			syscall3(SYS_read, (long)fd, (long)(buf + *length), (long)to_read);
 		if (n <= 0)
 			break;
 		*length += (size_t)n;
@@ -325,7 +324,8 @@ AsyncResult fun_process_arch_spawn(const char *executable, const char **args,
 		}
 		syscall1(SYS_exit, 127);
 		/* unreachable */
-		while (1) {}
+		while (1) {
+		}
 	}
 
 	/* Parent */

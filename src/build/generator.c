@@ -27,8 +27,7 @@ int build_ini_read_name(char *output, size_t output_size)
 	if (fun_error_is_error(cfg.error))
 		return 0;
 
-	StringResult name =
-		fun_config_get_string(&cfg.value, (String) "name");
+	StringResult name = fun_config_get_string(&cfg.value, (String) "name");
 	int found = 0;
 	if (fun_error_is_ok(name.error) && fun_string_length(name.value) > 0) {
 		fun_string_copy(name.value, output, output_size);

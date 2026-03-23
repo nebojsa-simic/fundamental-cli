@@ -15,14 +15,12 @@ int _start_c(long *sp)
 
 __attribute__((naked)) void _start(void)
 {
-	__asm__ __volatile__(
-		"xor %%rbp, %%rbp\n\t"
-		"mov %%rsp, %%rdi\n\t"
-		"and $~15, %%rsp\n\t"
-		"call _start_c\n\t"
-		"mov %%eax, %%edi\n\t"
-		"mov $60, %%eax\n\t"
-		"syscall\n\t"
-		::: "memory"
-	);
+	__asm__ __volatile__("xor %%rbp, %%rbp\n\t"
+						 "mov %%rsp, %%rdi\n\t"
+						 "and $~15, %%rsp\n\t"
+						 "call _start_c\n\t"
+						 "mov %%eax, %%edi\n\t"
+						 "mov $60, %%eax\n\t"
+						 "syscall\n\t" ::
+							 : "memory");
 }

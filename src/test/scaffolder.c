@@ -181,11 +181,11 @@ int test_has_build_scripts(String test_dir)
 					sizeof(linux_path) - len - 1);
 	linux_path[len + 1 + 20] = '\0';
 
-	Path _wp_path = { (const char *[8]){0}, 0, false };
+	Path _wp_path = { (const char *[8]){ 0 }, 0, false };
 	fun_path_from_string(windows_path, &_wp_path);
 	boolResult win_exists = fun_file_exists(_wp_path);
 
-	Path _lp_path = { (const char *[8]){0}, 0, false };
+	Path _lp_path = { (const char *[8]){ 0 }, 0, false };
 	fun_path_from_string(linux_path, &_lp_path);
 	boolResult lin_exists = fun_file_exists(_lp_path);
 

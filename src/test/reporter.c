@@ -32,8 +32,8 @@ void test_report_single(TestResult *test_result)
 			  .value = { .intValue = test_result->exit_code } },
 		};
 		fun_string_template(
-			(String) "\x1b[31m✗\x1b[0m {name} (exit code: {code})", p, 2,
-			msg, sizeof(msg));
+			(String) "\x1b[31m✗\x1b[0m {name} (exit code: {code})", p, 2, msg,
+			sizeof(msg));
 		fun_console_write_line(msg);
 	}
 }

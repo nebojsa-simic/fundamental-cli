@@ -1,24 +1,24 @@
 ## Phase 1a: Tokenizer (Pass 1 — language-agnostic)
 
 - [x] 1a.1 Write tokenizer.grammar: define all token patterns (WORD, NUMBER, STRING, CHAR, symbols)
-- [ ] 1a.2 Define RawTokenType enum (RAW_WORD, RAW_NUMBER, RAW_STRING, RAW_CHAR, all symbols, RAW_EOF)
-- [ ] 1a.3 Define RawToken struct (type, offset, length, line, col)
-- [ ] 1a.4 Implement tokenizer initialization (accept source buffer + length, init cursor state)
-- [ ] 1a.5 Implement whitespace consumption with line/column tracking
-- [ ] 1a.6 Implement comment skipping (// line comments and /* block comments */)
-- [ ] 1a.7 Implement WORD tokenization: [a-zA-Z_][a-zA-Z0-9_]*
-- [ ] 1a.8 Implement NUMBER tokenization: decimal, hex (0x/0X), octal (0), float (with .)
-- [ ] 1a.9 Implement STRING tokenization: "..." (raw bytes, track escape sequences but don't resolve)
-- [ ] 1a.10 Implement CHAR tokenization: '...' (raw bytes, track escape sequences but don't resolve)
-- [ ] 1a.11 Implement single-character symbol tokenization (all punctuation and operators)
-- [ ] 1a.12 Implement multi-character symbol tokenization (==, !=, <=, >=, &&, ||, <<, >>, ->, +=, -=, etc.)
-- [ ] 1a.13 Implement ellipsis (...) tokenization
-- [ ] 1a.14 Implement tokenizer error reporting (unexpected character, unterminated string/char/comment)
-- [ ] 1a.15 Implement .tokens serialization (write Array<RawToken> to binary file)
-- [ ] 1a.16 Implement .tokens deserialization (read binary file to Array<RawToken>)
-- [ ] 1a.17 Write tokenizer tests: verify against tokenizer.grammar patterns
-- [ ] 1a.18 Write tokenizer tests: tokenize hand-written C fragments, verify token types and positions
-- [ ] 1a.19 Write tokenizer tests: tokenize actual fundamental-cli source files (post gcc -E), verify no errors
+- [x] 1a.2 Define RawTokenType enum (RAW_WORD, RAW_NUMBER, RAW_STRING, RAW_CHAR, all symbols, RAW_EOF)
+- [x] 1a.3 Define RawToken struct (type, offset, length, line, col)
+- [x] 1a.4 Implement tokenizer initialization (accept source buffer + length, init cursor state)
+- [x] 1a.5 Implement whitespace consumption with line/column tracking
+- [x] 1a.6 Implement comment skipping (// line comments and /* block comments */)
+- [x] 1a.7 Implement WORD tokenization: [a-zA-Z_][a-zA-Z0-9_]*
+- [x] 1a.8 Implement NUMBER tokenization: decimal, hex (0x/0X), octal (0), float (with .)
+- [x] 1a.9 Implement STRING tokenization: "..." (raw bytes, track escape sequences but don't resolve)
+- [x] 1a.10 Implement CHAR tokenization: '...' (raw bytes, track escape sequences but don't resolve)
+- [x] 1a.11 Implement single-character symbol tokenization (all punctuation and operators)
+- [x] 1a.12 Implement multi-character symbol tokenization (==, !=, <=, >=, &&, ||, <<, >>, ->, +=, -=, etc.)
+- [x] 1a.13 Implement ellipsis (...) tokenization
+- [x] 1a.14 Implement tokenizer error reporting (unexpected character, unterminated string/char/comment)
+- [x] 1a.15 Implement .tokens serialization (write Array<RawToken> to binary file)
+- [x] 1a.16 Implement .tokens deserialization (read binary file to Array<RawToken>)
+- [x] 1a.17 Write tokenizer tests: verify against tokenizer.grammar patterns
+- [x] 1a.18 Write tokenizer tests: tokenize hand-written C fragments, verify token types and positions
+- [x] 1a.19 Write tokenizer tests: tokenize actual fundamental-cli source files (post gcc -E), verify no errors
 
 ## Phase 1b: Lexer (Pass 2 — C-specific classification)
 

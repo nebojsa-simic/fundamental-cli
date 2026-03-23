@@ -8,12 +8,10 @@ struct timespec {
 static long sys_clock_gettime(int clkid, struct timespec *tp)
 {
 	long ret;
-	__asm__ __volatile__(
-		"syscall"
-		: "=a"(ret)
-		: "0"(228L), "D"((long)clkid), "S"(tp)
-		: "rcx", "r11", "memory"
-	);
+	__asm__ __volatile__("syscall"
+						 : "=a"(ret)
+						 : "0"(228L), "D"((long)clkid), "S"(tp)
+						 : "rcx", "r11", "memory");
 	return ret;
 }
 

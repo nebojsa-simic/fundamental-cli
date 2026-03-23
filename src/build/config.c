@@ -24,18 +24,18 @@ BuildConfig build_config_load(void)
 		return config;
 	}
 
-	String entry =
-		fun_config_get_string_or_default(&cfg.value, (String) "entry",
-										 (String) "").value;
-	String flags =
-		fun_config_get_string_or_default(&cfg.value, (String) "flags",
-										 (String) "").value;
-	String standard =
-		fun_config_get_string_or_default(&cfg.value, (String) "standard",
-										 (String) "").value;
-	String output =
-		fun_config_get_string_or_default(&cfg.value, (String) "output",
-										 (String) "").value;
+	String entry = fun_config_get_string_or_default(
+					   &cfg.value, (String) "entry", (String) "")
+					   .value;
+	String flags = fun_config_get_string_or_default(
+					   &cfg.value, (String) "flags", (String) "")
+					   .value;
+	String standard = fun_config_get_string_or_default(
+						  &cfg.value, (String) "standard", (String) "")
+						  .value;
+	String output = fun_config_get_string_or_default(
+						&cfg.value, (String) "output", (String) "")
+						.value;
 
 	fun_string_copy(entry, entry_buf, sizeof(entry_buf));
 	fun_string_copy(flags, flags_buf, sizeof(flags_buf));

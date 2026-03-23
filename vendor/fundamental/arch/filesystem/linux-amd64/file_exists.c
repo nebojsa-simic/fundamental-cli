@@ -1,7 +1,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#define S_IFMT  0170000
+#define S_IFMT 0170000
 #define S_IFDIR 0040000
 #define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
 
@@ -9,13 +9,13 @@ struct stat_t {
 	unsigned long st_dev;
 	unsigned long st_ino;
 	unsigned long st_nlink;
-	unsigned int  st_mode;
-	unsigned int  st_uid;
-	unsigned int  st_gid;
+	unsigned int st_mode;
+	unsigned int st_uid;
+	unsigned int st_gid;
 	unsigned long st_rdev;
-	long          st_size;
-	long          st_blksize;
-	long          st_blocks;
+	long st_size;
+	long st_blksize;
+	long st_blocks;
 	unsigned long st_atime;
 	unsigned long st_atime_nsec;
 	unsigned long st_mtime;
@@ -28,11 +28,10 @@ struct stat_t {
 static inline long sys_stat(const char *path, struct stat_t *st)
 {
 	long ret;
-	__asm__ __volatile__(
-		"syscall"
-		: "=a"(ret)
-		: "0"(4L), "D"(path), "S"(st)
-		: "rcx", "r11", "memory");
+	__asm__ __volatile__("syscall"
+						 : "=a"(ret)
+						 : "0"(4L), "D"(path), "S"(st)
+						 : "rcx", "r11", "memory");
 	return ret;
 }
 

@@ -3,11 +3,10 @@
 static inline long sys_write(int fd, const void *buf, unsigned long count)
 {
 	long ret;
-	__asm__ __volatile__(
-		"syscall"
-		: "=a"(ret)
-		: "0"(1L), "D"((long)fd), "S"(buf), "d"(count)
-		: "rcx", "r11", "memory");
+	__asm__ __volatile__("syscall"
+						 : "=a"(ret)
+						 : "0"(1L), "D"((long)fd), "S"(buf), "d"(count)
+						 : "rcx", "r11", "memory");
 	return ret;
 }
 

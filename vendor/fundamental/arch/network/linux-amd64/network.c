@@ -4,32 +4,32 @@
 #include "fundamental/network/network.h"
 
 /* ---- Syscall numbers ---- */
-#define SYS_close      3
-#define SYS_poll       7
-#define SYS_socket     41
-#define SYS_connect    42
-#define SYS_sendto     44
-#define SYS_recvfrom   45
+#define SYS_close 3
+#define SYS_poll 7
+#define SYS_socket 41
+#define SYS_connect 42
+#define SYS_sendto 44
+#define SYS_recvfrom 45
 #define SYS_getsockopt 55
-#define SYS_fcntl      72
+#define SYS_fcntl 72
 
 /* ---- Socket constants ---- */
-#define AF_INET      2
-#define AF_INET6     10
-#define SOCK_STREAM  1
-#define SOCK_DGRAM   2
-#define O_NONBLOCK   2048
-#define F_GETFL      3
-#define F_SETFL      4
-#define SOL_SOCKET   1
-#define SO_ERROR     4
+#define AF_INET 2
+#define AF_INET6 10
+#define SOCK_STREAM 1
+#define SOCK_DGRAM 2
+#define O_NONBLOCK 2048
+#define F_GETFL 3
+#define F_SETFL 4
+#define SOL_SOCKET 1
+#define SO_ERROR 4
 #define MSG_NOSIGNAL 0x4000
-#define POLLOUT      4
-#define POLLERR      8
-#define POLLHUP      16
-#define EINPROGRESS  115
-#define EAGAIN       11
-#define EWOULDBLOCK  11
+#define POLLOUT 4
+#define POLLERR 8
+#define POLLHUP 16
+#define EINPROGRESS 115
+#define EAGAIN 11
+#define EWOULDBLOCK 11
 
 /* ---- Types ---- */
 typedef unsigned int socklen_t;
@@ -37,25 +37,25 @@ typedef unsigned int socklen_t;
 struct sockaddr_in {
 	unsigned short sin_family;
 	unsigned short sin_port;
-	unsigned char  sin_addr[4];
-	unsigned char  sin_zero[8];
+	unsigned char sin_addr[4];
+	unsigned char sin_zero[8];
 };
 
 struct sockaddr_in6 {
 	unsigned short sin6_family;
 	unsigned short sin6_port;
-	unsigned int   sin6_flowinfo;
-	unsigned char  sin6_addr[16];
-	unsigned int   sin6_scope_id;
+	unsigned int sin6_flowinfo;
+	unsigned char sin6_addr[16];
+	unsigned int sin6_scope_id;
 };
 
 struct sockaddr_storage {
 	unsigned short ss_family;
-	unsigned char  _pad[126];
+	unsigned char _pad[126];
 };
 
 struct pollfd {
-	int   fd;
+	int fd;
 	short events;
 	short revents;
 };
@@ -91,31 +91,29 @@ static inline long syscall3(long n, long a1, long a2, long a3)
 	return ret;
 }
 
-static inline long syscall5(long n, long a1, long a2, long a3, long a4,
-							long a5)
+static inline long syscall5(long n, long a1, long a2, long a3, long a4, long a5)
 {
 	long ret;
 	register long r10 __asm__("r10") = a4;
-	register long r8  __asm__("r8")  = a5;
+	register long r8 __asm__("r8") = a5;
 	__asm__ __volatile__("syscall"
 						 : "=a"(ret)
-						 : "a"(n), "D"(a1), "S"(a2), "d"(a3), "r"(r10),
-						   "r"(r8)
+						 : "a"(n), "D"(a1), "S"(a2), "d"(a3), "r"(r10), "r"(r8)
 						 : "rcx", "r11", "memory");
 	return ret;
 }
 
-static inline long syscall6(long n, long a1, long a2, long a3, long a4,
-							long a5, long a6)
+static inline long syscall6(long n, long a1, long a2, long a3, long a4, long a5,
+							long a6)
 {
 	long ret;
 	register long r10 __asm__("r10") = a4;
-	register long r8  __asm__("r8")  = a5;
-	register long r9  __asm__("r9")  = a6;
+	register long r8 __asm__("r8") = a5;
+	register long r9 __asm__("r9") = a6;
 	__asm__ __volatile__("syscall"
 						 : "=a"(ret)
-						 : "a"(n), "D"(a1), "S"(a2), "d"(a3), "r"(r10),
-						   "r"(r8), "r"(r9)
+						 : "a"(n), "D"(a1), "S"(a2), "d"(a3), "r"(r10), "r"(r8),
+						   "r"(r9)
 						 : "rcx", "r11", "memory");
 	return ret;
 }
@@ -177,8 +175,7 @@ int fun_network_arch_tcp_connect(NetworkAddress addr, intptr_t *out_fd)
 		return -1;
 
 	long flags = syscall3(SYS_fcntl, fd, F_GETFL, 0);
-	if (flags < 0 ||
-		syscall3(SYS_fcntl, fd, F_SETFL, flags | O_NONBLOCK) < 0) {
+	if (flags < 0 || syscall3(SYS_fcntl, fd, F_SETFL, flags | O_NONBLOCK) < 0) {
 		syscall1(SYS_close, fd);
 		return -1;
 	}
@@ -219,8 +216,8 @@ int fun_network_arch_tcp_poll_connect(intptr_t fd)
 	if (pfd.revents & POLLOUT) {
 		int err = 0;
 		socklen_t len = sizeof(err);
-		if (syscall5(SYS_getsockopt, fd, SOL_SOCKET, SO_ERROR,
-					 (long)&err, (long)&len) != 0)
+		if (syscall5(SYS_getsockopt, fd, SOL_SOCKET, SO_ERROR, (long)&err,
+					 (long)&len) != 0)
 			return -1;
 		if (err != 0)
 			return -1;
@@ -233,8 +230,8 @@ int fun_network_arch_tcp_poll_connect(intptr_t fd)
 int fun_network_arch_tcp_send(intptr_t fd, const void *data, size_t len,
 							  size_t *sent)
 {
-	long n = syscall6(SYS_sendto, fd, (long)data, (long)len, MSG_NOSIGNAL,
-					  0, 0);
+	long n =
+		syscall6(SYS_sendto, fd, (long)data, (long)len, MSG_NOSIGNAL, 0, 0);
 	if (n < 0) {
 		if (n == -EAGAIN || n == -EWOULDBLOCK)
 			return 1;
@@ -278,8 +275,8 @@ int fun_network_arch_udp_send(NetworkAddress addr, const void *data, size_t len)
 		return -1;
 	}
 
-	syscall6(SYS_sendto, fd, (long)data, (long)len, MSG_NOSIGNAL,
-			 (long)&sa, sa_len);
+	syscall6(SYS_sendto, fd, (long)data, (long)len, MSG_NOSIGNAL, (long)&sa,
+			 sa_len);
 
 	syscall1(SYS_close, fd);
 	return 0;

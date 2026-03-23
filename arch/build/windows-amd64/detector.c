@@ -7,11 +7,12 @@ BuildDetectionResult build_detect_for_platform(String platform_str)
 	static char script_path_buffer[128];
 
 	StringTemplateParam params[] = {
-		{ .key = (String) "platform", .value = { .stringValue = platform_str } },
+		{ .key = (String) "platform",
+		  .value = { .stringValue = platform_str } },
 	};
-	voidResult tmpl =
-		fun_string_template((String) "build-{platform}.bat", params, 1,
-							script_path_buffer, sizeof(script_path_buffer));
+	voidResult tmpl = fun_string_template((String) "build-{platform}.bat",
+										  params, 1, script_path_buffer,
+										  sizeof(script_path_buffer));
 	if (fun_error_is_error(tmpl.error)) {
 		result.status = BUILD_DETECTED_ERROR;
 		result.script_path = (String) "";

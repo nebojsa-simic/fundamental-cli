@@ -42,7 +42,8 @@ BuildExecutionResult build_execute_for_platform(String script_path, int verbose)
 						   .stdout_capacity = sizeof(out_buf),
 						   .stderr_data = err_buf,
 						   .stderr_capacity = sizeof(err_buf) };
-	AsyncResult spawn_result = fun_process_spawn("/bin/bash", args, NULL, &proc);
+	AsyncResult spawn_result =
+		fun_process_spawn("/bin/bash", args, NULL, &proc);
 	fun_async_await(&spawn_result, -1);
 
 	int exit_code = proc.exit_code;
