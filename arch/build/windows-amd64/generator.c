@@ -37,6 +37,14 @@ BuildGenerationResult build_generate_for_platform(SourceScanResult scan_result)
 
 	ptr = build_append(
 		ptr,
+		"arch/build/windows-amd64/detector.c"
+		" arch/build/windows-amd64/executor.c"
+		" arch/build/windows-amd64/generator.c"
+		" arch/build/windows-amd64/platform.c ",
+		buf_end);
+
+	ptr = build_append(
+		ptr,
 		"vendor/fundamental/src/platform/platform.c"
 		" vendor/fundamental/arch/platform/windows-amd64/platform.c"
 		" vendor/fundamental/src/async/async.c"

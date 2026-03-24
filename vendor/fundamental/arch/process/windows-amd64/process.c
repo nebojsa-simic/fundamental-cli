@@ -32,13 +32,8 @@ static AsyncStatus win_process_poll(AsyncResult *result)
 		return ASYNC_ERROR;
 	}
 
-	if (exit_code == STILL_ACTIVE) {
-		return ASYNC_PENDING;
-	}
-
-	/* Process has exited — drain pipes */
-	out->exit_code = (int)exit_code;
-
+	/* Drain pipes on every poll to prevent the child from blocking on a full
+	 * pipe buffer while the parent waits for it to exit (classic deadlock). */
 	if (h->hStdout != NULL && out->stdout_data != NULL) {
 		DWORD bytes_read = 0;
 		DWORD available = 0;
@@ -52,8 +47,6 @@ static AsyncStatus win_process_poll(AsyncResult *result)
 				break;
 			out->stdout_length += bytes_read;
 		}
-		CloseHandle(h->hStdout);
-		h->hStdout = NULL;
 	}
 
 	if (h->hStderr != NULL && out->stderr_data != NULL) {
@@ -69,6 +62,20 @@ static AsyncStatus win_process_poll(AsyncResult *result)
 				break;
 			out->stderr_length += bytes_read;
 		}
+	}
+
+	if (exit_code == STILL_ACTIVE) {
+		return ASYNC_PENDING;
+	}
+
+	/* Process has exited — close pipe handles */
+	out->exit_code = (int)exit_code;
+
+	if (h->hStdout != NULL) {
+		CloseHandle(h->hStdout);
+		h->hStdout = NULL;
+	}
+	if (h->hStderr != NULL) {
 		CloseHandle(h->hStderr);
 		h->hStderr = NULL;
 	}
