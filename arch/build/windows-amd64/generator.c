@@ -40,7 +40,12 @@ BuildGenerationResult build_generate_for_platform(SourceScanResult scan_result)
 		"arch/build/windows-amd64/detector.c"
 		" arch/build/windows-amd64/executor.c"
 		" arch/build/windows-amd64/generator.c"
-		" arch/build/windows-amd64/platform.c ",
+		" arch/build/windows-amd64/platform.c"
+		" vendor/fundamental/src/config/config.c"
+		" vendor/fundamental/src/config/iniParser.c"
+		" vendor/fundamental/src/config/cliParser.c"
+		" vendor/fundamental/arch/config/windows-amd64/env.c"
+		" vendor/fundamental/src/hashmap/hashmap.c ",
 		buf_end);
 
 	ptr = build_append(
