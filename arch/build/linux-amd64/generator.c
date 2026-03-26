@@ -60,6 +60,8 @@ BuildGenerationResult build_generate_for_platform(SourceScanResult scan_result)
 		" vendor/fundamental/src/filesystem/directory.c"
 		" vendor/fundamental/src/filesystem/file_exists.c"
 		" vendor/fundamental/src/filesystem/path.c"
+		" vendor/fundamental/src/filesystem/walk.c"
+		" vendor/fundamental/src/tsv/tsv.c"
 		" vendor/fundamental/arch/filesystem/linux-amd64/directory.c"
 		" vendor/fundamental/arch/filesystem/linux-amd64/file_exists.c"
 		" vendor/fundamental/arch/filesystem/linux-amd64/path.c"

@@ -273,11 +273,21 @@ int fun_platform_directory_list(const char *path, char *buffer,
 		// Remove null terminator for length calculation
 		entry_len--;
 
-		// Check if we have space (entry + newline)
-		if (bytes_written + entry_len + 1 >= max_bytes) {
+		// Determine type prefix: "D\t" for directory, "F\t" for file
+		char type_prefix[2];
+		type_prefix[0] =
+			(find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ? 'D' : 'F';
+		type_prefix[1] = '\t';
+
+		// Check if we have space (prefix + entry + newline)
+		if (bytes_written + 2 + entry_len + 1 >= max_bytes) {
 			FindClose(hFind);
 			return -4; // Buffer too small
 		}
+
+		// Add type prefix
+		buffer[bytes_written++] = type_prefix[0];
+		buffer[bytes_written++] = type_prefix[1];
 
 		// Add entry to buffer
 		for (int i = 0; i < entry_len; i++) {
@@ -296,4 +306,111 @@ int fun_platform_directory_list(const char *path, char *buffer,
 	buffer[bytes_written] = '\0';
 
 	return (int)bytes_written;
+}
+
+// ============================================================================
+// Streaming Directory Handle (Walk API)
+// ============================================================================
+
+// Internal layout for Windows handle blob
+typedef struct {
+	HANDLE hFind;
+	WIN32_FIND_DATAW find_data;
+	int has_first; // 1 = find_data holds an unread first entry
+} WinDirHandle;
+
+// Static assertion that FUN_DIR_HANDLE_SIZE is large enough
+typedef char _win_dir_handle_size_check[640 >= sizeof(WinDirHandle) ? 1 : -1];
+
+int fun_platform_dir_open(const char *path, void *handle_buf)
+{
+	if (path == NULL || handle_buf == NULL) {
+		return -1;
+	}
+
+	WinDirHandle *h = (WinDirHandle *)handle_buf;
+
+	wchar_t path_wide[MAX_PATH];
+	if (utf8_to_utf16(path, path_wide, MAX_PATH) < 0) {
+		return -1;
+	}
+
+	// Build search pattern: path\*
+	wchar_t search_path[MAX_PATH + 2];
+	int len = fun_wide_string_length(path_wide);
+	if (len >= MAX_PATH - 2) {
+		return -1;
+	}
+	fun_wide_string_copy(search_path, path_wide);
+	if (len > 0 && path_wide[len - 1] != L'\\' && path_wide[len - 1] != L'/') {
+		fun_wide_string_concatenate(search_path, L"\\");
+	}
+	fun_wide_string_concatenate(search_path, L"*");
+
+	h->hFind = FindFirstFileW(search_path, &h->find_data);
+	if (h->hFind == INVALID_HANDLE_VALUE) {
+		h->has_first = 0;
+		return -1;
+	}
+	h->has_first = 1;
+	return 0;
+}
+
+int fun_platform_dir_read_entry(void *handle_buf, char *name_buf,
+								size_t name_buf_size, char *type_out)
+{
+	if (handle_buf == NULL || name_buf == NULL || type_out == NULL) {
+		return -1;
+	}
+
+	WinDirHandle *h = (WinDirHandle *)handle_buf;
+	if (h->hFind == INVALID_HANDLE_VALUE) {
+		return 0;
+	}
+
+	while (1) {
+		WIN32_FIND_DATAW *fd;
+		WIN32_FIND_DATAW next_data;
+
+		if (h->has_first) {
+			fd = &h->find_data;
+			h->has_first = 0;
+		} else {
+			if (!FindNextFileW(h->hFind, &next_data)) {
+				return 0; // No more entries
+			}
+			fd = &next_data;
+		}
+
+		// Skip . and ..
+		if (fun_wide_string_compare(fd->cFileName, L".") == 0 ||
+			fun_wide_string_compare(fd->cFileName, L"..") == 0) {
+			continue;
+		}
+
+		// Convert filename to UTF-8
+		int entry_len = WideCharToMultiByte(CP_UTF8, 0, fd->cFileName, -1,
+											name_buf, (int)name_buf_size, NULL,
+											NULL);
+		if (entry_len <= 0) {
+			continue;
+		}
+
+		// Set type
+		*type_out = (fd->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ? 'D' :
+																		'F';
+		return 1;
+	}
+}
+
+void fun_platform_dir_close(void *handle_buf)
+{
+	if (handle_buf == NULL) {
+		return;
+	}
+	WinDirHandle *h = (WinDirHandle *)handle_buf;
+	if (h->hFind != INVALID_HANDLE_VALUE) {
+		FindClose(h->hFind);
+		h->hFind = INVALID_HANDLE_VALUE;
+	}
 }

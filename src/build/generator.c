@@ -3,6 +3,7 @@
 #include "fundamental/config/config.h"
 #include "fundamental/file/file.h"
 #include "fundamental/filesystem/filesystem.h"
+#include "fundamental/tsv/tsv.h"
 #include "fundamental/async/async.h"
 #include "fundamental/console/console.h"
 #include "fundamental/memory/memory.h"
@@ -65,37 +66,24 @@ static void scan_directory_recursive(Path dir_path, SourceScanResult *result,
 	}
 
 	char *listing = (char *)listing_mem.value;
-	char *pos = listing;
 
-	while (*pos != '\0' && result->count < MAX_SOURCE_FILES) {
-		/* Find end of this entry */
-		char *end = pos;
-		while (*end != '\n' && *end != '\r' && *end != '\0')
-			end++;
+	FunTsvState tsv;
+	fun_tsv_init(&tsv, listing);
+	FunTsvRow row;
 
-		size_t entry_len = (size_t)(end - pos);
-
-		/* Skip empty entries */
-		if (entry_len == 0) {
-			pos = (*end != '\0') ? end + 1 : end;
+	while (fun_tsv_next(&tsv, &row).value &&
+	       result->count < MAX_SOURCE_FILES) {
+		if (row.count < 2)
 			continue;
-		}
+
+		const char *type = row.fields[0]; /* "D" or "F" */
+		const char *entry = row.fields[1];
 
 		/* Skip hidden entries (starting with '.') */
-		if (pos[0] == '.') {
-			pos = (*end != '\0') ? end + 1 : end;
+		if (entry[0] == '.')
 			continue;
-		}
 
-		/* Copy entry name to null-terminated buffer */
-		char entry[256];
-		voidResult sub = fun_string_substring((String)listing,
-											  (size_t)(pos - listing),
-											  entry_len, entry, sizeof(entry));
-		if (fun_error_is_error(sub.error)) {
-			pos = (*end != '\0') ? end + 1 : end;
-			continue;
-		}
+		StringLength entry_len = fun_string_length(entry);
 
 		/* Build child path using Path join */
 		const char *entry_comp[] = { entry };
@@ -104,33 +92,33 @@ static void scan_directory_recursive(Path dir_path, SourceScanResult *result,
 		Path child_path = { child_comps, 0, false };
 		fun_path_join(dir_path, entry_path, &child_path);
 
-		/* .c file? */
-		if (entry_len > 2 && entry[entry_len - 2] == '.' &&
-			entry[entry_len - 1] == 'c') {
-			char full_str[512];
-			ErrorResult ts_err =
-				fun_path_to_string(child_path, full_str, sizeof(full_str));
-			if (fun_error_is_ok(ts_err)) {
-				StringLength full_len = fun_string_length((String)full_str);
-				if (path_storage_pos + full_len + 1 <= MAX_PATH_STORAGE) {
-					fun_string_copy((String)full_str,
-									path_storage + path_storage_pos,
-									MAX_PATH_STORAGE - path_storage_pos);
-					result->sources[result->count] =
-						(String)(path_storage + path_storage_pos);
-					result->count++;
-					path_storage_pos += full_len + 1;
+		if (type[0] == 'F') {
+			/* .c file? */
+			if (entry_len > 2 && entry[entry_len - 2] == '.' &&
+			    entry[entry_len - 1] == 'c') {
+				char full_str[512];
+				ErrorResult ts_err = fun_path_to_string(
+					child_path, full_str, sizeof(full_str));
+				if (fun_error_is_ok(ts_err)) {
+					StringLength full_len =
+						fun_string_length((String)full_str);
+					if (path_storage_pos + full_len + 1 <=
+					    MAX_PATH_STORAGE) {
+						fun_string_copy(
+							(String)full_str,
+							path_storage + path_storage_pos,
+							MAX_PATH_STORAGE - path_storage_pos);
+						result->sources[result->count] = (String)(
+							path_storage + path_storage_pos);
+						result->count++;
+						path_storage_pos += full_len + 1;
+					}
 				}
 			}
-		} else {
-			/* Recurse into subdirectories */
-			boolResult is_dir = fun_directory_exists(child_path);
-			if (fun_error_is_ok(is_dir.error) && is_dir.value) {
-				scan_directory_recursive(child_path, result, depth + 1);
-			}
+		} else if (type[0] == 'D') {
+			/* Recurse into subdirectory */
+			scan_directory_recursive(child_path, result, depth + 1);
 		}
-
-		pos = (*end != '\0') ? end + 1 : end;
 	}
 
 	fun_memory_free(&listing_mem.value);

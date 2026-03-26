@@ -1,6 +1,7 @@
 #include "test/test.h"
 #include "fundamental/console/console.h"
 #include "fundamental/filesystem/filesystem.h"
+#include "fundamental/tsv/tsv.h"
 #include "fundamental/memory/memory.h"
 #include "fundamental/async/async.h"
 #include "fundamental/string/string.h"
@@ -56,7 +57,7 @@ TestDiscoveryResult test_discover(String tests_dir)
 		return result;
 	}
 
-	const char *listing = (const char *)list_mem.value;
+	char *listing = (char *)list_mem.value;
 	if (listing[0] == '\0') {
 		fun_memory_free(&list_mem.value);
 		result.status = TEST_DISCOVERY_NO_TESTS;
@@ -64,67 +65,40 @@ TestDiscoveryResult test_discover(String tests_dir)
 		return result;
 	}
 
-	const char *ptr = listing;
-	while (*ptr != '\0') {
-		const char *newline = ptr;
-		while (*newline != '\n' && *newline != '\0') {
-			newline++;
-		}
-		StringLength entry_len = (StringLength)(newline - ptr);
+	FunTsvState tsv;
+	fun_tsv_init(&tsv, listing);
+	FunTsvRow row;
 
-		if (entry_len == 0 || (entry_len == 1 && ptr[0] == '.') ||
-			(entry_len == 2 && ptr[0] == '.' && ptr[1] == '.')) {
-			if (*newline == '\n') {
-				ptr = newline + 1;
-				continue;
-			}
-			break;
-		}
+	while (fun_tsv_next(&tsv, &row).value) {
+		if (row.count < 2)
+			continue;
 
-		char entry_name[256];
-		voidResult sub = fun_string_substring(listing, (size_t)(ptr - listing),
-											  entry_len, entry_name,
-											  sizeof(entry_name));
-		if (fun_error_is_error(sub.error)) {
-			if (*newline == '\n') {
-				ptr = newline + 1;
-				continue;
-			}
-			break;
-		}
+		const char *type = row.fields[0]; /* "D" or "F" */
+		const char *entry_name = row.fields[1];
+
+		/* Only process directory entries */
+		if (type[0] != 'D')
+			continue;
+
+		StringLength entry_len = fun_string_length(entry_name);
 
 		char test_path[520];
 		StringLength tests_len = fun_string_length(tests_dir);
-		if (tests_len + 1 + entry_len >= sizeof(test_path)) {
-			if (*newline == '\n') {
-				ptr = newline + 1;
-				continue;
-			}
-			break;
-		}
+		if (tests_len + 1 + entry_len >= sizeof(test_path))
+			continue;
 		fun_string_copy(tests_dir, test_path, sizeof(test_path));
 		test_path[tests_len] = '/';
 		fun_string_copy(entry_name, test_path + tests_len + 1,
-						sizeof(test_path) - tests_len - 1);
+				sizeof(test_path) - tests_len - 1);
 		test_path[tests_len + 1 + entry_len] = '\0';
 
-		if (!test_has_test_file(test_path)) {
-			if (*newline == '\n') {
-				ptr = newline + 1;
-				continue;
-			}
-			break;
-		}
+		if (!test_has_test_file(test_path))
+			continue;
 
 		TestModule module;
 		MemoryResult name_mem = fun_memory_allocate(entry_len + 1);
-		if (fun_error_is_error(name_mem.error)) {
-			if (*newline == '\n') {
-				ptr = newline + 1;
-				continue;
-			}
-			break;
-		}
+		if (fun_error_is_error(name_mem.error))
+			continue;
 		fun_string_copy(entry_name, name_mem.value, entry_len + 1);
 		module.name = name_mem.value;
 
@@ -132,11 +106,7 @@ TestDiscoveryResult test_discover(String tests_dir)
 		MemoryResult path_mem = fun_memory_allocate(path_len + 1);
 		if (fun_error_is_error(path_mem.error)) {
 			fun_memory_free(&name_mem.value);
-			if (*newline == '\n') {
-				ptr = newline + 1;
-				continue;
-			}
-			break;
+			continue;
 		}
 		fun_string_copy(test_path, path_mem.value, path_len + 1);
 		module.path = path_mem.value;
@@ -145,11 +115,7 @@ TestDiscoveryResult test_discover(String tests_dir)
 		if (fun_error_is_error(file_mem.error)) {
 			fun_memory_free(&name_mem.value);
 			fun_memory_free(&path_mem.value);
-			if (*newline == '\n') {
-				ptr = newline + 1;
-				continue;
-			}
-			break;
+			continue;
 		}
 		fun_string_copy(test_path, file_mem.value, path_len + 8);
 		char *file_ptr = (char *)file_mem.value;
@@ -163,16 +129,6 @@ TestDiscoveryResult test_discover(String tests_dir)
 			fun_memory_free(&name_mem.value);
 			fun_memory_free(&path_mem.value);
 			fun_memory_free(&file_mem.value);
-			if (*newline == '\n') {
-				ptr = newline + 1;
-				continue;
-			}
-			break;
-		}
-		if (*newline == '\n') {
-			ptr = newline + 1;
-		} else {
-			break;
 		}
 	}
 

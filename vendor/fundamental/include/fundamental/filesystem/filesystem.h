@@ -54,13 +54,21 @@ ErrorResult fun_filesystem_remove_directory(Path path);
 
 /**
  * List directory contents into caller-allocated buffer
- * 
+ *
+ * Output format: TSV rows, one entry per line.
+ * Each row has two tab-separated fields followed by a newline:
+ *   "D\tname\n"  -- directory entry
+ *   "F\tname\n"  -- file (or other non-directory) entry
+ *
+ * Parse with fun_tsv_init / fun_tsv_next:
+ *   row.fields[0] == "D" or "F"
+ *   row.fields[1] == entry name
+ *
  * @param path REQUIRED - Directory path to list
- * @param output REQUIRED - Pre-allocated buffer to fill with entry names
- *                         Entries separated by newlines
- * 
+ * @param output REQUIRED - Pre-allocated buffer to fill with TSV rows
+ *
  * @return ErrorResult with operation status
- * 
+ *
  * Example:
  * Path path;
  * const char *components[] = {"tmp"};
@@ -320,5 +328,54 @@ boolResult fun_path_exists(Path path);
  * }
  */
 ErrorResult fun_filesystem_get_working_directory(OutputString output);
+
+// ------------------------------------------------------------------
+// Directory Walk
+// ------------------------------------------------------------------
+
+#define FUN_WALK_MAX_DEPTH 16
+#define FUN_WALK_PATH_SIZE 512
+#define FUN_WALK_MAX_COMPONENTS 32
+#define FUN_DIR_HANDLE_SIZE 640
+#define FUN_WALK_MEMORY_SIZE 40960 // 40KB -- fixed, covers all internal state
+
+// Single entry yielded per walk_next call.
+// path.components and name point into walk work memory.
+// Valid only until the next walk_next call -- copy what you need to keep.
+typedef struct {
+	Path path;
+	String name;
+	bool is_directory;
+	int depth; // 0 = direct children of root
+} FileEntry;
+
+// Walker state -- stack-allocatable (~24 bytes).
+// All bulk buffers live in caller-provided work memory.
+typedef struct {
+	void *_mem;
+	int _top;
+	bool _has_pend;
+} FunWalkState;
+
+// Returns required work memory size (== FUN_WALK_MEMORY_SIZE).
+size_t fun_filesystem_walk_memory_size(void);
+
+// Initialise a walk. work_mem must be >= fun_filesystem_walk_memory_size()
+// bytes. Opens the root directory handle immediately; call
+// fun_filesystem_walk_close if the walk is abandoned early to release open
+// handles.
+ErrorResult fun_filesystem_walk_init(FunWalkState *state, Memory work_mem,
+									 Path root);
+
+// Advance to next entry. skip_children applies to the previously yielded
+// entry: if true and that entry was a directory, skip descent.
+// Returns value=true with entry populated, value=false when walk is complete
+// (all handles are closed on natural completion).
+boolResult fun_filesystem_walk_next(FunWalkState *state, FileEntry *entry,
+									bool skip_children);
+
+// Close any remaining open directory handles. Call when abandoning a walk
+// early. Safe to call after natural completion (no-op).
+void fun_filesystem_walk_close(FunWalkState *state);
 
 #endif // LIBRARY_FILESYSTEM_H
