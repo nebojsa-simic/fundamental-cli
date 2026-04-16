@@ -425,7 +425,9 @@ static int test_full_pipeline_on_sources(void)
 
 /* ─── Main ───────────────────────────────────────────────────────── */
 
-int main(void)
+/* ─── main ───────────────────────────────────────────────────────── */
+
+int cli_main(void)
 {
 	int failed = 0;
 

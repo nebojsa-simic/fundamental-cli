@@ -9,10 +9,12 @@ echo Building lexer tests...
 
 gcc ^
     --std=c17 -Os ^
-    -fno-exceptions -fno-unwind-tables ^
-    -mno-stack-arg-probe -mconsole ^
+    -nostdlib -fno-builtin -fno-exceptions -fno-unwind-tables ^
+    -mno-stack-arg-probe -e main -mconsole ^
     -I %SRC% ^
     -I %VENDOR%\include ^
+    %VENDOR%\src\startup\startup.c ^
+    %VENDOR%\arch\startup\windows-amd64\windows.c ^
     test.c ^
     %SRC%\tokenizer\tokenizer.c ^
     %SRC%\tokenizer\lexer.c ^

@@ -714,7 +714,7 @@ static int test_real_source_files(void)
 
 /* ─── main ───────────────────────────────────────────────────────── */
 
-int main(void)
+int cli_main(void)
 {
 	int failed = 0;
 

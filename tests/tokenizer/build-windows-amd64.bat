@@ -8,10 +8,12 @@ set SRC=..\..\src
 
 gcc ^
     --std=c17 -Os ^
-    -fno-exceptions -fno-unwind-tables ^
-    -mno-stack-arg-probe -mconsole ^
+    -nostdlib -fno-builtin -fno-exceptions -fno-unwind-tables ^
+    -mno-stack-arg-probe -e main -mconsole ^
     -I %SRC% ^
     -I %VENDOR%\include ^
+    %VENDOR%\src\startup\startup.c ^
+    %VENDOR%\arch\startup\windows-amd64\windows.c ^
     test_tokenizer.c ^
     %SRC%\tokenizer\tokenizer.c ^
     %VENDOR%\src\array\array.c ^
