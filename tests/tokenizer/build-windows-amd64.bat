@@ -8,6 +8,8 @@ set SRC=..\..\src
 
 gcc ^
     --std=c17 -Os ^
+    -fno-exceptions -fno-unwind-tables ^
+    -mno-stack-arg-probe -mconsole ^
     -I %SRC% ^
     -I %VENDOR%\include ^
     test_tokenizer.c ^
