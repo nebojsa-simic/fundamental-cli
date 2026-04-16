@@ -72,6 +72,9 @@ int test_build_module(TestModule *module, int verbose)
 	if (verbose) {
 		fun_console_write("Building test: ");
 		fun_console_write_line(module->name);
+	} else {
+		fun_console_write("Building ");
+		fun_console_write_line(module->name);
 	}
 
 	char build_script[520];
@@ -132,6 +135,9 @@ int test_execute_module(TestModule *module, int verbose)
 {
 	if (verbose) {
 		fun_console_write("Running test: ");
+		fun_console_write_line(module->name);
+	} else {
+		fun_console_write("Running ");
 		fun_console_write_line(module->name);
 	}
 

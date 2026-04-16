@@ -56,6 +56,9 @@ int cmd_test_execute(int argc, const char **argv)
 	}
 
 	// Discover tests
+	if (!verbose) {
+		fun_console_write_line("Discovering tests...");
+	}
 	TestDiscoveryResult discover_result = test_discover((String) "./tests");
 
 	if (discover_result.status == TEST_DISCOVERY_ERROR) {
