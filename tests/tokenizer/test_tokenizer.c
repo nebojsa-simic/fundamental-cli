@@ -539,7 +539,7 @@ int main(void)
 	test_grammar_patterns();
 	test_c_fragments();
 	test_serialize_deserialize();
-	test_real_source_file();
+	test_real_source_files();
 	printf("All tests passed!\n");
 	return 0;
 }

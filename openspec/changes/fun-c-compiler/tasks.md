@@ -22,21 +22,21 @@
 
 ## Phase 1b: Lexer (Pass 2 — C-specific classification)
 
-- [ ] 1b.1 Define LexTokenType enum (all C keywords, LEX_IDENTIFIER, literal types, operators, punctuation)
-- [ ] 1b.2 Define LexToken struct (type, offset, length, line, col, value)
-- [ ] 1b.3 Implement keyword lookup table (RAW_WORD text → LexTokenType keyword or LEX_IDENTIFIER)
-- [ ] 1b.4 Implement integer literal parsing (decimal, hex, octal string → uint64_t value)
-- [ ] 1b.5 Implement float literal parsing (string → double value, stored as uint64_t bits)
-- [ ] 1b.6 Implement character literal resolution (escape sequences → byte value)
-- [ ] 1b.7 Implement string literal resolution (escape sequences → resolved bytes, store in string table)
-- [ ] 1b.8 Implement operator/symbol mapping (RAW_* → LEX_* with semantic names)
-- [ ] 1b.9 Implement lexer driver: iterate Array<RawToken>, classify each, produce Array<LexToken>
-- [ ] 1b.10 Implement .lex serialization (write Array<LexToken> + string table to binary file)
-- [ ] 1b.11 Implement .lex deserialization (read binary file to Array<LexToken> + string table)
-- [ ] 1b.12 Write lexer tests: verify keyword classification for all C keywords
-- [ ] 1b.13 Write lexer tests: verify numeric literal parsing (dec, hex, oct, float)
-- [ ] 1b.14 Write lexer tests: verify escape sequence resolution (\n, \t, \0, \\, \', \", \x41)
-- [ ] 1b.15 Write lexer tests: full pipeline (source → tokenize → lex) on fundamental-cli files
+- [x] 1b.1 Define LexTokenType enum (all C keywords, LEX_IDENTIFIER, literal types, operators, punctuation)
+- [x] 1b.2 Define LexToken struct (type, offset, length, line, col, value)
+- [x] 1b.3 Implement keyword lookup table (RAW_WORD text → LexTokenType keyword or LEX_IDENTIFIER)
+- [x] 1b.4 Implement integer literal parsing (decimal, hex, octal string → uint64_t value)
+- [x] 1b.5 Implement float literal parsing (string → double value, stored as uint64_t bits)
+- [x] 1b.6 Implement character literal resolution (escape sequences → byte value)
+- [x] 1b.7 Implement string literal resolution (escape sequences → resolved bytes, store in string table)
+- [x] 1b.8 Implement operator/symbol mapping (RAW_* → LEX_* with semantic names)
+- [x] 1b.9 Implement lexer driver: iterate Array<RawToken>, classify each, produce Array<LexToken>
+- [x] 1b.10 Implement .lex serialization (write Array<LexToken> + string table to binary file)
+- [x] 1b.11 Implement .lex deserialization (read binary file to Array<LexToken> + string table)
+- [x] 1b.12 Write lexer tests: verify keyword classification for all C keywords
+- [x] 1b.13 Write lexer tests: verify numeric literal parsing (dec, hex, oct, float)
+- [x] 1b.14 Write lexer tests: verify escape sequence resolution (\n, \t, \0, \\, \', \", \x41)
+- [x] 1b.15 Write lexer tests: full pipeline (source → tokenize → lex) on fundamental-cli files
 
 ## Phase 2: Parser — Expressions
 

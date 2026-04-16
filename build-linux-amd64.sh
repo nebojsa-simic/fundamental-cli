@@ -40,6 +40,8 @@ gcc \
     src/test/module_map.c \
     src/test/runner.c \
     src/test/reporter.c \
+    src/tokenizer/tokenizer.c \
+    src/tokenizer/lexer.c \
     vendor/fundamental/src/platform/platform.c \
     vendor/fundamental/arch/platform/linux-amd64/platform.c \
     vendor/fundamental/src/async/async.c \
