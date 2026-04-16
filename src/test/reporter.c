@@ -32,7 +32,7 @@ void test_report_single(TestResult *test_result)
 			  .value = { .intValue = test_result->exit_code } },
 		};
 		fun_string_template(
-			(String) "\x1b[31m✗\x1b[0m {name} (exit code: {code})", p, 2, msg,
+			(String) "\x1b[31m✗\x1b[0m ${name} (exit code: #{code})", p, 2, msg,
 			sizeof(msg));
 		fun_console_write_line(msg);
 	}
@@ -48,7 +48,7 @@ void test_report_summary(int passed, int failed, int total)
 
 	if (passed > 0) {
 		p[0].value.intValue = passed;
-		fun_string_template((String) "\x1b[32m{n} passed\x1b[0m", p, 1, buf,
+		fun_string_template((String) "\x1b[32m#{n} passed\x1b[0m", p, 1, buf,
 							sizeof(buf));
 		fun_console_write(buf);
 	}
@@ -59,12 +59,12 @@ void test_report_summary(int passed, int failed, int total)
 
 	if (failed > 0) {
 		p[0].value.intValue = failed;
-		fun_string_template((String) "\x1b[31m{n} failed\x1b[0m", p, 1, buf,
+		fun_string_template((String) "\x1b[31m#{n} failed\x1b[0m", p, 1, buf,
 							sizeof(buf));
 		fun_console_write(buf);
 	}
 
 	p[0].value.intValue = total;
-	fun_string_template((String) " / {n} total", p, 1, buf, sizeof(buf));
+	fun_string_template((String) " / #{n} total", p, 1, buf, sizeof(buf));
 	fun_console_write_line(buf);
 }

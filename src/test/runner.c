@@ -120,7 +120,7 @@ int test_build_module(TestModule *module, int verbose)
 		char msg[64];
 		StringTemplateParam p[] = { { .key = (String) "code",
 									  .value = { .intValue = exit_code } } };
-		fun_string_template((String) "Build failed with exit code: {code}", p,
+		fun_string_template((String) "Build failed with exit code: #{code}", p,
 							1, msg, sizeof(msg));
 		fun_console_write_line(msg);
 	}

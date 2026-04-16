@@ -81,8 +81,8 @@ int cmd_test_execute(int argc, const char **argv)
 			  .value = { .intValue = (int64_t)fun_array_TestModule_size(
 							 &discover_result.modules) } },
 		};
-		fun_string_template((String) "DEBUG: Found {n} test modules", p, 1, msg,
-							sizeof(msg));
+		fun_string_template((String) "DEBUG: Found #{n} test modules", p, 1,
+							msg, sizeof(msg));
 		fun_console_write_line(msg);
 	}
 
