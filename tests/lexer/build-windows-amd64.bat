@@ -27,6 +27,17 @@ gcc ^
     %VENDOR%\src\string\stringOperations.c ^
     %VENDOR%\src\string\stringConversion.c ^
     %VENDOR%\src\string\stringTemplate.c ^
+    %VENDOR%\src\console\console.c ^
+    %VENDOR%\arch\console\windows-amd64\console.c ^
+    %VENDOR%\src\filesystem\path.c ^
+    %VENDOR%\src\filesystem\file_exists.c ^
+    %VENDOR%\src\filesystem\file_size.c ^
+    %VENDOR%\arch\filesystem\windows-amd64\path.c ^
+    %VENDOR%\arch\filesystem\windows-amd64\file_exists.c ^
+    %VENDOR%\arch\filesystem\windows-amd64\file_size.c ^
+    %VENDOR%\arch\filesystem\windows-amd64\directory.c ^
+    %VENDOR%\src\platform\platform.c ^
+    %VENDOR%\arch\platform\windows-amd64\platform.c ^
     -lkernel32 ^
     -o test.exe
 
