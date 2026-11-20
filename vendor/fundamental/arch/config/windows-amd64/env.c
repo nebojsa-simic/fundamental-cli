@@ -2,6 +2,7 @@
  * Windows AMD64 platform implementation for config module.
  *
  * Provides:
+ *   fun_arch_set_envp           - Set mock environment pointer for tests
  *   fun_platform_env_lookup     - Read env var using GetEnvironmentVariableA()
  *   fun_platform_get_executable_dir - Get directory of running executable
  *   fun_platform_read_text_file - Read a text file of unknown size
@@ -12,8 +13,25 @@
 #include <stddef.h>
 #include <stdint.h>
 
+/* Saved environment from startup - NULL by default for tests */
+static const char **fun_arch_envp_local = NULL;
+
+/* Getter/setter for environment pointer - used by tests to inject mock env */
+const char **fun_arch_get_envp(void)
+{
+	return fun_arch_envp_local;
+}
+
+void fun_arch_set_envp(const char **envp)
+{
+	fun_arch_envp_local = envp;
+}
+
 /*
  * Look up an environment variable by its fully-transformed name.
+ *
+ * Checks fun_arch_envp_local first (for tests), then falls back to
+ * GetEnvironmentVariableA().
  *
  * @param env_var_name  Null-terminated env var name (e.g., "MYAPP_DATABASE_HOST")
  * @param out_buf       Buffer to receive the value
@@ -26,6 +44,35 @@ int fun_platform_env_lookup(const char *env_var_name, char *out_buf,
 	if (!env_var_name || !out_buf || buf_size == 0)
 		return -1;
 
+	/* Check mock environment first (for tests) */
+	const char **envp = fun_arch_get_envp();
+	if (envp) {
+		size_t name_len = 0;
+		while (env_var_name[name_len])
+			name_len++;
+
+		for (int i = 0; envp[i] != NULL; i++) {
+			const char *e = envp[i];
+			size_t j;
+			for (j = 0; j < name_len; j++) {
+				if (e[j] != env_var_name[j])
+					break;
+			}
+			if (j == name_len && e[j] == '=') {
+				const char *val = e + j + 1;
+				size_t k = 0;
+				while (val[k] && k < buf_size - 1) {
+					out_buf[k] = val[k];
+					k++;
+				}
+				out_buf[k] = '\0';
+				return 0;
+			}
+		}
+		return -1;
+	}
+
+	/* No mock environment - use real Windows environment */
 	DWORD result =
 		GetEnvironmentVariableA(env_var_name, out_buf, (DWORD)buf_size);
 	if (result == 0 || result >= (DWORD)buf_size)

@@ -1,15 +1,13 @@
 #include "fundamental/memory/memory.h"
 
 extern int cli_main(int argc, const char **argv);
-
-/* Saved environment pointer — used by process spawning */
-const char **fun_arch_envp;
+extern void fun_arch_set_envp(const char **envp);
 
 int _start_c(long *sp)
 {
 	int argc = (int)*sp;
 	const char **argv = (const char **)(sp + 1);
-	fun_arch_envp = argv + argc + 1;
+	fun_arch_set_envp(argv + argc + 1);
 	return cli_main(argc, argv);
 }
 

@@ -242,10 +242,10 @@ boolResult fun_filesystem_walk_next(FunWalkState *state, FileEntry *entry,
 			continue;
 		}
 
-		/* Build child path */
+		/* Build child path. Skip if child path exceeds FUN_WALK_PATH_SIZE */
 		if (walk_build_child_path(frame->path_raw, name_buf, mem->entry_path,
 								  FUN_WALK_PATH_SIZE) != 0)
-			continue; /* Path too long, skip */
+			continue;
 
 		/* Parse child path into components */
 		walk_str_copy(mem->entry_path, mem->entry_path_tok, FUN_WALK_PATH_SIZE);

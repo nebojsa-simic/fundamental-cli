@@ -2,41 +2,19 @@
 #include "fundamental/memory/memory.h"
 #include "fundamental/error/error.h"
 #include "fundamental/async/async.h"
+#include "syscall_nums.h"
 
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
 
-#include <stddef.h>
-
-#define SYS_read 0
-#define SYS_write 1
-#define SYS_open 2
-#define SYS_close 3
-#define SYS_poll 7
-#define SYS_mmap 9
-#define SYS_munmap 11
-#define SYS_fcntl 72
-#define SYS_inotify_init 253
-#define SYS_inotify_add_watch 254
-#define SYS_inotify_rm_watch 255
-
-#define O_RDONLY 0
-
-#define IN_ACCESS 0x00000001
-#define IN_MODIFY 0x00000002
-#define IN_CREATE 0x00000100
-#define IN_DELETE 0x00000200
-#define IN_MOVED_FROM 0x00000040
-#define IN_MOVED_TO 0x00000080
-
-#define POLLIN 0x001
-
 typedef struct {
 	String file_path;
 	FileChangeCallback callback;
 	int inotify_fd;
+	bool inotify_fd_valid;
 	int watch_fd;
+	bool watch_fd_valid;
 	bool monitoring_active;
 } FileNotificationState;
 
@@ -150,6 +128,8 @@ AsyncResult fun_register_file_change_notification(String filePath,
 	FileNotificationState *state = (FileNotificationState *)stateResult.value;
 	state->file_path = filePath;
 	state->callback = callback;
+	state->inotify_fd_valid = false;
+	state->watch_fd_valid = false;
 	state->monitoring_active = true;
 
 	int inotify_fd = (int)syscall1(SYS_inotify_init, 0);
@@ -160,6 +140,7 @@ AsyncResult fun_register_file_change_notification(String filePath,
 								  -inotify_fd, "Failed to init inotify") };
 	}
 	state->inotify_fd = inotify_fd;
+	state->inotify_fd_valid = true;
 
 	char dir_path[512];
 	get_parent_dir(filePath, dir_path);
@@ -176,18 +157,33 @@ AsyncResult fun_register_file_change_notification(String filePath,
 								  -watch_fd, "Failed to add inotify watch") };
 	}
 	state->watch_fd = watch_fd;
+	state->watch_fd_valid = true;
 
 	return (AsyncResult){ .state = state,
 						  .status = ASYNC_PENDING,
 						  .error = ERROR_RESULT_NO_ERROR };
 }
 
-AsyncResult fun_unregister_file_change_notification(String filePath)
+AsyncResult fun_unregister_file_change_notification(void *state)
 {
-	if (!filePath) {
+	if (!state) {
 		return (AsyncResult){ .status = ASYNC_ERROR,
 							  .error = ERROR_RESULT_NULL_POINTER };
 	}
+
+	FileNotificationState *s = (FileNotificationState *)state;
+
+	if (s->watch_fd_valid) {
+		syscall2(SYS_inotify_rm_watch, s->inotify_fd, s->watch_fd);
+		s->watch_fd_valid = false;
+	}
+
+	if (s->inotify_fd_valid) {
+		syscall1(SYS_close, s->inotify_fd);
+		s->inotify_fd_valid = false;
+	}
+
+	fun_memory_free((Memory *)&state);
 
 	return (AsyncResult){ .status = ASYNC_COMPLETED,
 						  .error = ERROR_RESULT_NO_ERROR };

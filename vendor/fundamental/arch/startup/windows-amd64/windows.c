@@ -17,8 +17,8 @@ __declspec(dllimport) void __stdcall ExitProcess(UINT uExitCode);
 static int g_argc = 0;
 static char *g_argv[64];
 
-// Entry point - called by linker
-void main(void)
+// Entry point - called by the OS
+void mainCRTStartup(void)
 {
 	// Get command line
 	char *cmdline = GetCommandLineA();

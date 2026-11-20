@@ -1,8 +1,26 @@
 #include <stddef.h>
 #include <stdint.h>
 
-/* Saved environment from startup */
-extern const char **fun_arch_envp;
+/* Saved environment from startup - NULL by default for tests */
+static const char **fun_arch_envp_local = NULL;
+
+/* Getter/setter for environment pointer */
+const char **fun_arch_get_envp(void)
+{
+	return fun_arch_envp_local;
+}
+
+void fun_arch_set_envp(const char **envp)
+{
+	fun_arch_envp_local = envp;
+}
+
+/* Forward declaration */
+int fun_platform_read_text_file(const char *path, char *buffer, size_t max_size,
+								size_t *out_bytes_read);
+
+/* __environ is set by libc and updated by setenv() - weak reference */
+extern char **__environ __attribute__((weak));
 
 /* ---- Syscall numbers ---- */
 #define SYS_read 0
@@ -46,21 +64,18 @@ static inline long syscall3(long n, long a1, long a2, long a3)
 /*
  * Look up an environment variable by name.
  * Searches fun_arch_envp directly — no getenv().
+ * Falls back to /proc/self/environ if fun_arch_envp is NULL.
  */
-int fun_platform_env_lookup(const char *env_var_name, char *out_buf,
-							size_t buf_size)
+static int lookup_in_env_buffer(const char *env_var_name, const char *env_buf,
+								size_t env_size, char *out_buf, size_t buf_size)
 {
-	if (!env_var_name || !out_buf || buf_size == 0)
-		return -1;
-	if (!fun_arch_envp)
-		return -1;
-
 	size_t name_len = 0;
 	while (env_var_name[name_len])
 		name_len++;
 
-	for (int i = 0; fun_arch_envp[i] != NULL; i++) {
-		const char *e = fun_arch_envp[i];
+	size_t i = 0;
+	while (i < env_size) {
+		const char *e = env_buf + i;
 		size_t j;
 		for (j = 0; j < name_len; j++) {
 			if (e[j] != env_var_name[j])
@@ -76,8 +91,56 @@ int fun_platform_env_lookup(const char *env_var_name, char *out_buf,
 			out_buf[k] = '\0';
 			return 0;
 		}
+		while (i < env_size && env_buf[i] != '\0')
+			i++;
+		i++;
 	}
 	return -1;
+}
+
+int fun_platform_env_lookup(const char *env_var_name, char *out_buf,
+							size_t buf_size)
+{
+	const char **envp = fun_arch_get_envp();
+
+	if (!env_var_name || !out_buf || buf_size == 0)
+		return -1;
+
+	if (envp) {
+		size_t name_len = 0;
+		while (env_var_name[name_len])
+			name_len++;
+
+		for (int i = 0; envp[i] != NULL; i++) {
+			const char *e = envp[i];
+			size_t j;
+			for (j = 0; j < name_len; j++) {
+				if (e[j] != env_var_name[j])
+					break;
+			}
+			if (j == name_len && e[j] == '=') {
+				const char *val = e + j + 1;
+				size_t k = 0;
+				while (val[k] && k < buf_size - 1) {
+					out_buf[k] = val[k];
+					k++;
+				}
+				out_buf[k] = '\0';
+				return 0;
+			}
+		}
+		return -1;
+	}
+
+	char env_buf[65536];
+	size_t bytes_read = 0;
+	int ret = fun_platform_read_text_file("/proc/self/environ", env_buf,
+										  sizeof(env_buf), &bytes_read);
+	if (ret != 0)
+		return -1;
+
+	return lookup_in_env_buffer(env_var_name, env_buf, bytes_read, out_buf,
+								buf_size);
 }
 
 /*

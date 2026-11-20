@@ -119,7 +119,7 @@ CanReturnError(void) fun_string_slice(String source, int64_t start, int64_t end,
 
 // templating
 CanReturnError(void)
-	fun_string_template(String template, StringTemplateParam *params,
+	fun_string_template(String template_str, StringTemplateParam *params,
 						size_t paramCount, OutputString output,
 						size_t output_size);
 

@@ -13,6 +13,10 @@
 #include "fundamental/network/network.h"
 #include "fundamental/memory/memory.h"
 #include "fundamental/string/string.h"
+#include "fundamental/config/config.h"
+
+/* Global config reference for network init */
+extern Config fun_config_get_global(void);
 
 /* ------------------------------------------------------------------
  * Arch-layer declarations (implemented per platform in arch/network/)
@@ -421,6 +425,29 @@ static struct TcpNetworkConnection_s conn_pool[NETWORK_POOL_SIZE];
 static int pool_ready = 0;
 static size_t g_rx_buf_size = NETWORK_RX_BUF_DEFAULT;
 
+/* Forward declaration */
+static void pool_init(void);
+
+/*
+ * Network initialization (Phase 6)
+ * Initializes connection pool and reads rx_buf_size from config.
+ */
+int fun_network_init(void)
+{
+	/* Read rx_buf_size from [network] config section */
+	Config global_config = fun_config_get_global();
+	int64_tResult rx_size_result = fun_config_get_int_or_default(
+		&global_config, "network.rx_buf_size", NETWORK_RX_BUF_DEFAULT);
+
+	if (fun_error_is_ok(rx_size_result.error)) {
+		g_rx_buf_size = (size_t)rx_size_result.value;
+	}
+
+	/* Initialize connection pool */
+	pool_init();
+	return 0;
+}
+
 static void pool_init(void)
 {
 	if (pool_ready)
@@ -757,6 +784,29 @@ voidResult fun_network_tcp_close(TcpNetworkConnection conn)
 	}
 	pool_release(conn);
 	return result;
+}
+
+TcpNetworkConnection fun_network_tcp_register_connection(intptr_t accepted_fd)
+{
+	struct TcpNetworkConnection_s *conn = pool_acquire();
+	if (!conn)
+		return (TcpNetworkConnection)0;
+
+	conn->fd = accepted_fd;
+
+	MemoryResult mr = fun_memory_allocate(g_rx_buf_size);
+	if (fun_error_is_error(mr.error)) {
+		pool_release(conn);
+		return (TcpNetworkConnection)0;
+	}
+
+	conn->rx_buf = mr.value;
+	conn->rx_cap = g_rx_buf_size;
+	conn->rx_head = 0;
+	conn->rx_len = 0;
+	conn->op_type = CONN_OP_NONE;
+
+	return (TcpNetworkConnection)conn;
 }
 
 AsyncResult fun_network_udp_send(NetworkAddress addr, const void *data,

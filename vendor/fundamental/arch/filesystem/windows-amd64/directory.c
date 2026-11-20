@@ -116,7 +116,7 @@ static bool directory_is_empty_wide(const wchar_t *path_wide)
 
 	HANDLE hFind = FindFirstFileW(search_path, &find_data);
 	if (hFind == INVALID_HANDLE_VALUE) {
-		return true; // Can't read directory, treat as empty
+		return 0;
 	}
 
 	bool empty = true;

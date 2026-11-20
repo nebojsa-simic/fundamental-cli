@@ -115,7 +115,6 @@ static const char *T_README =
 	"Windows\n```batch\n.\\build-windows-amd64.bat\n```\n\n### "
 	"Linux\n```bash\n./build-linux-amd64.sh\n```\n\n## Usage\n```bash\n./build/app-windows-amd64.exe "
 	"--help\n./build/app-linux-amd64 --help\n```\n\n## License\nSame as fundamental library.\n";
-static const char *T_ARCH = "void __main(void) {}\n";
 static const char *T_SKILL =
 	"---\nname: fundamental-expert\ndescription: Expert guide for building "
 	"applications with Fundamental Library\n---\n\n# Fundamental Library "
@@ -163,8 +162,9 @@ int cmd_init_execute(int argc, const char **argv)
 	mkdir_str("src");
 	mkdir_str("src/commands");
 	mkdir_str(".opencode/skills/fundamental-expert");
-	mkdir_str("arch/startup/windows-amd64");
-	mkdir_str("arch/startup/linux-amd64");
+	mkdir_str("arch");
+	mkdir_str("arch/build/windows-amd64");
+	mkdir_str("arch/build/linux-amd64");
 	fun_console_write_line("✓ Created directories\n");
 
 	fun_console_write_line("Writing source files...\n");
@@ -186,11 +186,6 @@ int cmd_init_execute(int argc, const char **argv)
 	write_file("fun.ini", T_INI);
 	write_file("README.md", T_README);
 	fun_console_write_line("✓ Created configuration\n");
-
-	fun_console_write_line("Writing arch files...\n");
-	write_file("arch/startup/windows-amd64/windows.c", T_ARCH);
-	write_file("arch/startup/linux-amd64/linux.c", T_ARCH);
-	fun_console_write_line("✓ Created arch files\n");
 
 	fun_console_write_line("Writing fundamental-expert skill...\n");
 	write_file(".opencode/skills/fundamental-expert/SKILL.md", T_SKILL);

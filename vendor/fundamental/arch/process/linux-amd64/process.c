@@ -37,7 +37,7 @@
 #define ESRCH 3
 
 /* ---- Saved environment from startup ---- */
-extern const char **fun_arch_envp;
+extern const char **fun_arch_get_envp(void);
 
 /* ---- Syscall helpers ---- */
 static inline long syscall1(long n, long a1)
@@ -142,9 +142,10 @@ static int find_executable(const char *name, char *out, size_t out_size)
 
 	/* Search PATH */
 	const char *path_val = NULL;
-	if (fun_arch_envp != NULL) {
-		for (int i = 0; fun_arch_envp[i] != NULL; i++) {
-			const char *e = fun_arch_envp[i];
+	const char **envp = fun_arch_get_envp();
+	if (envp != NULL) {
+		for (int i = 0; envp[i] != NULL; i++) {
+			const char *e = envp[i];
 			if (e[0] == 'P' && e[1] == 'A' && e[2] == 'T' && e[3] == 'H' &&
 				e[4] == '=') {
 				path_val = e + 5;
@@ -314,7 +315,9 @@ AsyncResult fun_process_arch_spawn(const char *executable, const char **args,
 		syscall1(SYS_close, (long)stderr_pipe[1]);
 
 		const char *empty_env[] = { NULL };
-		const char **envp = fun_arch_envp ? fun_arch_envp : empty_env;
+		const char **envp = fun_arch_get_envp();
+		if (!envp)
+			envp = empty_env;
 
 		if (args != NULL) {
 			syscall3(SYS_execve, (long)exec_path, (long)args, (long)envp);

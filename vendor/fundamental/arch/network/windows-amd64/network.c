@@ -15,7 +15,6 @@
 #include "fundamental/network/network.h"
 
 #include <stdint.h>
-#include <string.h>
 
 /* ------------------------------------------------------------------
  * WSAStartup guard — initialise once per process
@@ -35,13 +34,32 @@ static int ensure_wsa(void)
 }
 
 /* ------------------------------------------------------------------
+ * CRT-free byte helpers
+ * ------------------------------------------------------------------ */
+
+static void zero_bytes(void *p, size_t n)
+{
+	unsigned char *b = (unsigned char *)p;
+	for (size_t i = 0; i < n; i++)
+		b[i] = 0;
+}
+
+static void copy_bytes(void *dst, const void *src, size_t n)
+{
+	unsigned char *d = (unsigned char *)dst;
+	const unsigned char *s = (const unsigned char *)src;
+	for (size_t i = 0; i < n; i++)
+		d[i] = s[i];
+}
+
+/* ------------------------------------------------------------------
  * Address helpers
  * ------------------------------------------------------------------ */
 
 static int addr_to_sockaddr(NetworkAddress addr, struct sockaddr_storage *out,
 							int *out_len)
 {
-	memset(out, 0, sizeof(*out));
+	zero_bytes(out, sizeof(*out));
 	if (addr.family == NETWORK_ADDRESS_IPV4) {
 		struct sockaddr_in *sa = (struct sockaddr_in *)out;
 		sa->sin_family = AF_INET;
@@ -56,7 +74,7 @@ static int addr_to_sockaddr(NetworkAddress addr, struct sockaddr_storage *out,
 	} else if (addr.family == NETWORK_ADDRESS_IPV6) {
 		struct sockaddr_in6 *sa = (struct sockaddr_in6 *)out;
 		sa->sin6_family = AF_INET6;
-		memcpy(&sa->sin6_addr, addr.bytes, 16);
+		copy_bytes(&sa->sin6_addr, addr.bytes, 16);
 		sa->sin6_port = htons(addr.port);
 		*out_len = sizeof(*sa);
 		return 0;

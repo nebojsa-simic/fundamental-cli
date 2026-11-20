@@ -3,6 +3,12 @@
 
 AsyncResult fun_read_file_in_memory(Read parameters)
 {
+	/* Validate required parameters */
+	if (parameters.file_path == NULL || parameters.output == NULL) {
+		return (AsyncResult){ .status = ASYNC_ERROR,
+							  .error = ERROR_RESULT_NULL_POINTER };
+	}
+
 	FileMode mode = parameters.mode;
 	if (mode == FILE_MODE_AUTO)
 		mode = file_adaptive_choose(parameters.adaptive);

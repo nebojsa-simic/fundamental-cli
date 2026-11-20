@@ -1,24 +1,13 @@
 #include "fileRead.h"
 #include "fileAdaptive.h"
+#include "syscall_nums.h"
+#include "page_size.h"
 
 #include <stdint.h>
 #include <stddef.h>
 
-#include <stddef.h>
-
 typedef unsigned long size_t;
 typedef long off_t;
-
-#define SYS_open 2
-#define SYS_close 3
-#define SYS_fstat 5
-#define SYS_mmap 9
-#define SYS_munmap 11
-
-#define O_RDONLY 0
-
-#define PROT_READ 0x1
-#define MAP_PRIVATE 0x2
 
 struct stat {
 	unsigned long st_dev;
@@ -39,8 +28,6 @@ struct stat {
 	unsigned long st_ctime_nsec;
 	unsigned long __unused[3];
 };
-
-#define PAGE_SIZE 4096
 
 static inline long syscall1(long n, long a1)
 {
@@ -96,7 +83,7 @@ AsyncStatus poll_mmap(AsyncResult *result)
 	uint64_t bytes = state->parameters.bytes_to_read;
 	AsyncStatus final_status = ASYNC_COMPLETED;
 
-	if (state->file_descriptor == 0) {
+	if (!state->fd_valid) {
 		int fd = (int)syscall2(SYS_open, (long)state->parameters.file_path,
 							   O_RDONLY);
 		if (fd < 0) {
@@ -105,10 +92,11 @@ AsyncStatus poll_mmap(AsyncResult *result)
 			goto cleanup;
 		}
 		state->file_descriptor = fd;
+		state->fd_valid = true;
 		return ASYNC_PENDING;
 	}
 
-	if (!state->mapped_address) {
+	if (!state->mmap_valid) {
 		struct stat file_stat;
 		if (syscall2(SYS_fstat, state->file_descriptor, (long)&file_stat) < 0) {
 			result->error = fun_error_result(1, "Failed to get file size");
@@ -116,23 +104,38 @@ AsyncStatus poll_mmap(AsyncResult *result)
 			goto cleanup;
 		}
 
-		uint64_t granularity = PAGE_SIZE;
+		/* off_t is a signed 64-bit type; reject offsets that overflow it. */
+		if (state->parameters.offset > (uint64_t)INT64_MAX) {
+			result->error = ERROR_RESULT_INTEGER_OVERFLOW;
+			final_status = ASYNC_ERROR;
+			goto cleanup;
+		}
+
+		uint64_t granularity = get_page_size();
 		state->adjusted_offset =
 			(state->parameters.offset / granularity) * granularity;
+		uint64_t intra_page_offset =
+			state->parameters.offset - state->adjusted_offset;
+
+		if (state->parameters.bytes_to_read > UINT64_MAX - intra_page_offset) {
+			result->error = ERROR_RESULT_INTEGER_OVERFLOW;
+			final_status = ASYNC_ERROR;
+			goto cleanup;
+		}
 		uint64_t view_size =
-			state->parameters.bytes_to_read +
-			(state->parameters.offset - state->adjusted_offset);
+			state->parameters.bytes_to_read + intra_page_offset;
 
 		void *mapped = sys_mmap(NULL, view_size, PROT_READ, MAP_PRIVATE,
 								state->file_descriptor,
 								(off_t)state->adjusted_offset);
-		if (mapped == (void *)-1) {
+		if ((long)mapped < 0 && (long)mapped >= -4095) {
 			result->error = fun_error_result(1, "Failed to mmap file");
 			final_status = ASYNC_ERROR;
 			goto cleanup;
 		}
 
 		state->mapped_address = mapped;
+		state->mmap_valid = true;
 		return ASYNC_PENDING;
 	}
 
@@ -147,13 +150,13 @@ AsyncStatus poll_mmap(AsyncResult *result)
 
 cleanup:
 	if (state) {
-		if (state->mapped_address && state->mapped_address != (void *)-1) {
+		if (state->mmap_valid) {
 			uint64_t view_size =
 				state->parameters.bytes_to_read +
 				(state->parameters.offset - state->adjusted_offset);
 			sys_munmap(state->mapped_address, view_size);
 		}
-		if (state->file_descriptor >= 0)
+		if (state->fd_valid)
 			syscall1(SYS_close, state->file_descriptor);
 		fun_memory_free((Memory *)&state);
 	}

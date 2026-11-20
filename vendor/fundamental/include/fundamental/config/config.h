@@ -196,4 +196,14 @@ boolResult fun_config_has(Config *config, String key);
  */
 voidResult fun_config_destroy(Config *config);
 
+/*
+ * Get the global config instance.
+ *
+ * Returns a copy of the global Config struct initialized by fun_config_init().
+ * Only valid after fun_config_init() has been called during startup.
+ *
+ * @return Config struct copy
+ */
+Config fun_config_get_global(void);
+
 #endif /* LIBRARY_CONFIG_H */

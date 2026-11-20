@@ -40,12 +40,41 @@ int build_ini_read_name(char *output, size_t output_size)
 }
 
 /* --------------------------------------------------------------------------
- * Real recursive directory scanner
+ * Real recursive directory scanner - filters by platform
  * Uses fun_filesystem_list_directory for actual OS traversal.
  * Discovered .c paths are stored in path_storage[]; sources[] holds pointers.
+ * Only includes files from arch/ that contain the platform string in path.
  * -------------------------------------------------------------------------- */
+static int file_has_foreign_os_suffix(const char *name, String platform_str)
+{
+	static const char *suffixes[] = { "_windows", "_linux", "_darwin" };
+	for (size_t i = 0; i < 3; i++) {
+		StringPosition pos =
+			fun_string_index_of((String)name, (String)suffixes[i], 0);
+		if (pos < 0)
+			continue;
+		/* platform_str is "<os>-<arch>"; match if it starts with the OS name */
+		StringPosition m =
+			fun_string_index_of(platform_str, (String)(suffixes[i] + 1), 0);
+		if (m != 0)
+			return 1;
+	}
+	return 0;
+}
+
+/* Files that the scanner should skip. These are optional modules whose
+ * dependencies live in CPU-feature-variant directories (arch/math/{scalar,
+ * avx2,avx512}) that the platform filter cannot resolve. */
+static int file_is_excluded(const char *name)
+{
+	if (fun_string_compare((String)name, (String) "math_kernels.c") == 0)
+		return 1;
+	return 0;
+}
+
 static void scan_directory_recursive(Path dir_path, SourceScanResult *result,
-									 int depth)
+									 int depth, String platform_str,
+									 int filter_platform)
 {
 	if (depth > 8)
 		return;
@@ -71,8 +100,7 @@ static void scan_directory_recursive(Path dir_path, SourceScanResult *result,
 	fun_tsv_init(&tsv, listing);
 	FunTsvRow row;
 
-	while (fun_tsv_next(&tsv, &row).value &&
-	       result->count < MAX_SOURCE_FILES) {
+	while (fun_tsv_next(&tsv, &row).value && result->count < MAX_SOURCE_FILES) {
 		if (row.count < 2)
 			continue;
 
@@ -83,41 +111,57 @@ static void scan_directory_recursive(Path dir_path, SourceScanResult *result,
 		if (entry[0] == '.')
 			continue;
 
-		StringLength entry_len = fun_string_length(entry);
+		StringLength entry_len = fun_string_length((String)entry);
 
-		/* Build child path using Path join */
-		const char *entry_comp[] = { entry };
-		Path entry_path = { entry_comp, 1, false };
-		const char *child_comps[32];
-		Path child_path = { child_comps, 0, false };
+		if (entry_len == 0)
+			continue;
+
+		/* Build path to child */
+		const char *entry_comps[2] = { entry, NULL };
+		Path entry_path = { entry_comps, 1, false };
+		Path child_path = { (const char *[8]){ 0 }, 0, false };
 		fun_path_join(dir_path, entry_path, &child_path);
 
 		if (type[0] == 'F') {
 			/* .c file? */
 			if (entry_len > 2 && entry[entry_len - 2] == '.' &&
-			    entry[entry_len - 1] == 'c') {
+				entry[entry_len - 1] == 'c') {
 				char full_str[512];
-				ErrorResult ts_err = fun_path_to_string(
-					child_path, full_str, sizeof(full_str));
+				ErrorResult ts_err =
+					fun_path_to_string(child_path, full_str, sizeof(full_str));
 				if (fun_error_is_ok(ts_err)) {
-					StringLength full_len =
-						fun_string_length((String)full_str);
-					if (path_storage_pos + full_len + 1 <=
-					    MAX_PATH_STORAGE) {
-						fun_string_copy(
-							(String)full_str,
-							path_storage + path_storage_pos,
-							MAX_PATH_STORAGE - path_storage_pos);
-						result->sources[result->count] = (String)(
-							path_storage + path_storage_pos);
-						result->count++;
-						path_storage_pos += full_len + 1;
+					StringLength full_len = fun_string_length((String)full_str);
+					if (path_storage_pos + full_len + 1 <= MAX_PATH_STORAGE) {
+						int include = 1;
+						if (file_is_excluded(entry))
+							include = 0;
+						if (include && filter_platform) {
+							StringPosition pos = fun_string_index_of(
+								(String)full_str, platform_str, 0);
+							if (pos < 0)
+								include = 0;
+						}
+						if (include &&
+							file_has_foreign_os_suffix(entry, platform_str)) {
+							include = 0;
+						}
+						if (include) {
+							fun_string_copy((String)full_str,
+											path_storage + path_storage_pos,
+											MAX_PATH_STORAGE -
+												path_storage_pos);
+							result->sources[result->count] =
+								(String)(path_storage + path_storage_pos);
+							result->count++;
+							path_storage_pos += full_len + 1;
+						}
 					}
 				}
 			}
 		} else if (type[0] == 'D') {
 			/* Recurse into subdirectory */
-			scan_directory_recursive(child_path, result, depth + 1);
+			scan_directory_recursive(child_path, result, depth + 1,
+									 platform_str, filter_platform);
 		}
 	}
 
@@ -125,7 +169,8 @@ static void scan_directory_recursive(Path dir_path, SourceScanResult *result,
 }
 
 /* --------------------------------------------------------------------------
- * Public: scan src/ for all .c source files
+ * Public: scan project (src/ + arch/) and vendor (vendor/fundamental/src/ +
+ * arch/) for all .c source files. arch/ trees are platform-filtered.
  * -------------------------------------------------------------------------- */
 SourceScanResult build_scan_sources(void)
 {
@@ -136,9 +181,27 @@ SourceScanResult build_scan_sources(void)
 	/* Reset path storage for this scan */
 	path_storage_pos = 0;
 
+	String platform_str = build_platform_to_string(build_platform_get());
+
+	/* Project src/ directory (no platform filtering) */
 	const char *src_comp[] = { "src" };
 	Path src_path = { src_comp, 1, false };
-	scan_directory_recursive(src_path, &result, 0);
+	scan_directory_recursive(src_path, &result, 0, platform_str, 0);
+
+	/* Project arch/ directory (filter by platform string) */
+	const char *arch_comp[] = { "arch" };
+	Path arch_path = { arch_comp, 1, false };
+	scan_directory_recursive(arch_path, &result, 0, platform_str, 1);
+
+	/* Vendor src/ directory (no platform filtering) */
+	const char *vs_comp[] = { "vendor", "fundamental", "src" };
+	Path vs_path = { vs_comp, 3, false };
+	scan_directory_recursive(vs_path, &result, 0, platform_str, 0);
+
+	/* Vendor arch/ directory (filter by platform string) */
+	const char *va_comp[] = { "vendor", "fundamental", "arch" };
+	Path va_path = { va_comp, 3, false };
+	scan_directory_recursive(va_path, &result, 0, platform_str, 1);
 
 	return result;
 }

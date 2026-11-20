@@ -162,3 +162,26 @@ CanReturnError(void)
 	result.error = ERROR_RESULT_NO_ERROR;
 	return result;
 }
+
+CanReturnError(int32_t)
+	fun_memory_compare(const Memory a, const Memory b, size_t sizeInBytes)
+{
+	int32_tResult result;
+	const unsigned char *pa = (const unsigned char *)a;
+	const unsigned char *pb = (const unsigned char *)b;
+	for (size_t i = 0; i < sizeInBytes; i++) {
+		if (pa[i] < pb[i]) {
+			result.value = -1;
+			result.error = ERROR_RESULT_NO_ERROR;
+			return result;
+		}
+		if (pa[i] > pb[i]) {
+			result.value = 1;
+			result.error = ERROR_RESULT_NO_ERROR;
+			return result;
+		}
+	}
+	result.value = 0;
+	result.error = ERROR_RESULT_NO_ERROR;
+	return result;
+}

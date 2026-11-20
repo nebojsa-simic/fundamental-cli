@@ -21,5 +21,7 @@ CanReturnError(size_t) fun_memory_size(Memory memory);
 CanReturnError(void)
 	fun_memory_copy(const Memory source, const Memory destination,
 					size_t sizeInBytes);
+CanReturnError(int32_t)
+	fun_memory_compare(const Memory a, const Memory b, size_t sizeInBytes);
 
 #endif // LIBRARY_MEMORY_H

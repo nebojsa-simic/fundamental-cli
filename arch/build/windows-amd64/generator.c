@@ -4,7 +4,7 @@
 
 BuildGenerationResult build_generate_for_platform(SourceScanResult scan_result)
 {
-	static char script_buffer[8192];
+	static char script_buffer[16384];
 	static char sources_buffer[MAX_SOURCES_LENGTH];
 	char name[64];
 
@@ -27,59 +27,13 @@ BuildGenerationResult build_generate_for_platform(SourceScanResult scan_result)
 		"\r\n"
 		"REM Compile with GCC\r\n"
 		"gcc --std=c17 -Os -nostdlib -fno-builtin -fno-exceptions"
-		" -fno-unwind-tables -mno-stack-arg-probe -e main -mconsole"
-		" -I . -I include -I src -I vendor/fundamental/include"
-		" vendor/fundamental/src/startup/startup.c"
-		" vendor/fundamental/arch/startup/windows-amd64/windows.c ",
+		" -fno-unwind-tables -mno-stack-arg-probe -e mainCRTStartup -mconsole"
+		" -I . -I include -I src -I vendor/fundamental/include ",
 		buf_end);
 
 	ptr = build_append(ptr, sources_buffer, buf_end);
 
-	ptr = build_append(
-		ptr,
-		"arch/build/windows-amd64/detector.c"
-		" arch/build/windows-amd64/executor.c"
-		" arch/build/windows-amd64/generator.c"
-		" arch/build/windows-amd64/platform.c"
-		" vendor/fundamental/src/config/config.c"
-		" vendor/fundamental/src/config/iniParser.c"
-		" vendor/fundamental/src/config/cliParser.c"
-		" vendor/fundamental/arch/config/windows-amd64/env.c"
-		" vendor/fundamental/src/hashmap/hashmap.c ",
-		buf_end);
-
-	ptr = build_append(
-		ptr,
-		"vendor/fundamental/src/platform/platform.c"
-		" vendor/fundamental/arch/platform/windows-amd64/platform.c"
-		" vendor/fundamental/src/async/async.c"
-		" vendor/fundamental/arch/async/windows-amd64/async.c"
-		" vendor/fundamental/src/process/process.c"
-		" vendor/fundamental/arch/process/windows-amd64/process.c"
-		" vendor/fundamental/arch/file/windows-amd64/fileRead.c"
-		" vendor/fundamental/arch/file/windows-amd64/fileReadMmap.c"
-		" vendor/fundamental/arch/file/windows-amd64/fileReadRing.c"
-		" vendor/fundamental/arch/file/windows-amd64/fileWrite.c"
-		" vendor/fundamental/arch/file/windows-amd64/fileWriteMmap.c"
-		" vendor/fundamental/arch/file/windows-amd64/fileWriteRing.c"
-		" vendor/fundamental/src/console/console.c"
-		" vendor/fundamental/src/string/stringConversion.c"
-		" vendor/fundamental/src/string/stringOperations.c"
-		" vendor/fundamental/src/string/stringTemplate.c"
-		" vendor/fundamental/src/string/stringValidation.c"
-		" vendor/fundamental/src/array/array.c"
-		" vendor/fundamental/arch/console/windows-amd64/console.c"
-		" vendor/fundamental/arch/memory/windows-amd64/memory.c"
-		" vendor/fundamental/src/filesystem/directory.c"
-		" vendor/fundamental/src/filesystem/file_exists.c"
-		" vendor/fundamental/src/filesystem/path.c"
-		" vendor/fundamental/src/filesystem/walk.c"
-		" vendor/fundamental/src/tsv/tsv.c"
-		" vendor/fundamental/arch/filesystem/windows-amd64/directory.c"
-		" vendor/fundamental/arch/filesystem/windows-amd64/file_exists.c"
-		" vendor/fundamental/arch/filesystem/windows-amd64/path.c"
-		" -lkernel32 -o build/",
-		buf_end);
+	ptr = build_append(ptr, " -lkernel32 -lws2_32 -o build/", buf_end);
 
 	ptr = build_append(ptr, name, buf_end);
 	ptr = build_append(ptr, "-windows-amd64.exe\r\n\r\n", buf_end);

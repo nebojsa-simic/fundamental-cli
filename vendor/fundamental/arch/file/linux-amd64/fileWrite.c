@@ -26,7 +26,9 @@ AsyncResult fun_write_memory_to_file(Write parameters)
 	MMapWriteState *state = (MMapWriteState *)allocation.value;
 	*state = (MMapWriteState){ .parameters = parameters,
 							   .file_descriptor = -1,
+							   .fd_valid = false,
 							   .mapped_address = NULL,
+							   .mmap_valid = false,
 							   .adjusted_offset = 0,
 							   .original_file_size = 0,
 							   .file_extended = false };

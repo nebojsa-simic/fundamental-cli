@@ -108,7 +108,7 @@ bool fun_platform_directory_is_empty(const char *path)
 {
 	int fd = (int)syscall2(SYS_open, (long)path, O_RDONLY | O_DIRECTORY);
 	if (fd < 0)
-		return true;
+		return 0;
 
 	char buf[1024];
 	bool empty = true;

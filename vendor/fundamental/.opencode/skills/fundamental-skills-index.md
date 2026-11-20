@@ -42,6 +42,7 @@ This is the central index for all Fundamental Library skills for AI coding agent
 | **Config** | [fundamental-config.md](fundamental-config.md) | Load configuration, cascade sources, get values |
 | **Network** | [fundamental-network.md](fundamental-network.md) | Simple async TCP/UDP client, address parse, overflow-buffered receive |
 | **Platform** | [fundamental-platform.md](fundamental-platform.md) | Detect OS and architecture, convert to string |
+| **Shutdown** | [fundamental-shutdown.md](fundamental-shutdown.md) | Graceful shutdown, cleanup handlers, Ctrl+C handling |
 
 ---
 
@@ -146,6 +147,11 @@ fundamental-platform.md
 fundamental-network.md
     └──→ fundamental-async.md (for non-blocking I/O patterns)
     └──→ fundamental-memory.md (for receive buffer allocation)
+
+fundamental-shutdown.md
+    └──→ fundamental-platform.md (cleanup after platform init)
+    └──→ fundamental-file-io.md (save state during cleanup)
+    └──→ fundamental-console.md (log cleanup progress)
 ```
 
 ---
@@ -167,6 +173,7 @@ fundamental-network.md
 | Get file size | fundamental-directory.md |
 | Detect OS/arch | fundamental-platform.md |
 | Connect TCP/UDP | fundamental-network.md |
+| Handle Ctrl+C | fundamental-shutdown.md |
 
 ---
 
@@ -174,6 +181,7 @@ fundamental-network.md
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.3 | 2026-05-14 | Added shutdown skill for graceful cleanup handling |
 | 1.2 | 2026-03-21 | Added fun_file_size to directory skill |
 | 1.1 | 2026-03-17 | Added substring/slice operations to string skill |
 | 1.0 | 2024 | Initial release with 8 core skills |

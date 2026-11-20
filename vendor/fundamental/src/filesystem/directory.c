@@ -78,18 +78,25 @@ static ErrorResult path_to_string_internal(Path path, char *buffer,
 		}
 	}
 
-	for (size_t i = 0; i < path.count && out_pos < max_len; i++) {
+	for (size_t i = 0; i < path.count; i++) {
 		const char *component = path.components[i];
 		if (component == NULL) {
 			continue;
 		}
 
 		size_t comp_len = string_length(component);
-		for (size_t j = 0; j < comp_len && out_pos < max_len; j++) {
+		size_t need = comp_len + (i < path.count - 1 ? 1 : 0);
+		if (out_pos + need > max_len) {
+			buffer[out_pos] = '\0';
+			return fun_error_result(ERROR_CODE_PATH_TOO_LONG,
+									"Path exceeds buffer");
+		}
+
+		for (size_t j = 0; j < comp_len; j++) {
 			buffer[out_pos++] = component[j];
 		}
 
-		if (i < path.count - 1 && out_pos < max_len) {
+		if (i < path.count - 1) {
 			buffer[out_pos++] = sep;
 		}
 	}
@@ -158,7 +165,7 @@ static ErrorResult create_parent_directories(const char *path)
 				}
 			}
 
-			temp[i] = '/'; // Restore separator
+			temp[i] = fun_path_separator(); // Restore separator
 		}
 	}
 
@@ -236,7 +243,10 @@ ErrorResult fun_filesystem_remove_directory(Path path)
 
 	// Remove the directory
 	int result = fun_platform_directory_remove(path_string);
-	if (result == -2) {
+	if (result == -1) {
+		return fun_error_result(ERROR_CODE_DIRECTORY_NOT_EMPTY,
+								"Directory is not empty");
+	} else if (result == -2) {
 		return fun_error_result(ERROR_CODE_DIRECTORY_NOT_FOUND,
 								"Directory not found");
 	} else if (result == -3) {

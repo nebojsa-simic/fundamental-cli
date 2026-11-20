@@ -75,7 +75,7 @@ int cmd_build_execute(int argc, const char **argv)
 		fun_console_error_line("Warning: Unknown architecture, assuming amd64");
 	}
 
-	// Always regenerate the build script so new/removed source files are picked up
+	// Generate build script from project files
 	if (verbose) {
 		fun_console_write_line("Generating build script...");
 	}

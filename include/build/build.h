@@ -141,7 +141,7 @@ BuildExecutionResult build_execute_current(int verbose);
 /* ── Build generation ─────────────────────────────────────── */
 
 #define MAX_SOURCE_FILES 256
-#define MAX_SOURCES_LENGTH 4096
+#define MAX_SOURCES_LENGTH 16384
 
 /**
  * Source scan result

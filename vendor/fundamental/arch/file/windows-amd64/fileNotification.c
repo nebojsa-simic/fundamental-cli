@@ -1,5 +1,6 @@
 #include <windows.h>
 #include "fundamental/file/file.h"
+#include "fundamental/filesystem/filesystem.h"
 #include "fundamental/memory/memory.h"
 #include "fundamental/error/error.h"
 #include "fundamental/async/async.h"
@@ -27,8 +28,10 @@ DWORD WINAPI file_monitor_thread(LPVOID param)
 	BOOL result;
 
 	while (!monitoring_should_stop) {
-		// Reset overlapped structure
-		fun_memory_fill(&(state->overlapped), 0, sizeof(OVERLAPPED));
+		// Reset the OVERLAPPED operation fields, preserving the event handle
+		unsigned char *overlapped_bytes = (unsigned char *)&state->overlapped;
+		for (size_t i = 0; i < sizeof(OVERLAPPED) - sizeof(HANDLE); i++)
+			overlapped_bytes[i] = 0;
 
 		// Watch for changes to the file
 		result = ReadDirectoryChangesW(
@@ -79,6 +82,30 @@ DWORD WINAPI file_monitor_thread(LPVOID param)
 	return 0;
 }
 
+// Extract the parent directory of a path using the platform separator.
+// Mirrors the Linux inotify implementation's get_parent_dir helper.
+static void get_parent_dir(const char *path, char *dir_buf)
+{
+	size_t len = 0;
+	while (path[len] != '\0') {
+		dir_buf[len] = path[len];
+		len++;
+	}
+	dir_buf[len] = '\0';
+
+	char sep = fun_path_separator();
+	while (len > 0 && dir_buf[len - 1] != sep) {
+		len--;
+	}
+
+	if (len > 0) {
+		dir_buf[len - 1] = '\0';
+	} else {
+		dir_buf[0] = '.';
+		dir_buf[1] = '\0';
+	}
+}
+
 AsyncResult fun_register_file_change_notification(String filePath,
 												  FileChangeCallback callback)
 {
@@ -96,7 +123,7 @@ AsyncResult fun_register_file_change_notification(String filePath,
 	}
 
 	FileNotificationState *state = (FileNotificationState *)stateResult.value;
-	fun_memory_fill(state, 0, sizeof(FileNotificationState));
+	fun_memory_fill(state, sizeof(FileNotificationState), 0);
 
 	// Initialize event for overlapped operations
 	state->overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
@@ -109,31 +136,19 @@ AsyncResult fun_register_file_change_notification(String filePath,
 	}
 
 	// Prepare the path - extract directory path from file path
-	wchar_t wide_path[512];
-	int path_converted =
-		MultiByteToWideChar(CP_UTF8, 0, filePath, -1, wide_path, 512);
-	if (path_converted == 0) {
+	char dir_path_utf8[512];
+	get_parent_dir(filePath, dir_path_utf8);
+
+	wchar_t dir_path[512];
+	int dir_converted =
+		MultiByteToWideChar(CP_UTF8, 0, dir_path_utf8, -1, dir_path, 512);
+	if (dir_converted == 0) {
 		CloseHandle(state->overlapped.hEvent);
 		fun_memory_free((Memory *)&state);
-		return (
-			AsyncResult){ .status = ASYNC_ERROR,
-						  .error = fun_error_result(
-							  GetLastError(), "Failed to convert file path") };
-	}
-
-	// Determine directory and filename
-	wchar_t dir_path[512];
-	wcscpy_s(dir_path, 512, wide_path);
-	wchar_t *lastSlash = wcsrchr(dir_path, L'\\');
-	if (!lastSlash) {
-		lastSlash = wcsrchr(dir_path, L'/');
-	}
-
-	if (lastSlash) {
-		*(lastSlash + 1) = L'\0'; // Keep trailing slash for dir
-	} else {
-		// If no slash, assume current directory
-		wcscpy_s(dir_path, 512, L".\\");
+		return (AsyncResult){ .status = ASYNC_ERROR,
+							  .error = fun_error_result(
+								  GetLastError(),
+								  "Failed to convert directory path") };
 	}
 
 	// Store file details
@@ -189,12 +204,14 @@ AsyncResult fun_register_file_change_notification(String filePath,
 	return result;
 }
 
-AsyncResult fun_unregister_file_change_notification(String filePath)
+AsyncResult fun_unregister_file_change_notification(void *state)
 {
-	if (!filePath) {
+	if (!state) {
 		return (AsyncResult){ .status = ASYNC_ERROR,
 							  .error = ERROR_RESULT_NULL_POINTER };
 	}
+
+	FileNotificationState *s = (FileNotificationState *)state;
 
 	if (monitoring_thread != NULL) {
 		// Signal the monitoring thread to stop
@@ -213,8 +230,15 @@ AsyncResult fun_unregister_file_change_notification(String filePath)
 		monitoring_thread = NULL;
 	}
 
-	// This API call would actually remove a specific registration if we had a registry
-	// of file registrations
+	if (s->dir_handle != NULL && s->dir_handle != INVALID_HANDLE_VALUE) {
+		CloseHandle(s->dir_handle);
+	}
+
+	if (s->overlapped.hEvent != NULL) {
+		CloseHandle(s->overlapped.hEvent);
+	}
+
+	fun_memory_free((Memory *)&state);
 
 	return (AsyncResult){ .status = ASYNC_COMPLETED,
 						  .error = ERROR_RESULT_NO_ERROR };

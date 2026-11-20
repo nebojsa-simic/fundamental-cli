@@ -123,6 +123,14 @@ AsyncResult fun_network_tcp_receive_exact(TcpNetworkConnection conn,
  */
 voidResult fun_network_tcp_close(TcpNetworkConnection conn);
 
+/*
+ * Register an already-connected TCP socket (e.g. from accept()) into
+ * the connection pool.  Returns a TcpNetworkConnection handle that
+ * is compatible with send/receive_exact/close.  Returns NULL on
+ * pool exhaustion or memory failure.
+ */
+TcpNetworkConnection fun_network_tcp_register_connection(intptr_t accepted_fd);
+
 /* ------------------------------------------------------------------
  * UDP — fire-and-forget send
  * ------------------------------------------------------------------ */
