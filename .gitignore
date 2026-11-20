@@ -64,6 +64,12 @@ dkms.conf
 .idea/
 *.vsix
 
+# opencode tooling (auto-generated)
+.opencode/node_modules/
+.opencode/package.json
+.opencode/package-lock.json
+.opencode/bun.lock
+
 # Test artifacts
 *.o
 
